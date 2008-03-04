@@ -25,7 +25,6 @@ with Ada.Characters.Latin_1;
 with Ada.Strings.Fixed;
 with Ada.Characters.Handling;
 
-
 package body APQ is
 
    type Time_Unit is ( Hour, Minute, Second );
@@ -75,22 +74,22 @@ package body APQ is
 
 	procedure Raise_APQ_Error_Exception( E: in Exception_Id; Code: in APQ_Error; Where: in String; Patterns: in Pattern_Array ) is
 
+		use Aw_lib.String_Util;
 
 		function Process_Message return String is
 			Desc: Unbounded_String := Unbounded_String(APQ_Error_Descriptions(Code));
 
 			function Get_Pattern( i: in Integer ) return Unbounded_String is
-				P: String := "%" & Integer'Image( i ) & "%";
+				P: String := "%" & Trim( Integer'Image( i ) ) & "%";
 			begin
 				return To_Unbounded_String( P );
 			end Get_Pattern;
 
-			use Aw_lib.String_Util;
 		begin
 			for i in Patterns'Range
 			loop
-				Str_Replace(	From	=> To_Unbounded_String(Integer'Image(i)),
-						To 	=> Get_Pattern(i),
+				Str_Replace(	From	=> Get_Pattern(i),
+						To 	=> Patterns(i),
 						Str	=> Desc );
 			end loop;
 			return To_String( Desc );
