@@ -238,7 +238,7 @@ package body APQ is
 		Raise_APQ_Error_Exception( 
 			E => Invalid_Format'Identity,
 			Code => APQ01,
-			Where => "function Port" );
+			Where => "Port" );
 		return 0; -- so GNAT won't complaint
       end case;
    end Port;
@@ -257,7 +257,7 @@ package body APQ is
 		Raise_APQ_Error_Exception( 
 			E => Invalid_Format'Identity,
 			Code => APQ02,
-			Where => "function Port" );
+			Where => "Port" );
 		return ""; -- so GNAT won't complaint
          when UNIX_Port =>
             return To_String(C.Port_Name);
