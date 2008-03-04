@@ -1,0 +1,1191 @@
+% win32.tex - $Id: win32.tex,v 1.2 2004/10/25 02:06:08 wwg Exp $
+% Warren W. Gay
+%
+% Needs:
+%	gnat-3.15p-nt.exe
+%	gnatwin-3.15p.exe
+%
+\documentclass[english]{report}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+\usepackage{graphicx}
+
+\makeatletter
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Textclass specific LaTeX commands.
+ \newenvironment{lyxcode}
+   {\begin{list}{}{
+     \setlength{\rightmargin}{\leftmargin}
+     \setlength{\listparindent}{0pt}% needed for AMS classes
+     \raggedright
+     \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+     \normalfont\ttfamily}%
+    \item[]}
+   {\end{list}}
+
+\usepackage{babel}
+\makeatother
+\begin{document}
+
+\title{APQ-2.1 Win32 Build Instructions}
+
+
+\author{Warren W. Gay}
+
+
+\date{September 24, 2003}
+
+\maketitle
+
+\chapter{Getting Started}
+
+This document provides a guide to those people who prefer to compile
+products they install, from the source code. This guide specifically
+deals with compiling and installing APQ in a win32 environment.
+
+What do you get from APQ in the win32 environment?
+
+The following are the products of this compile and install procedure:
+
+\begin{itemize}
+\item apq\_myadapter.dll for MySQL support
+\item apq-mysql.ads generated spec for MySQL support
+\item libapq.a static library for APQ client programs
+\item APQ static spec and body sources
+\item APQ-2.1.EXE Installer program
+\end{itemize}
+You may also choose which databases you wish to support. For example,
+you may only wish to include MySQL support for the win32 environment.
+Or instead, you may choose to support all products%
+\footnote{At the present time, this is PostgreSQL and MySQL.%
+}, since PostgreSQL databases may reside on hosts other than the win32
+environment that you are using. The choice is yours.
+
+
+\section{Does APQ Need CYGWIN?}
+
+No. When APQ is built and installed using these instructions, is completely
+independent of any CYGWIN tools and libraries. You may run your APQ
+application in or out of a CYGWIN environment. It only requires the
+win32 environment, and those libraries that come installed with GNAT.
+
+APQ does however, require the use of CYGWIN environment tools, to
+perform the build process. The compiler used is only GNAT and GNAT's
+underlying gcc.%
+\footnote{Microsoft's tool set is also required to compile some components.%
+} However, the win32 environment is not rich in the way of scripted
+build processes, so the CYGWIN POSIX like environment is used instead.
+
+
+\section{Tools Needed}
+
+In order to build the APQ library from sources, you will need a number
+of tools installed:
+
+\begin{itemize}
+\item CYGWIN (see below for list)
+\item Microsoft Visual Studio (Version 6.0)%
+\footnote{It is possible that an earlier version such as 5.0 might be sufficient,
+but this is untested.%
+}
+\item makensis (Nullsoft Scriptable Install System)%
+\footnote{Dowload it from nsis.sourceforge.net/site/index.php%
+}
+\item GNAT Compiler (3.14p was tested)
+\end{itemize}
+The makensis is actual somewhat optional. The actual build does not
+require this tool. If you are prepared to move the various components
+into the correct places (or custom locations), you do not need it.
+However, the built APQ-2.1.EXE install program is highly recommended,
+because it provides the following benefits:
+
+\begin{itemize}
+\item makes installation easy and foolproof
+\item allows you to choose what components to install
+\item registers its version in the registry
+\item is {}``GNAT aware''
+\item provides an uninstall capability%
+\footnote{From the Control Panel, select Add/Remove Programs.%
+}
+\end{itemize}
+
+\section{CYGWIN Tools}
+
+In order to provide a POSIX like environment, the CYGWIN tools are
+necessary to facilitate the complex process of building the APQ library
+from sources. If binary versions of the library are available, you
+may want to use them instead.
+
+The following list are the CYGWIN tools needed:
+
+\begin{itemize}
+\item bash (shell)
+\item sed
+\item sort
+\item ar
+\item tar
+\item cp
+\item rm
+\item chmod
+\item mkdir
+\item make
+\item cygpath
+\item uname
+\end{itemize}
+
+\chapter{PostgreSQL Preparation}
+
+This section shows you what you need to do to prepare the PostgreSQL
+components of APQ. If you do not plan to provide win32 support for
+PostgreSQL, then you can skip to the next chapter. Note that this
+chapter is only about preparing a PostgreSQL client facility. Installing
+and using a PostgreSQL database under Windows is well beyond the scope
+of this document.
+
+
+\section{Shell Sessions}
+
+This chapter will assume that you are using the cmd.exe native shell
+sessions (ie. not CYGWIN).
+
+
+\section{Source Code}
+
+This document will assume that your 3rd party source code will be
+downloaded and unpacked in the directory:
+
+\begin{itemize}
+\item c:\textbackslash{}work
+\end{itemize}
+If you don't have this directory, then create one now.
+
+
+\subsection{Download Sources}
+
+Download the PostgreSQL sources that you plan to use. In this example
+the download file:
+
+\begin{lyxcode}
+postgresql-base-snapshot.tar.gz
+\end{lyxcode}
+was used. You may want to choose a stable production quality release
+instead. Once you have downloaded your source file, unpack it to your
+work directory. Here we will use the file shown above.
+
+
+\subsection{Unpack Sources}
+
+Unpack your PostgreSQL sources to the work subdirectory. Using the
+file downloaded above, the sources unpacked into the directory named:
+
+\begin{itemize}
+\item c:\textbackslash{}work\textbackslash{}postgresql-snapshot
+\end{itemize}
+If you downloaded a production level release, then {}``snapshot''
+was likely replaced by a version number. Change to the src subdirectory,
+and then list the files there. You should find a file named win32.mak
+(using cmd.exe shell):
+
+\begin{lyxcode}
+
+
+{\footnotesize C:\textbackslash{}work>~cd~postgresql-snapshot\textbackslash{}src\textbackslash{}interfaces\textbackslash{}libpq}{\footnotesize \par}
+
+{\footnotesize C:\textbackslash{}work\textbackslash{}postgresql-snapshot\textbackslash{}src\textbackslash{}interfaces\textbackslash{}libpq>~dir~/w}{\footnotesize \par}
+
+
+\end{lyxcode}
+
+\section{Compile PostgreSQL Components}
+
+In that directory, you should see a file named win32.mak (the prompt
+here will be abbreviated):
+
+\begin{lyxcode}
+{\footnotesize C:>~nmake~/f~win32.mak}{\footnotesize \par}
+\end{lyxcode}
+Note: you should always check with the documentation that comes with
+your source code. These directions should work on all recent releases
+up to and including 7.4beta2. Build and install instructions often
+change, so check for them, with each new release.
+
+
+\subsection{Check for libpq.dll}
+
+This should now build the PostgreSQL client library libpq.dll. This
+process might fail at some point.%
+\footnote{Release 7.4beta2 failed building a component after libpq.dll.%
+} This can be ignored, if the important part (libpq.dll) was built.
+Change to the dll directory to check:
+
+\begin{lyxcode}
+{\footnotesize C:>~cd~interfaces\textbackslash{}libpq\textbackslash{}Release}{\footnotesize \par}
+
+{\footnotesize C:>~dir~libpq.dll}{\footnotesize \par}
+
+~{\footnotesize Volume~in~drive~C~has~no~label.}{\footnotesize \par}
+
+~{\footnotesize Volume~Serial~Number~is~587F-CB45}{\footnotesize \par}
+
+~{\footnotesize Directory~of~C:\textbackslash{}work\textbackslash{}postgresql-snapshot\textbackslash{}src\textbackslash{}interfaces\textbackslash{}libpq\textbackslash{}Release}{\footnotesize \par}
+
+{\footnotesize 09/19/2003~~10:42p~~~~~~~~~~~~~~90,112~libpq.dll}{\footnotesize \par}
+
+~{\footnotesize ~~~~~~~~~~~~~~1~File(s)~~~~~~~~~90,112~bytes}{\footnotesize \par}
+
+~{\footnotesize ~~~~~~~~~~~~~~0~Dir(s)~~32,435,912,704~bytes~free}{\footnotesize \par}
+
+{\footnotesize C:>}{\footnotesize \par}
+\end{lyxcode}
+The example session above, shows that the libpq.dll file was successfully
+created.
+
+
+\section{Create Staging Area}
+
+Now create a directory to place the important PostgreSQL files into.
+Create the following directories:
+
+\begin{description}
+\item [c:\textbackslash{}postgresql]top level staging directory
+\item [c:\textbackslash{}postgresql\textbackslash{}include]directory of
+C header files for compiling
+\item [c:\textbackslash{}postgresql\textbackslash{}lib]optional directory
+for DLL
+\end{description}
+These directories create a place for the PostgreSQL DLL file and the
+C header files.%
+\footnote{It is possible to install everything from its original location, provided
+that you answer the configuration prompts correctly. But this install
+procedure has been designed to keep things simple.%
+}
+
+
+\subsection{Install the DLL File}
+
+Copy the PostgreSQL DLL file into the staging area. You want to copy
+the file:
+
+\begin{itemize}
+\item c:\textbackslash{}work\textbackslash{}postgresql-snapshot\textbackslash{}src\textbackslash{}interfaces\textbackslash{}libpq\textbackslash{}release\textbackslash{}libpq.dll
+\end{itemize}
+to the location:
+
+\begin{itemize}
+\item c:\textbackslash{}postgresql\textbackslash{}lib\textbackslash{}libpq.dll
+\end{itemize}
+If this directory is not on your windows PATH, you will need to either
+put it on your path, or place it somewhere else that is on the path.
+One suggestion is GNAT's bin directory. On the author's system, this
+would be:
+
+\begin{itemize}
+\item c:\textbackslash{}opt\textbackslash{}gnat\textbackslash{}bin\textbackslash{}libpq.dll
+\end{itemize}
+\begin{lyxcode}
+
+\end{lyxcode}
+
+\subsection{Install C Header Files}
+
+Now it is necessary to copy over the C header files that APQ will
+need to examine. Copy all the files from:
+
+\begin{itemize}
+\item c:\textbackslash{}work\textbackslash{}postgresql-snapshot\textbackslash{}src\textbackslash{}interfaces\textbackslash{}libpq\textbackslash{}{*}.h
+\end{itemize}
+to the directory:
+
+\begin{itemize}
+\item c:\textbackslash{}work\textbackslash{}postgresql\textbackslash{}include
+\end{itemize}
+\begin{lyxcode}
+
+\end{lyxcode}
+There are a few other C header files that APQ will need. Copy the
+header files from:
+
+\begin{itemize}
+\item c:\textbackslash{}work\textbackslash{}postgresql-snapshot\textbackslash{}src\textbackslash{}include\textbackslash{}{*}.h
+\end{itemize}
+additionally to the directory:
+
+\begin{itemize}
+\item c:\textbackslash{}work\textbackslash{}postgresql\textbackslash{}include
+\end{itemize}
+\begin{lyxcode}
+
+\end{lyxcode}
+Now the PostgreSQL preparation is ready for APQ.
+
+
+\chapter{MySQL Preparation}
+
+Like the PostgreSQL chapter, this chapter is optional. If you do not
+plan to include MySQL client support, then skip to the next chapter.
+Just be sure that you include support for at least one of PostgreSQL
+or MySQL!
+
+
+\section{Shell Sessions}
+
+Where shell sessions are required, this chapter is assuming that you
+will be using cmd.exe sessions (ie. not CYGWIN).
+
+
+\section{Create Work Directory}
+
+If you don't already have a C:\textbackslash{}WORK directory, then
+create one now.
+
+Note: numerous shortcuts are possible in this procedure if you know
+what you are doing. We will be taking a cautious approach to the procedure,
+so that the steps will be easy to understand, and to avoid confusion.
+
+
+\section{Unpack MySQL Sources}
+
+Unpack (or unzip) the tar/zip file into the C:\textbackslash{}WORK
+directory. Here we used WinZip to unpack the sources into a subdirectory.
+
+\includegraphics[scale=0.5]{winzip.jpg}
+
+Note carefully that the {}``Use folder names'' checkbox is checked.
+
+
+\section{Build MySQL DLL}
+
+You will need to start the Microsoft Visual Studio 6.0 at this point.%
+\footnote{Check with the MySQL documentation for the necessary build instructions.
+This procedure was effective for MySQL version 4.0.14b. If their instructions
+vary from these, follow theirs.%
+} Select File->Open Workspace, and then browse in the unpacked subdirectory
+for a file named mysql.dsw :
+
+\includegraphics[scale=0.5]{open_workspace.jpg}
+
+Next, from the Build->Set Active Configuration Menu, choose libmsql
+- Win32 Release (or Win32 Debug if you are debugging changes).
+
+\includegraphics[scale=0.5]{set_active.jpg}
+
+Then compile by pressing F7. If all went well, you should see a successful
+completion of the compile:
+
+\includegraphics[scale=0.5]{comp1.jpg}
+
+
+\section{Create MySQL Staging Area}
+
+\marginpar{You may find that you already have a MySQL lib\textbackslash{}debug
+and lib\textbackslash{}opt library directory. The former has components
+for debugging while the later contains optimized libraries.%
+}This APQ build procedure will assume that you have the following directories
+in place for the client MySQL components:
+
+\begin{description}
+\item [c:\textbackslash{}mysql]top level MySQL directory
+\item [c:\textbackslash{}mysql\textbackslash{}include]containing all client
+MySQL C header files
+\item [c:\textbackslash{}mysql\textbackslash{}bin]containing the libmySQL.dll
+DLL file
+\item [c:\textbackslash{}mysql\textbackslash{}lib]containing the libmySQL.lib
+import file
+\end{description}
+Your directory structure can vary from this theme, but we'll refer
+to the directories in this document as noted above.
+
+You may have installed MySQL from binary distributions. If it included
+the install of a libmySQL.dll client library (as it should), you might
+already have include files, that were installed with the dll. Note
+however, the author has found that you need more than the include
+files that were provided, for the compile of the APQ component. So
+it is recommended that you follow this procedure, including the staging
+area.
+
+
+\subsection{Staging Directories}
+
+Create the c:\textbackslash{}mysql staging area directories and subdirectories
+as shown in the prior section, if they don't already exist. If you
+are using other directories, you may want to write your notes on this
+document page.
+
+
+\subsection{Copy Include Files}
+
+Copy the include files from:%
+\footnote{The directory name obviously reflects MySQL version 4.0.14b, which
+may be different in your case.%
+}
+
+\begin{itemize}
+\item c:\textbackslash{}work\textbackslash{}mysql-4.0.14b\textbackslash{}include\textbackslash{}{*}.h
+\end{itemize}
+to the directory:
+
+\begin{itemize}
+\item c:\textbackslash{}mysql\textbackslash{}include
+\end{itemize}
+
+\subsection{Copy the libmySQL.dll File}
+
+If you built the libmySQL.dll file from sources, you will want to
+install that. Copy the file:
+
+\begin{itemize}
+\item c:\textbackslash{}work\textbackslash{}mysql-4.0.14b\textbackslash{}lib\_release\textbackslash{}libmysql.dll
+\end{itemize}
+to your directory:
+
+\begin{itemize}
+\item c:\textbackslash{}mysql\textbackslash{}bin\textbackslash{}libmysql.dll
+\end{itemize}
+You will need to make certain that this DLL is on the PATH, in order
+to be executable. You may prefer to put the DLL with the GNAT binary
+directory such as:
+
+\begin{itemize}
+\item c:\textbackslash{}opt\textbackslash{}gnat\textbackslash{}bin\textbackslash{}libmysql.dll
+\end{itemize}
+instead. The choice is up to you.
+
+
+\subsection{Copy the Import Library}
+
+You will need the import library to assist with the linking of the
+APQ DLL file. Copy the file:
+
+\begin{itemize}
+\item c:\textbackslash{}work\textbackslash{}mysql-4.0.14b\textbackslash{}lib\_release\textbackslash{}libmysql.lib
+\end{itemize}
+to your directory:
+
+\begin{itemize}
+\item c:\textbackslash{}mysql\textbackslash{}lib\textbackslash{}libmysql.lib
+\end{itemize}
+Now your staging area for MySQL is ready for APQ.
+
+
+\chapter{Compiling APQ}
+
+Now we are ready to start into building the APQ components. The first
+step is one of configuration.
+
+APQ has been designed to allow PostgreSQL and/or MySQL support to
+be included. The preceeding chapters documented preparations for both,
+but either of those database products can been omitted.%
+\footnote{As long as at least one is chosen.%
+} We will assume in this document, that you want all the support you
+can build, and so will build both. However, you can easily bypass
+one or the other, with the appropriate answers to the scripted prompts.
+
+
+\section{Shell Sessions}
+
+The APQ work will primarily use a CYGWIN shell session using the bash
+shell. Open a CYGWIN bash session now, and make a work subdirectory
+there, and then unpack APQ and finally change to that directory. In
+this section you may need to switch between this CYGWIN bash session,
+and a cmd.exe session window.
+
+If you downloaded APQ-2.1, then your unpacked sources should probably
+be unpacked to a directory named:
+
+\begin{itemize}
+\item c:\textbackslash{}work\textbackslash{}apq-2.1 (ie. /cygdrive/c/work/apq-2.1
+for CYGWIN)
+\end{itemize}
+
+\section{Configuration}
+
+Before you can build the APQ sources, you must configure them. Run
+the shell script ./configure in the CYGWIN bash session:
+
+\begin{lyxcode}
+\$~./configure
+
+
+
+THIS~IS~A~WIN32~INSTALL~OF~APQ-2.1~:
+
+-
+
+-{}-Building~gnat\_info~command,~to~obtain~some~registry
+
+-{}-information~about~your~installed~GNAT~compiler..
+
+-
+
+You~have~GNAT~3.14p~installed~:
+
+
+\end{lyxcode}
+Initially the script should identify this as a WIN32 configure step%
+\footnote{The script eventually execs the script win32\_config.%
+}. Then the program gnat\_info.adb is compiled to allow the configuration
+script to access the registry. It locates where your GNAT compiler
+is installed, and later tests to see if APQ has already been installed.
+If APQ is found to be installed, you will need to uninstall it to
+compile APQ successfully.%
+\footnote{If you installed APQ manually, this test will likely fail to detect
+that APQ is already installed.%
+}
+
+
+\subsection{Configure Edit Mode}
+
+The script will ask for a number of pathnames for input. This is more
+easily done, if editing is permitted at the input prompts. But to
+do this, the script must know which edit mode the user prefers:
+
+\begin{lyxcode}
+
+
+~~Please~choose~your~preference~for~input~editing
+
+~~bindings:
+
+-
+
+~~e~-~emacs~mode
+
+~~v~-~vi~mode
+
+~~n~-~neither
+
+-
+
+Choose~e/v/n~?
+\end{lyxcode}
+So the script prompts you for the editing mode you want to use. Choose:
+
+\begin{description}
+\item [e]for emacs editor bindings
+\item [v]for vi editor bindings
+\item [n]for no special editing
+\end{description}
+If you are not in the habit of using emacs or vi UNIX/Linux editors,
+then you might prefer to use {}``n''. This document will assume
+that you have chosen {}``e'' for emacs mode, because this permits
+some special features to be highlighted, for the convenience of power
+users.
+
+
+\subsection{Microsoft Toolset Check}
+
+After answering the edit mode prompt, you'll get an assessment made
+of the Microsoft Toolset. If you have Microsoft Visual Studio 6.0
+installed, you should see:
+
+\begin{lyxcode}
+Choose~e/v/n~?~e
+
+-
+
+You~seem~to~have~the~Microsoft~Toolset~available..
+\end{lyxcode}
+Here the script is confirming that you have the necessary tools to
+build the APQ\_MYADAPTER.DLL file. Certainly if you built the MySQL
+or PostgreSQL DLL files, you should receive a favourable report here.
+However, it is possible that those components be downloaded in binary
+form instead and then placed into the work directories indicated.
+
+If you have the Visual Studio installed, and you don't receive confirmation
+of this from the script, then check your PATH variable within the
+CYGWIN environment. The PATH setting probably needs adjustment.
+
+The Microsoft Toolset required by APQ includes:
+
+\begin{description}
+\item [CL]the C/C++ Compiler
+\item [LIB]the library utility for creating export and import files
+\item [LINK]the Microsoft C/C++ linker utility
+\end{description}
+Before you despair of not owning the Microsoft toolset, consider:
+
+\begin{itemize}
+\item If you are not building support for MySQL, you do not need them. 
+\item If you have downloaded a binary form of APQ\_MYADAPTER.DLL you do
+not need them.
+\end{itemize}
+If on the other hand, you are planning to compile APQ, with MySQL
+support, and lack the Microsoft toolset above, then you must now locate
+and download a binary copy of apq\_myadapter.dll. Otherwise, you will
+be required to use the Microsoft toolset to create that dll file.
+This file may be available in your package, or perhaps made available
+separately, to reduce download file sizes.
+
+
+\subsection{Choosing MySQL Support}
+
+Now you must decide whether or not you want your installed copy of
+APQ to include MySQL support. The only real reason not to include
+it is to save the installer time and effort. Otherwise, I suggest
+you include it for flexibility.
+
+\begin{lyxcode}
+Questions~for~MySQL~:
+
+-
+
+Installing~MySQL~database~support~?~(Yes/No)?~Yes
+\end{lyxcode}
+I'm going to assume that you are answering yes, to get your money's
+worth from APQ.
+
+
+\subsection{Specifying MySQL Pathnames}
+
+Once you answer \emph{Yes} to the MySQL support prompt, you are prompted
+for two more pathnames:
+
+\begin{lyxcode}
+{\footnotesize Questions~for~MySQL~:}{\footnotesize \par}
+
+-
+
+{\footnotesize Installing~MySQL~database~support~?~(Yes/No)?~yes}{\footnotesize \par}
+
+{\footnotesize Windows~pathname~to~MySQL~include~directory~:~c:\textbackslash{}mysql\textbackslash{}include}{\footnotesize \par}
+
+{\footnotesize Windows~path~of~MySQL~DLL~file~is~~~~~~~~~~~:~c:\textbackslash{}MySQL\textbackslash{}BIN\textbackslash{}libmysql.dll}{\footnotesize \par}
+
+{\footnotesize Windows~path~to~libmysql.lib~file~~~~~~~~~~~:~c:\textbackslash{}mysql\textbackslash{}lib\textbackslash{}libmysql.lib}{\footnotesize \par}
+\end{lyxcode}
+While the session appears to show three prompts, the pathname of the
+MySQL DLL is determined by the script. It does this by looking for
+libmySQL.dll on your PATH. If your PATH is not correctly set, or the
+DLL not correctly installed, then this step will fail. Correct the
+PATH and try again, if necessary.
+
+The two important inputs are:
+
+\begin{enumerate}
+\item Directory pathname to MySQL include files 
+\item Pathname of the MySQL DLL import file (libmysql.lib)
+\end{enumerate}
+Your pathnames may vary from the example, but these are the ones I
+am using for illustration purposes.
+
+
+\subsection{Choosing PostgreSQL Support}
+
+Like MySQL, you can choose whether or not you want to build support
+for it:
+
+\begin{lyxcode}
+Questions~for~PostgreSQL~:
+
+-
+
+Installing~PostgreSQL~database~support~?~(Yes/No)?~yes
+\end{lyxcode}
+Here, once again, we are assuming you want to get your money's worth.
+
+
+\subsection{Specifying PostgreSQL Pathnames}
+
+Currently, PostgreSQL only needs to know the location of the C header
+(include) files:
+
+\begin{lyxcode}
+{\footnotesize Questions~for~PostgreSQL~:}{\footnotesize \par}
+
+-
+
+{\footnotesize Installing~PostgreSQL~database~support~?~(Yes/No)?~yes}{\footnotesize \par}
+
+{\footnotesize Windows~pathname~to~PostgreSQL~include~directory~:~c:\textbackslash{}postgresql\textbackslash{}include}{\footnotesize \par}
+
+{\footnotesize Windows~path~of~PostgreSQL~DLL~file~is~~~~~~~~~~~:~c:\textbackslash{}OPT\textbackslash{}GNAT\textbackslash{}bin\textbackslash{}libpq.dll}{\footnotesize \par}
+\end{lyxcode}
+The script locates the PostgreSQL DLL file libpq.dll, by searching
+the PATH variable. If the script fails to locate the DLL file, then
+you may need to change the PATH (under CYGWIN) and/or make the DLL
+file in a directory that is searched by the PATH variable setting.
+Then try the configure step again.
+
+In this example, I will just hit return and accept the default. But
+you may specify a different directory from this.
+
+
+\subsection{Concluding the Configuration}
+
+The configuration session should look something like the following: 
+
+\begin{lyxcode}
+{\footnotesize You~seem~to~have~the~Microsoft~Toolset~available..}{\footnotesize \par}
+
+-
+
+{\footnotesize Questions~for~MySQL~:}{\footnotesize \par}
+
+-
+
+{\footnotesize Installing~MySQL~database~support~?~(Yes/No)?~yes}{\footnotesize \par}
+
+{\footnotesize Windows~pathname~to~MySQL~include~directory~:~c:\textbackslash{}mysql\textbackslash{}include}{\footnotesize \par}
+
+{\footnotesize Windows~path~of~MySQL~DLL~file~is~~~~~~~~~~~:~c:\textbackslash{}MySQL\textbackslash{}BIN\textbackslash{}libmysql.dll}{\footnotesize \par}
+
+{\footnotesize Windows~path~to~libmysql.lib~file~~~~~~~~~~~:~c:\textbackslash{}mysql\textbackslash{}lib\textbackslash{}opt\textbackslash{}libmysql.lib}{\footnotesize \par}
+
+-
+
+{\footnotesize Questions~for~PostgreSQL~:}{\footnotesize \par}
+
+-
+
+{\footnotesize Installing~PostgreSQL~database~support~?~(Yes/No)?~yes}{\footnotesize \par}
+
+{\footnotesize Windows~pathname~to~PostgreSQL~include~directory~:~c:\textbackslash{}postgresql\textbackslash{}include}{\footnotesize \par}
+
+{\footnotesize Windows~path~of~PostgreSQL~DLL~file~is~~~~~~~~~~~:~c:\textbackslash{}OPT\textbackslash{}GNAT\textbackslash{}bin\textbackslash{}libpq.dll}{\footnotesize \par}
+
+-
+
+~{\footnotesize ~~~You~are~now~ready~to~'make'}{\footnotesize \par}
+
+-
+
+To~proceed~with~the~build,~perform~the~following:
+
+-
+
+\$~make-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-(do~'make~clean'~prior~to~rebuilds)
+
+\$~make~installer-{}-{}-{}-(optional)
+
+\$~make~install
+
+
+\end{lyxcode}
+You may of course, choose different directories and preferences. This
+document is just a guideline. 
+
+At this point, you should receive a message indicating that you are
+ready to perform a {}``make''. If you are making changes and need
+to rebuild the sources, perform a {}``make clean'' first. If you
+are making changes to the installer programm, then you can repeat
+builds of it by simply doing a {}``make installer''.
+
+A {}``make install'' will make the installer program, and then execute
+it.
+
+
+\section{Building APQ}
+
+If you have all of the CYGWIN components required, then this should
+be the easiest part of the WIN32 build process.
+
+
+\subsection{Win32 Makefile}
+
+The APQ components are compiled using a Makefile that is tailored
+to the Windows environment. The actual make file used is named:
+
+\begin{itemize}
+\item Makefile.win32
+\end{itemize}
+When the configure script ran%
+\footnote{The configure script invokes script win32\_config under Windows.%
+}, it also created a symlink to the Makefile.win32 file. The symlink
+is named:
+
+\begin{itemize}
+\item GNUmakefile
+\end{itemize}
+This symlink permits the make command to reference Makefile.win32
+by default. If you must customize the make file, be sure to edit Makefile.win32.
+
+The configuration process also created another file:
+
+\begin{itemize}
+\item config.win32
+\end{itemize}
+The configured values for the build are included in the config.win32
+file. This is the file that is included from Makefile.win32. If you
+need edit configuration values, edit that file. Just be aware that
+those changes will be lost if the configure script is successfully
+rerun.
+
+To compile the APQ components, in a CYGWIN bash session, using the
+APQ source directory%
+\footnote{Using our example this would be /cygdrive/c/work/apq-2.1.%
+} as the current directory, you just type make:
+
+\begin{lyxcode}
+\$~make
+\end{lyxcode}
+This should successfully build everything that is required, depending
+upon the options you selected in the configuration process. The following
+products should come out of the build:
+
+\begin{description}
+\item [apq-mysql.ads]This is generated for MySQL support only
+\item [apq\_myadapter.dll]This is for MySQL support only
+\item [libapq.a]A static GNAT library for APQ
+\end{description}
+Additionally, all static APQ spec and body sources must also be installed.
+
+
+\section{Rebuilding/Configuring}
+
+Sometimes things don't go right on the first try. To allow for that
+possibility, the following tools are at your disposal:
+
+\begin{enumerate}
+\item make clean
+\item make clobber
+\end{enumerate}
+
+\subsection{Make Clean}
+
+Use this when you want to delete all compiled objects, binary components
+and generated sources (like apq-mysql.ads). This allows you to tweak
+as necessary, but rebuild again without redoing the configuration
+process.
+
+
+\subsection{Make Clobber}
+
+This goes one step further than {}``make clean'', in that it destroys
+the configuration information that was gathered. Use this procedure
+when you want to start over from scratch.
+
+
+\section{Installing APQ}
+
+Once you have successfully built APQ, you need to install its components.
+If it were only a few binary files, you could do this by hand. However,
+in addition to the library components, the Ada specification and body
+source files must be installed in the correct place.%
+\footnote{Some of the Ada bodies are mandatory because of the generics that
+must be compiled by GNAT. So APQ just installs them all.%
+}
+
+If you perform {}``make installer'', this will build the installer
+program for you. If you perform a {}``make install'', it will build
+the installer program and invoke it.
+
+\begin{lyxcode}
+\$~make~install
+\end{lyxcode}
+The installer used is a nice GUI installer, provided complements of
+the Nullsoft Scriptable Installer System folks. Visit their website
+at:
+
+\begin{lyxcode}
+nsis.sourceforge.net/site/index.php
+\end{lyxcode}
+When the installer is run, simply follow the GUI prompts.
+
+
+\section{Uninstalling APQ}
+
+If you are making changes, you'll frequently need to uninstall and
+re-install. This is easily provided for in the Control Panel. Choose
+{}``Add/Remove Programs'' and look for the entry named {}``APQ-2.1
+(remove only)''. Click on the button {}``Change/Remove'' to proceed.
+The APQ\_Uninstall.exe program will then be launched to guide you
+through the process.
+
+
+\section{Conclusion}
+
+If you reached this point, you have successfully installed database
+support, which is now at your Ada95 finger tips! Congratulations!
+The next chapter will show you how to test your APQ library.
+
+
+\chapter{Testing APQ}
+
+Naturally, you want to test out your shiny new APQ library, now that
+you can connect to databases both on your win32 platform, and remotely
+over the network. The example programs in the ./eg and the ./eg2 are
+UNIX flavoured tests and are not suitable.
+
+Starting with APQ-2.1, there is now a template program named win32\_test.adb.
+This chapter will describe how you can use that source file to perform
+some simple tests.
+
+
+\section{Creating the Test Program}
+
+First you need to create a file named win\_test.adb from the win32\_test.adb
+source file provided. Do not modify the original win32\_test.adb file.
+You may need it for testing another database, later.
+
+Create the win\_test.adb by copying the win32\_test.adb file (bash):
+
+\begin{lyxcode}
+\$~cp~win32\_test.adb~win\_test.adb
+\end{lyxcode}
+But don't compile that file yet! You need to supply some changes.
+
+\begin{quote}
+Note: if you are testing a binary installed release, look for the
+win32\_test.adb program in the APQ bindings directory. If GNAT is
+installed as C:\textbackslash{}OPT\textbackslash{}GNAT, then look
+for the file named:
+
+C:\textbackslash{}OPT\textbackslash{}GNAT\textbackslash{}Bindings\textbackslash{}APQ\textbackslash{}win32\_test.adb
+
+Copy this file to your work area, and name it win\_test.adb to match
+the procedure name within it.
+\end{quote}
+
+\subsection{Editing the win\_test.adb Source}
+
+The test file win\_test.adb is nearly complete. But it still needs
+you to define:
+
+\begin{enumerate}
+\item Which database product to use
+\item What host name (if not local) to use
+\item What account name (userid) to use
+\item What password to use (if any)
+\end{enumerate}
+Once these are defined, the program is ready to compile and test.
+
+The unmodified start of the win\_test.adb program should look like
+this:
+
+\begin{lyxcode}
+~{\footnotesize ~~~~1~~-{}-~Very~Simple~Connect~to~Database~Test}{\footnotesize \par}
+
+~{\footnotesize ~~~~2}{\footnotesize \par}
+
+~{\footnotesize ~~~~3~~-{}-~Uncomment~one~of~the~following:}{\footnotesize \par}
+
+~{\footnotesize ~~~~4~~-{}-~with~APQ.PostgreSQL.Client;~use~APQ,~APQ.PostgreSQL,~...}{\footnotesize \par}
+
+~{\footnotesize ~~~~5~~-{}-~with~APQ.MySQL.Client;~use~APQ,~APQ.MySQL,~APQ.MySQL.Client;}{\footnotesize \par}
+
+~{\footnotesize ~~~~6}{\footnotesize \par}
+
+~{\footnotesize ~~~~7~~with~Ada.Text\_IO;~use~Ada.Text\_IO;}{\footnotesize \par}
+
+~{\footnotesize ~~~~8}{\footnotesize \par}
+
+~{\footnotesize ~~~~9~~procedure~Win\_Test~is}{\footnotesize \par}
+
+~{\footnotesize ~~~10~~~~~C~:~Connection\_Type;}{\footnotesize \par}
+
+~{\footnotesize ~~~11~~~~~Q~:~Query\_Type;}{\footnotesize \par}
+
+~{\footnotesize ~~~12~~begin}{\footnotesize \par}
+
+~{\footnotesize ~~~13}{\footnotesize \par}
+
+~{\footnotesize ~~~14~~~~~Put\_Line(\char`\"{}Win32\_Test~Started:\char`\"{});}{\footnotesize \par}
+
+~{\footnotesize ~~~15}{\footnotesize \par}
+
+~{\footnotesize ~~~16~~-{}-~Set\_Host\_Name(C,\char`\"{}<hostname>\char`\"{});}{\footnotesize \par}
+
+~{\footnotesize ~~~17~~~~~Set\_User\_Password(C,\char`\"{}<userid>\char`\"{},\char`\"{}<password>\char`\"{});}{\footnotesize \par}
+
+~{\footnotesize ~~~18~~~~~Set\_DB\_Name(C,\char`\"{}<database\_name>\char`\"{});}{\footnotesize \par}
+\end{lyxcode}
+The line numbers are not part of the source code however, since they
+are here only for our ease of reference. Now perform the following
+edits:
+
+\begin{enumerate}
+\item Uncomment line 4 if you are testing PostgreSQL. Else uncomment line
+5 for MySQL.
+\item If your database is a remote database, uncomment line 16. Then replace
+<hostname> with the host name or IP number of the database server.
+\item Edit your userid value in place of <userid> on line 17.
+\item Edit your password value in place of <password> on line 17. If there
+is no password, supply a null string like {}``''.
+\item Edit the database name in place of <database\_name> on line 18.
+\end{enumerate}
+Save the file to win\_test.adb and compile it as follows:
+
+\begin{lyxcode}
+\$~gnatmake~win\_test
+\end{lyxcode}
+You will not need to specify any linking arguments, since the GNAT
+feature:
+
+\begin{lyxcode}
+pragma~Linker\_Options({}``...'');
+\end{lyxcode}
+was used in the APQ package specs to avoid this inconvenience.
+
+
+\section{Running the Test}
+
+Before the test run can be successful, there are some obvious prerequisites
+on the database side:
+
+\begin{itemize}
+\item The database server must accept connections from you
+\item The database server userid and password must be acceptable
+\item The database named must already exist (the test program does not create
+it)
+\end{itemize}
+The test program win\_test.exe, first attempts to drop a table TEST\_TBL,
+and then creates a new one. This is done so that you can run the test
+multiple times. This has the implication that:
+
+\begin{itemize}
+\item The userid must have table create privileges
+\item The userid must have table drop privileges
+\item The userid must have sequence drop privileges, for PostgreSQL only
+\end{itemize}
+Configuring the security and the privileges of the user accounts,
+is outside the scope of this document. Note however, that you can
+test the connectivity and rights with the mysql command for MySQL,
+and psql for PostgreSQL. Once those work, you should have success
+with win\_test.exe as well.
+
+The test results look something like the following for MySQL:
+
+\begin{lyxcode}
+\$~./win\_test
+
+{\footnotesize Win32\_Test~Started:}{\footnotesize \par}
+
+{\footnotesize My~Userid~is~'wwg'}{\footnotesize \par}
+
+{\footnotesize My~Password~is~''}{\footnotesize \par}
+
+{\footnotesize My~Database~is~'wwg'}{\footnotesize \par}
+
+{\footnotesize My~Host~Name~is~''}{\footnotesize \par}
+
+{\footnotesize My~Engine~is~ENGINE\_MYSQL}{\footnotesize \par}
+
+{\footnotesize Connecting..}{\footnotesize \par}
+
+{\footnotesize Connected!}{\footnotesize \par}
+
+-
+
+{\footnotesize DROP~TABLE~TEST\_TBL}{\footnotesize \par}
+
+-
+
+{\footnotesize Table~was~dropped.}{\footnotesize \par}
+
+-
+
+{\footnotesize CREATE~TABLE~TEST\_TBL~(}{\footnotesize \par}
+
+~{\footnotesize ~NAME~~~VARCHAR(32)~NOT~NULL,}{\footnotesize \par}
+
+~{\footnotesize ~ID~~~~~INTEGER~NOT~NULL~AUTO\_INCREMENT~PRIMARY~KEY}{\footnotesize \par}
+
+{\footnotesize )}{\footnotesize \par}
+
+-
+
+{\footnotesize Table~created.}{\footnotesize \par}
+
+-
+
+{\footnotesize INSERT~INTO~TEST\_TBL~(~NAME~)}{\footnotesize \par}
+
+~{\footnotesize ~VALUES(~'ONE'~)}{\footnotesize \par}
+
+-
+
+{\footnotesize OID=~1}{\footnotesize \par}
+
+
+
+{\footnotesize INSERT~INTO~TEST\_TBL~(~NAME~)}{\footnotesize \par}
+
+~{\footnotesize ~VALUES(~'TWO'~)}{\footnotesize \par}
+
+-
+
+{\footnotesize OID=~2}{\footnotesize \par}
+
+-
+
+{\footnotesize INSERT~INTO~TEST\_TBL~(~NAME~)}{\footnotesize \par}
+
+~{\footnotesize ~VALUES(~'THREE'~)}{\footnotesize \par}
+
+-
+
+{\footnotesize OID=~3}{\footnotesize \par}
+
+-
+
+{\footnotesize SELECT~NAME,ID}{\footnotesize \par}
+
+{\footnotesize FROM~TEST\_TBL}{\footnotesize \par}
+
+-
+
+{\footnotesize Got~3~Tuples..}{\footnotesize \par}
+
+{\footnotesize NAME='ONE',~ID='1'}{\footnotesize \par}
+
+{\footnotesize NAME='TWO',~ID='2'}{\footnotesize \par}
+
+{\footnotesize NAME='THREE',~ID='3'}{\footnotesize \par}
+
+{\footnotesize <END>}{\footnotesize \par}
+
+{\footnotesize Test~Completed.}{\footnotesize \par}
+\end{lyxcode}
+Note that this win\_test.exe can run independently of CYGWIN as well,
+in a cmd.exe session. APQ is not dependent upon the CYGWIN infrastructure.
+CYGWIN is only used as a tool to build APQ from sources.
+
+
+\section{Congratulations!}
+
+If you successfully built and installed APQ on your win32 environment,
+then you are ready to branch out into entire new horizons with APQ.
+This software has been developed and provided to you for free. One
+way you can help with the development is to provide support in the
+way of:
+
+\begin{itemize}
+\item bug reports
+\item user experiences with APQ (good and bad)
+\item suggestions for enhancements
+\item testimonials about the APQ library to encourage others to try it
+\item financial support
+\end{itemize}
+APQ is Open Sourced, and so financial support is not required. However,
+financial support is always welcome, and may help with future releases.
+An example of where financial support may be necessary is to fund
+the purchase of newer Microsoft development tools. The success of
+win32 ports of any package, depend upon access to these tools. So
+if you use APQ in a business setting, please consider providing some
+level of support to the APQ project.
+
+Testimonials and bug reports are another major area of support that
+don't cost anything. Testimonials help others realize that they need
+to take the time to test drive it. If you want to provide a testimonial,
+just let me know if you want it kept anonymous, or the email address
+removed. I understand the pain of spam. Bug reports help eliminate
+problems for everyone, including yourself in future revisions of APQ. 
+
+User experiences and suggestions are always welcome. Just drop a line
+or three, and let me know how APQ can be improved, or how it has made
+your projects successful.
+
+
+\subsection*{Thanks for using APQ!}
+
+\begin{quote}
+Warren W. Gay VE3WWG
+
+ve3wwg@cogeco.ca
+\end{quote}
+\begin{lyxcode}
+\end{lyxcode}
+
+\end{document}

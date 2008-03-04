@@ -1,0 +1,10 @@
+Thu Jan 27 15:29:52 2005
+
+Fix the POSIX (Linux/UNIX) install script to be "script
+friendly". I.e. eliminate the curses based interactive
+script format, so that it can be better packaged for
+distributions.
+
+PostgreSQL provides up to the microsecond level. Sybase to ~ 1/300
+second. MySQL not at all.
+

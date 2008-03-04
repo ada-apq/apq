@@ -1,0 +1,56 @@
+#!/bin/sh
+# $Id: build_release,v 1.4 2003/09/28 20:47:39 wwg Exp $
+# Warren W. Gay VE3WWG
+#
+# Build a software release for distribution
+#
+# Driven by the build_files file.
+
+if [ "${1:-NOFORCE}" = FORCE ] ; then
+	FORCE=1
+	shift
+else
+	FORCE=0
+fi
+
+set -eu
+BUILD_FILES="${1:-build_files}"
+
+directory() {
+	DESTDIR="${PWD}$1"	# Destination directory to build
+	mode="$2"		# Mode of the destination directory
+	rm -fr "$DESTDIR"
+	mkdir -p $DESTDIR
+	chmod "$mode" "$DESTDIR"
+}
+
+install() {
+	src="$1"	# Source file name
+	mode="$2"	# Mode for destination file
+	dst="$3"	# Destination directory name
+	bname=$(basename "$src")
+	dstfile="${DESTDIR}${dst}/$bname"
+	mkdir -p $(dirname $dstfile)
+	if [ ! -r "$src" ] ; then
+		echo "FILE '$src' is missing!"
+		if [ $FORCE -eq 0 ] ; then 
+			exit 13
+		else
+			return 0;	# Ignore the error for test distributions
+		fi
+	fi
+	cp "$src" "$dstfile"
+	chmod "$mode" "$dstfile"
+	ls -l "$dstfile"
+}
+
+sed '/^#/d;s|#.$||;/^ *$/d' <$BUILD_FILES |
+while read flg file mode dest rest ; do
+	case $flg in
+	d )	directory "$dest" "$mode";;
+	i )	install "$file" "$mode" "$dest";;
+	* )	echo "What is '$flg'?!?!?"; exit 13;;
+	esac
+done
+
+# End $Source: /cvsroot/apq/apq/build_release,v $
