@@ -95,7 +95,9 @@ package APQ is
 		APQ26,
 		APQ27,
 		APQ28);
-	-- It's a type used to raise exceptions
+	-- It's a type used to raise exceptions with messages
+	-- Each APQ_Error is linked to an error message that can be retrieved from the
+	-- constant array APQ_Error_Descriptions.
 
 
 	subtype APQ_Error_Description is Unbounded_String;
@@ -144,13 +146,21 @@ package APQ is
 	type Pattern_Array is Array(Natural range<>) of Unbounded_String;
 
 	function To_Pattern_Array(Zero: in String) return Pattern_Array;
+	-- return a Pattern array that maps from 0 to Zero.
+	
 	function To_Pattern_Array(Zero, One: in String) return Pattern_Array;
+	-- same as the previous, but including both zero and one.
 	function To_Pattern_Array(Zero, One, Two: in String) return Pattern_Array;
+	-- same as the previous, but including both zero, one and two.
 
 	procedure Raise_APQ_Error_Exception( E: in Exception_Id; Code: in APQ_Error; Where: in String; Zero: in String := "" );
+	-- Raise the Exception E with a comprehensive error message
 	procedure Raise_APQ_Error_Exception( E: in Exception_Id; Code: in APQ_Error; Where: in String; Zero, One: in String );
+	-- Raise the Exception E with a comprehensive error message
 	procedure Raise_APQ_Error_Exception( E: in Exception_Id; Code: in APQ_Error; Where: in String; Zero, One, Two: in String );
+	-- Raise the Exception E with a comprehensive error message
 	procedure Raise_APQ_Error_Exception( E: in Exception_Id; Code: in APQ_Error; Where: in String; Patterns: in Pattern_Array );
+	-- Raise the Exception E with a comprehensive error message
 
 
 
@@ -279,19 +289,24 @@ package APQ is
 	-- Connect to the Database C.
 	
 	procedure Connect(C : in out Root_Connection_Type; Same_As : Root_Connection_Type'Class) is abstract;
-	-- Connect to another Database, using the same settings as the Same_As connection.
+	-- Clone the connection Same_As in C
 
 	procedure Disconnect(C : in out Root_Connection_Type) is abstract; 
+	-- Close the database connection
 
 	function Is_Connected(C : Root_Connection_Type) return Boolean is abstract;
+	-- Checks if the connection is active
 
 	procedure Reset(C : in out Root_Connection_Type) is abstract;
-	-- reset the connection.
-	-- after calling this procedure the connection should be in the same
-	-- state as after just connecting.
+	-- Reset the Connection object, not the connection itself.
+	-- It makes possible the reuse of the Root_Connection_Type object in another
+	-- connection.
+	-- It does not disconnect and then reconnect!
 
 
 	function Error_Message(C : Root_Connection_Type) return String is abstract;
+	-- Return an error message describing why the connection might have failed.
+	-- To be used when the No_Connection exception is raised by the Connect predicate
 
 
 
@@ -299,38 +314,92 @@ package APQ is
 	-- ROOT_QUERY_TYPE --
 	---------------------
 	function Engine_Of(Q : Root_Query_Type) return Database_Type is abstract;
+	-- Return an identifier for the database type used.
 
 	procedure Execute(Query : in out Root_Query_Type; Connection : in out Root_Connection_Type'Class) is abstract;
+	-- Execute the query using the specified connection
+	
 	procedure Execute_Checked(Query : in out Root_Query_Type; Connection : in out Root_Connection_Type'Class; Msg : String := "") is abstract;
+	-- Execute the query using the specified connection, reporting any error that might occur to 
+	-- the Standard_Error output.
+	--
+	-- The exception is then re-raised to leave control in the caller's hands.
+	--
+	-- If the Msg string is specified, a line is printed before the error message following the pattern:
+	-- **** SQL ERROR: [Msg]
 
+
+	-- Transation Operations --
+	--
+	--  Use these procedures in favour of using the custom SQL syntax for better portability:
 	procedure Begin_Work(Query : in out Root_Query_Type; Connection : in out Root_Connection_Type'Class) is abstract;
 	procedure Commit_Work(Query : in out Root_Query_Type; Connection : in out Root_Connection_Type'Class) is abstract;
 	procedure Rollback_Work(Query : in out Root_Query_Type; Connection : in out Root_Connection_Type'Class) is abstract;
 
+
 	procedure Rewind(Q : in out Root_Query_Type) is abstract;
+	-- Rewind to the first result when Random_Fetch mode is used.
+	-- Raises SQL_Error when not in the right mode.
+
+
 	procedure Fetch(Q : in out Root_Query_Type) is abstract;
+	-- Fetch the next result of the query when in Random_Fetch or Sequential_Fetch mode
+	
 	procedure Fetch(Q : in out Root_Query_Type; TX : Tuple_Index_Type) is abstract;
+	-- Fetch the TXth result when in the Random_Fetch mode.
 
 	function End_of_Query(Q : Root_Query_Type) return Boolean is abstract;
+	-- !!!!DEPRECIATED!!!!
+	-- Catch the No_Tuple exception instead!
+	-- This won't work as expected with MySQL due to a bug in the client library used
+	--
+	-- Checks if there are more results to be fetched.
+	
 	function Tuple(Q : Root_Query_Type) return Tuple_Index_Type is abstract;
+	-- return the last tuple fetched
+	
 	function Tuples(Q : Root_Query_Type) return Tuple_Count_Type is abstract;
+	-- count the tuples returned by the query
 
 	function Columns(Q : Root_Query_Type) return Natural is abstract;
+	-- count the columns returned by the query
 
 	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return String is abstract;
+	-- get a value as an String.
 
 	function Column_Name(Query : Root_Query_Type; Index : Column_Index_Type) return String is abstract;
+	-- get the Index'th column name.
+	
 	function Column_Index(Query : Root_Query_Type; Name : String) return Column_Index_Type is abstract;
+	-- get the index for the column "Name"
 
 	function Result(Query : Root_Query_Type) return Natural is abstract;
+	-- get the result code for the query
+	-- the meaning of the returned code varies from database product to another.
 
 	function Is_Null(Q : Root_Query_Type; CX : Column_Index_Type) return Boolean is abstract;
+	-- checks if the result in the CXth column is null.
 
 	function Command_Oid(Query : Root_Query_Type) return Row_ID_Type is abstract;
+	-- After running an INSERT statement, return the Row_ID for the inserted column.
+	-- Can raise:
+	-- 	No_Result	=> there is no result status (no execution)
+	-- 	SQL_Error	=> An SQL error occurred obtaining the OID
+	--
+	-- Each database product has it's own requirements for this function to work.
+	-- For more information reffer to the driver's documentation.
+
 	function Null_Oid(Query : Root_Query_Type) return Row_ID_Type is abstract;
+	-- Used to avoid hardcoded numbers.
+	-- Return the ID that represents a NULL OID.
 
 	function Error_Message(Query : Root_Query_Type) return String is abstract;
+	-- Return an error message when the query has failed.
+	
 	function Is_Duplicate_Key(Query : Root_Query_Type) return Boolean is abstract;
+	-- When an INSERT statement runs it might have a duplicated key.
+	-- When it does, SQL_Error is raised and then the developer might use
+	-- Is_Duplicate_Key to check if the error was due the row being duplicated.
 
 	function SQL_Code(Query : Root_Query_Type) return SQL_Code_Type is abstract;
 
