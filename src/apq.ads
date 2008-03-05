@@ -1,21 +1,46 @@
--- $Id: apq.ads,v 1.44 2004/10/16 18:36:31 wwg Exp $
--- Copyright (c) 2002, Warren W. Gay VE3WWG
---
--- Licensed under the GMGPL (GNAT Modified GPL2) 
--- 
---     This program is free software; you can redistribute it and/or modify
---     it under the terms of the GNU General Public License as published by
---     the Free Software Foundation; either version 2 of the License, or
---     (at your option) any later version.
--- 
---     This program is distributed in the hope that it will be useful,
---     but WITHOUT ANY WARRANTY; without even the implied warranty of
---     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
---     GNU General Public License for more details.
--- 
---     You should have received a copy of the GNU General Public License
---     along with this program; if not, write to the Free Software
---     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+------------------------------------------------------------------------------
+--                                                                          --
+--                          APQ DATABASE BINDINGS                           --
+--                                                                          --
+--                                  A P Q                                   --
+--                                                                          --
+--                                 S p e c                                  --
+--                                                                          --
+--         Copyright (C) 2002-2007, Warren W. Gay VE3WWG                    --
+--         Copyright (C) 2007-2008, Marcelo C. de Freitas (OgRo)            --
+--                                                                          --
+--                                                                          --
+-- APQ is free software;  you can  redistribute it  and/or modify it under  --
+-- terms of the  GNU General Public License as published  by the Free Soft- --
+-- ware  Foundation;  either version 2,  or (at your option) any later ver- --
+-- sion.  APQ is distributed in the hope that it will be useful, but WITH-  --
+-- OUT ANY WARRANTY;  without even the  implied warranty of MERCHANTABILITY --
+-- or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License --
+-- for  more details.  You should have  received  a copy of the GNU General --
+-- Public License  distributed with APQ;  see file COPYING.  If not, write  --
+-- to  the Free Software Foundation,  59 Temple Place - Suite 330,  Boston, --
+-- MA 02111-1307, USA.                                                      --
+--                                                                          --
+-- As a special exception,  if other files  instantiate  generics from this --
+-- unit, or you link  this unit with other files  to produce an executable, --
+-- this  unit  does not  by itself cause  the resulting  executable  to  be --
+-- covered  by the  GNU  General  Public  License.  This exception does not --
+-- however invalidate  any other reasons why  the executable file  might be --
+-- covered by the  GNU Public License.                                      --
+--                                                                          --
+------------------------------------------------------------------------------
+
+
+
+-------------------------------------------------------------------------------
+-- This is the base package for APQ.                                         --
+-- That's  everything  that  should  be  used when developping in a database --
+-- vendor  independent  manner.                                              --
+-- It doesn't mean that by only using those methods your code will run at any--
+-- backend.  This  only  assures  that your code will be able to be linked   --
+-- against  other  drivers,  even  in  runtime  (using  plugins).            --
+-------------------------------------------------------------------------------
+
 
 with Ada.Calendar;
 with Ada.Exceptions;	use Ada.Exceptions;
@@ -31,13 +56,6 @@ with Interfaces.C_Streams;
 with System;
 
 package APQ is
-	--------------------------------------------------------------------------------------------------
-	-- This is the base package for APQ.
-	-- That's everything that should be used when developping in a database independent manner.	--
-	-- It doesn't mean that by only using those methods your code will run at any backend.		--
-	-- This only assures that your code will be able to be linked against other drivers, 		--
-	-- even in runtime (using plugins).								--
-	--------------------------------------------------------------------------------------------------
 
 
 	pragma Linker_Options("-lapq");
@@ -289,7 +307,7 @@ package APQ is
 	-- Connect to the Database C.
 	
 	procedure Connect(C : in out Root_Connection_Type; Same_As : Root_Connection_Type'Class) is abstract;
-	-- Clone the connection Same_As in C
+	-- Clone the connection Same_As to C
 
 	procedure Disconnect(C : in out Root_Connection_Type) is abstract; 
 	-- Close the database connection
@@ -402,77 +420,218 @@ package APQ is
 	-- Is_Duplicate_Key to check if the error was due the row being duplicated.
 
 	function SQL_Code(Query : Root_Query_Type) return SQL_Code_Type is abstract;
+	-- Return a Code, that varies from database product to another, representing
+	-- the result status.
+	-- Currently, this feature is only avaliable to the Sybase binding.
+
+
+	function Query_Factory( C: in Root_Connection_Type ) return Root_Query_Type'Class is abstract;
+	-- create a query object for the selected connection type.
+	-- this is used internally by the New_Query function.
+	-- NOTE: DO NOT USE THIS FUNCTION AS IT'S MEANT TO BE USED INTERNALLY ONLY!
+	-- NOTE: USE New_Query INSTEAD
 
 
 
 
+	----------------------------------------------------------------------------------
+	--			 IMPLEMENTED METHODS FOR BOTH				--
+	-- 	. Root_Connection_Type and						--
+	-- 	. Root_Query_Type							--
+	----------------------------------------------------------------------------------
+	-- These methods are provided by the APQ base package but the driver implementor--
+	-- might provide their own implementations.					--
+	-- Those methods, in their original implementation, make use of the abstract	--
+	-- methods defined in the previous code session.				--
+	----------------------------------------------------------------------------------
+
+
+	function New_Query(C : Root_Connection_Type'Class) return Root_Query_Type'Class;
+	-- Use this function to create a new query object for your connection.
+
+
+	--------------------------
+	-- ROOT_CONNECTION_TYPE --
+	--------------------------
 	
-	function New_Query(C : Root_Connection_Type) return Root_Query_Type'Class;
-
 	function Get_Case(C : Root_Connection_Type) return SQL_Case_Type;
+	-- Get the SQL case used by default in this connection.
+	-- All new queries will use this casing by default.
 	procedure Set_Case(C : in out Root_Connection_Type; SQL_Case : SQL_Case_Type);
+	-- Set the SQL case used by default in this connection.
+	-- All new queries will use this casing by default.
 
+
+
+	function Get_Instance(C: Root_Connection_Type) return String;
+	-- Get the instance Name for the Database.
+	function Instance(C : Root_Connection_type) return String renames Get_Instance;
+	-- Get the instance Name for the Database. It's an alias for Get_Instance
 	procedure Set_Instance(C : in out Root_Connection_Type; Instance : String);
-	function Instance(C : Root_Connection_type) return String;
+	-- Set the instance Name for the Database.
 
+	function Get_Host_Name(C: Root_Connection_Type) return String;
+	-- Get the host name for the Database server.
+	function Host_Name(C : Root_Connection_Type) return String renames Get_Host_Name;
+	-- Get the host name for the Database server. It's an alias for Get_Host_Name
 	procedure Set_Host_Name(C : in out Root_Connection_Type; Host_Name : String);
+	-- Set the host name for the Database server.
+	
+	function Get_Host_Address(C: in Root_Connection_Type) return String;
+	-- Set the host address for the database server.
+	function Host_Address(C: in Root_Connection_Type) return String renames Get_Host_Address;
+	-- Set the host address for the database server. It's an alias for Get_Host_Address
 	procedure Set_Host_Address(C : in out Root_Connection_Type; Host_Address : String);
-	function Host_Name(C : Root_Connection_Type) return String;
+	-- Set the host address for the database server.
 
+	function Get_Port( C: in Root_Connection_Type ) return Integer;
+	-- Get the TCP port number.
+	function Port(C : Root_Connection_Type) return Integer renames Get_Port;
+	-- Get the TCP port number. It's an alias for Get_Port.
 	procedure Set_Port(C : in out Root_Connection_Type; Port_Number : Integer);
-	procedure Set_Port(C : in out Root_Connection_Type; Port_Name : String);
-	function Port(C : Root_Connection_Type) return Integer;
-	function Port(C : Root_Connection_Type) return String;
+	-- Set the TCP port number.
 
+	function Get_Port( C: in Root_Connection_Type) return String;
+	-- Get the Unix Port.
+	function Port(C : Root_Connection_Type) return String renames Get_Port;
+	-- Get the Unix Port. It's an alias for Get_Port.
+	procedure Set_Port(C : in out Root_Connection_Type; Port_Name : String);
+	-- Set the Unix Port
+
+	function Get_DB_Name(C : Root_Connection_Type) return String;
+	-- Get the Database name used in this connection. 
+	function DB_Name(C : Root_Connection_Type) return String renames Get_DB_Name;
+	-- Get the Database name used in this connection. It's an alias for Get_DB_Name.
 	procedure Set_DB_Name(C : in out Root_Connection_Type; DB_Name : String);
-	function DB_Name(C : Root_Connection_Type) return String;
+	-- Set the Database name used in this connection.
+
+
+	function Get_User( C: in Root_Connection_Type ) return String;
+	-- Get the Username for this connection.
+	function User( C: in Root_Connection_Type ) return String renames Get_User;
+	-- Get the Username for this connection. It's ana alias for Get_User
+	procedure Set_User( C: in out Root_Connection_Type; User: in String );
+	-- Set the Username for this connection.
+
+	function Get_Password( C: Root_Connection_Type ) return String;
+	-- Get the Password for this connection.
+	function Password(C : Root_Connection_Type) return String renames Get_Password;
+	-- Get the Password for this connection. It's an alias for Get_Password
+	procedure Set_Password( C: in out Root_Connection_Type; Password: in String );
+	-- Get the Password for this connection.
 
 	procedure Set_User_Password(C : in out Root_Connection_Type; User_Name, User_Password : String);
-	function User(C : Root_Connection_Type) return String;
-	function Password(C : Root_Connection_Type) return String;
+	-- Set both the username and the password for this connection.
 
 
 	function In_Abort_State(C : Root_Connection_Type) return Boolean;
+	-- Some database products (eg, PostgreSQL) can enter in a status where
+	-- every operation is ignored.
+	-- There is the Abort_State Exception for this, but there is also
+	-- this function that checks if the connection is in this state.
 
+	
+	function Get_Rollback_On_Finalize( C: in Root_Connection_Type ) return Boolean;
+	-- Get if the work will be rollbacked when finalizing.
+	function Will_Rollback_On_Finalize(C : Root_Connection_Type) return Boolean renames Get_Rollback_On_Finalize;
+	-- Get if the work will be rollbacked when finalizing. It's an alias for Get_Rollback_on_Finalize.
 	procedure Set_Rollback_On_Finalize(C : in out Root_Connection_Type; Rollback : Boolean);
-	function Will_Rollback_On_Finalize(C : Root_Connection_Type) return Boolean;
+	-- Set if the work will be rollbacked when finalizing
 
 
 
 
+	---------------------
+	-- ROOT_QUERY_TYPE --
+	---------------------
+
+	-- Query setup ...
 
 	function Get_Case(Q : Root_Query_Type) return SQL_Case_Type;
+	-- Get the case used by this query
+	-- This case might be different from the one used by default
 	procedure Set_Case(Q : in out Root_Query_Type; SQL_Case : SQL_Case_Type);
+	-- Set the case used by this query.
 
-	procedure Clear(Q : in out Root_Query_Type);
-	function Fetch_Mode(Q : Root_Query_Type) return Fetch_Mode_Type;
+	function Get_Fetch_Mode( Q: in Root_Query_Type ) return Fetch_Mode_Type;
+	-- Get the fetch mode used by this query.
+	function Fetch_Mode(Q : Root_Query_Type) return Fetch_Mode_Type renames Get_Fetch_Mode;
+	-- Get the fetch mode used by this query. It's an alias for Get_Fetch_Mode
 	procedure Set_Fetch_Mode(Q : in out Root_Query_Type; Mode : Fetch_Mode_Type);
-	procedure Prepare(Q : in out Root_Query_Type; SQL : String; After : String := Line_Feed);
-	procedure Append(Q : in out Root_Query_Type; SQL : String; After : String := "");
-	procedure Append(Q : in out Root_Query_Type; SQL : Ada.Strings.Unbounded.Unbounded_String; After : String := "");
-	procedure Append_Line(Q : in out Root_Query_Type; SQL : String := "");
-
-	procedure Append(Q : in out Root_Query_Type; V : APQ_Boolean; After : String := "");
-	procedure Append(Q : in out Root_Query_Type; V : APQ_Date; After : String := "");
-
-	procedure Append(Q : in out Root_Query_Type; V : APQ_Time; After : String := "");
-	procedure Append(Q : in out Root_Query_Type; V : APQ_Timestamp; After : String := "");
-	procedure Append(Q : in out Root_Query_Type; TS : APQ_Timestamp; TZ : APQ_Timezone; After : String := "");
-
-	procedure Append(Q : in out Root_Query_Type; V : APQ_Bitstring; After : String := "");
-	procedure Append(Q : in out Root_Query_Type; V : Row_ID_Type; After : String := "");
-
-	procedure Append_Quoted(Q : in out Root_Query_Type; Connection : Root_Connection_Type'Class; SQL : String; After : String := "");
-	procedure Append_Quoted(Q : in out Root_Query_Type; Connection : Root_Connection_Type'Class; SQL : Ada.Strings.Unbounded.Unbounded_String; After : String := "");
+	-- Set the fetch mode used by this query.
 
 	procedure Raise_Exceptions(Query : in out Root_Query_Type; Raise_On : Boolean := True);
+	-- when Execute_Checked is called, should raise the exception back to the caller?
+	
 	procedure Report_Errors(Query : in out Root_Query_Type; Report_On : Boolean := True);
+	-- report sql erros when Execute_Checked is called?
 
 
+	-- SQL creation ...
+
+	procedure Clear(Q : in out Root_Query_Type);
+	-- Clear the query so one can start a new SQL expression.
+
+	procedure Grow(Q : in out Root_Query_Type);
+	-- used internally to grow the query size so Append works
+
+	procedure Prepare(Q : in out Root_Query_Type; SQL : String; After : String := Line_Feed);
+	-- Clear the query, starting a new one.
+
+
+	procedure Append(Q : in out Root_Query_Type; SQL : String; After : String := "");
+	-- Append a string to the query
+	procedure Append(Q : in out Root_Query_Type; SQL : Ada.Strings.Unbounded.Unbounded_String; After : String := "");
+	-- Append an Unbounded_String to the query
+	procedure Append_Line(Q : in out Root_Query_Type; SQL : String := "");
+	-- Append a String followed by a new line.
+	-- If the parameter SQL is omited, there is inserted only a line break
+
+	procedure Append(Q : in out Root_Query_Type; V : APQ_Boolean; After : String := "");
+	-- Append a boolean to the query
+	
+	procedure Append(Q : in out Root_Query_Type; V : APQ_Date; After : String := "");
+	-- Append a date to the query
+
+	procedure Append(Q : in out Root_Query_Type; V : APQ_Time; After : String := "");
+	-- Append a time...
+	
+	procedure Append(Q : in out Root_Query_Type; V : APQ_Timestamp; After : String := "");
+	-- Append a timestamp...
+	procedure Append(Q : in out Root_Query_Type; TS : APQ_Timestamp; TZ : APQ_Timezone; After : String := "");
+	-- Append a timestamp at a timezone...
+
+	procedure Append(Q : in out Root_Query_Type; V : APQ_Bitstring; After : String := "");
+	-- Append a bitstring...
+	
+	procedure Append(Q : in out Root_Query_Type; V : Row_ID_Type; After : String := "");
+	-- Append a row_id_type...
+
+	procedure Append_Quoted(Q : in out Root_Query_Type; Connection : Root_Connection_Type'Class; SQL : String; After : String := "");
+	-- Append a quoted String.
+	-- The case of this String isn't changed.
+	-- This primitive should normally be overriden for a specific database.
+	-- PostgreSQL and MySQL will potentially have different quoting requirements.
+	
+	procedure Append_Quoted(Q : in out Root_Query_Type; Connection : Root_Connection_Type'Class; SQL : Ada.Strings.Unbounded.Unbounded_String; After : String := "");
+	-- Append a quoted Unbouned_String.
+	-- The case of this String isn't changed.
+	-- This primitive should normally be overriden for a specific database.
+	-- PostgreSQL and MySQL will potentially have different quoting requirements.
+
+	
 	procedure Value(Query: Root_Query_Type; CX : Column_Index_Type; V : out String);
+	-- Get the value of the CXth column as String.
 	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Ada.Strings.Unbounded.Unbounded_String;
+	-- Get the value of the CXth column as Unbounded_String.
 	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Row_ID_Type;
+	-- Get the value of the CXth column as Row_Id_Type.
 	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Bitstring;
+	-- Get the value of the CXth column as Bitstring.
+
+
+-- TODO:
+
 
 	function To_String(Query : Root_Query_Type) return String;
 	function Is_Select(Q : Root_Query_Type) return Boolean;
@@ -928,7 +1087,6 @@ private
 	function Strip_NL(S : String) return String;
 	procedure Replace_String(SP : in out String_Ptr; S : String);
 
-	procedure Grow(Q : in out Root_Query_Type);
 
 	function Value_Of(C_String : Interfaces.C.Strings.chars_ptr) return String;
 	function Is_Null(C_String : Interfaces.C.Strings.chars_ptr) return Boolean;

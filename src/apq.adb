@@ -1,23 +1,34 @@
--- $Id: apq.adb,v 1.37 2004/10/16 18:36:31 wwg Exp $
--- Copyright (c) 2002, Warren W. Gay VE3WWG
---
--- Licensed under the ACL (Ada Community License)
--- or
--- GNU Public License 2 (GPL2)
--- 
---     This program is free software; you can redistribute it and/or modify
---     it under the terms of the GNU General Public License as published by
---     the Free Software Foundation; either version 2 of the License, or
---     (at your option) any later version.
--- 
---     This program is distributed in the hope that it will be useful,
---     but WITHOUT ANY WARRANTY; without even the implied warranty of
---     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
---     GNU General Public License for more details.
--- 
---     You should have received a copy of the GNU General Public License
---     along with this program; if not, write to the Free Software
---     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+------------------------------------------------------------------------------
+--                                                                          --
+--                          APQ DATABASE BINDINGS                           --
+--                                                                          --
+--                                  A P Q                                   --
+--                                                                          --
+--                                 S p e c                                  --
+--                                                                          --
+--         Copyright (C) 2002-2007, Warren W. Gay VE3WWG                    --
+--         Copyright (C) 2007-2008, Marcelo C. de Freitas (OgRo)            --
+--                                                                          --
+--                                                                          --
+-- APQ is free software;  you can  redistribute it  and/or modify it under  --
+-- terms of the  GNU General Public License as published  by the Free Soft- --
+-- ware  Foundation;  either version 2,  or (at your option) any later ver- --
+-- sion.  APQ is distributed in the hope that it will be useful, but WITH-  --
+-- OUT ANY WARRANTY;  without even the  implied warranty of MERCHANTABILITY --
+-- or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License --
+-- for  more details.  You should have  received  a copy of the GNU General --
+-- Public License  distributed with APQ;  see file COPYING.  If not, write  --
+-- to  the Free Software Foundation,  59 Temple Place - Suite 330,  Boston, --
+-- MA 02111-1307, USA.                                                      --
+--                                                                          --
+-- As a special exception,  if other files  instantiate  generics from this --
+-- unit, or you link  this unit with other files  to produce an executable, --
+-- this  unit  does not  by itself cause  the resulting  executable  to  be --
+-- covered  by the  GNU  General  Public  License.  This exception does not --
+-- however invalidate  any other reasons why  the executable file  might be --
+-- covered by the  GNU Public License.                                      --
+--                                                                          --
+------------------------------------------------------------------------------
 
 with Aw_Lib.String_Util;
 
@@ -27,22 +38,32 @@ with Ada.Characters.Handling;
 
 package body APQ is
 
-   type Time_Unit is ( Hour, Minute, Second );
-
+	
+	type Time_Unit is ( Hour, Minute, Second );
+	
+	----------------
+	-- EXCEPTIONS --
+	----------------
 
 	function To_Pattern_Array(Zero: in String) return Pattern_Array is
+		-- return a Pattern array that maps from 0 to Zero.
 		A: Pattern_Array := (	0 => To_Unbounded_String(Zero));
 	begin
 		return A;
 	end To_Pattern_Array;
-		
+	
+
 	function To_Pattern_Array(Zero, One: in String) return Pattern_Array is
+		-- same as the previous, but including both zero and one.
 		A: Pattern_Array := (	0 => To_Unbounded_String(Zero) ,
 					1 => To_Unbounded_String(One) );
 	begin
 		return A;
 	end To_Pattern_Array;
+
+
 	function To_Pattern_Array(Zero, One, Two: in String) return Pattern_Array is
+		-- same as the previous, but including both zero, one and two.
 		A: Pattern_Array := (	0 => To_Unbounded_String(Zero),
 					1 => To_Unbounded_String(One),
 					2 => To_Unbounded_String(Two) );
@@ -50,7 +71,9 @@ package body APQ is
 		return A;
 	end To_Pattern_Array;
 
+	
 	procedure Raise_APQ_Error_Exception( E: in Exception_Id; Code: in APQ_Error; Where: in String; Zero: in String := "" ) is
+		-- Raise the Exception E with a comprehensive error message
 		Pragma Inline(Raise_APQ_Error_Exception);
 		A: Pattern_Array := To_Pattern_Array( Zero );
 	begin
@@ -58,6 +81,7 @@ package body APQ is
 	end Raise_APQ_Error_Exception;
 
 	procedure Raise_APQ_Error_Exception( E: in Exception_Id; Code: in APQ_Error; Where: in String; Zero, One: in String ) is
+		-- Raise the Exception E with a comprehensive error message
 		Pragma Inline(Raise_APQ_Error_Exception);
 		A: Pattern_Array := To_Pattern_Array( Zero, One );
 	begin
@@ -65,6 +89,7 @@ package body APQ is
 	end Raise_APQ_Error_Exception;
 
 	procedure Raise_APQ_Error_Exception( E: in Exception_Id; Code: in APQ_Error; Where: in String; Zero, One, Two: in String ) is
+		-- Raise the Exception E with a comprehensive error message
 		Pragma Inline(Raise_APQ_Error_Exception);
 		A: Pattern_Array := To_Pattern_Array( Zero, One, Two );
 	begin
@@ -73,6 +98,7 @@ package body APQ is
 
 
 	procedure Raise_APQ_Error_Exception( E: in Exception_Id; Code: in APQ_Error; Where: in String; Patterns: in Pattern_Array ) is
+		-- Raise the Exception E with a comprehensive error message
 
 		use Aw_lib.String_Util;
 
@@ -99,6 +125,511 @@ package body APQ is
 	begin
 		Raise_Exception( E, Message );
 	end Raise_APQ_Error_Exception;
+
+
+
+	----------------------------------------------------------------------------------
+	--			 IMPLEMENTED METHODS FOR BOTH				--
+	-- 	. Root_Connection_Type and						--
+	-- 	. Root_Query_Type							--
+	----------------------------------------------------------------------------------
+	-- These methods are provided by the APQ base package but the driver implementor--
+	-- might provide their own implementations.					--
+	-- Those methods, in their original implementation, make use of the abstract	--
+	-- methods defined in the previous code session.				--
+	----------------------------------------------------------------------------------
+
+	function New_Query(C : Root_Connection_Type'Class) return Root_Query_Type'Class is
+		-- Use this function to create a new query object for your connection.
+		Q : Root_Query_Type'Class := Query_Factory(C);
+	begin
+		Q.SQL_Case := C.SQL_Case;  -- Preserve setting in connection
+		return Q;
+	end New_Query;
+
+   	
+
+	--------------------------
+	-- ROOT_CONNECTION_TYPE --
+	--------------------------
+
+
+	function Get_Case(C : Root_Connection_Type) return SQL_Case_Type is
+		-- Get the SQL case used by default in this connection.
+		-- All new queries will use this casing.
+	begin
+		return C.SQL_Case;
+	end Get_Case;
+
+	procedure Set_Case(C : in out Root_Connection_Type; SQL_Case : SQL_Case_Type) is
+		-- Set the SQL case used by default in this connection.
+		-- All new queries will use this casing.
+	begin
+		C.SQL_Case := Set_Case.SQL_Case;
+	end Set_Case;
+
+
+
+	function Get_Instance(C : Root_Connection_type) return String is
+		-- Get the instance Name for the Database.
+	begin
+		return To_String(C.Instance);
+	end Get_Instance;
+
+	procedure Set_Instance(C : in out Root_Connection_Type; Instance : String) is
+		-- Set the instance Name for the Database.
+	begin
+		Replace_String(C.Instance,"");
+		Replace_String(C.Instance,Instance);
+	end Set_Instance;
+
+
+	
+	function Get_Host_Name(C : Root_Connection_Type) return String is
+		-- Get the host name for the Database server.
+	begin
+		return To_String(C.Host_Address);
+	end Get_Host_Name;
+	
+	procedure Set_Host_Name(C : in out Root_Connection_Type; Host_Name : String) is
+		-- Set the host name for the Database server.
+	begin
+		Replace_String(C.Host_Address,"");
+		Replace_String(C.Host_Name,Set_Host_Name.Host_Name);
+	end Set_Host_Name;
+ 
+
+
+	function Get_Host_Address( C: in Root_Connection_Type ) return String is
+		-- Set the host address for the database server.
+	begin
+		return To_String( C.Host_Address );
+	end Get_Host_Address;
+
+	procedure Set_Host_Address(C : in out Root_Connection_Type; Host_Address : String) is
+		-- Set the host address for the database server.
+	begin
+		Replace_String(C.Host_Name,"");
+		Replace_String(C.Host_Address, Set_Host_Address.Host_Address);
+	end Set_Host_Address;
+  
+
+	
+	function Get_Port(C : Root_Connection_Type) return Integer is
+		-- Get the TCP port number.
+	begin
+		case C.Port_Format is
+			when IP_Port =>
+				return C.Port_Number;
+			when UNIX_Port =>
+				Raise_APQ_Error_Exception( 
+					E => Invalid_Format'Identity,
+					Code => APQ01,
+					Where => "Port" );
+				return 0; -- so GNAT won't complaint
+		end case;
+	end Get_Port;
+
+	procedure Set_Port(C : in out Root_Connection_Type; Port_Number : Integer) is
+		-- Set the TCP port number.
+	begin
+		C.Port_Format := IP_Port;
+		C.Port_Number := Set_Port.Port_Number;
+	end Set_Port;
+   
+
+
+	function Get_Port(C : Root_Connection_Type) return String is
+		-- Get the Unix Port.
+	begin
+		case C.Port_Format is
+			when IP_Port =>
+				Raise_APQ_Error_Exception( 
+					E => Invalid_Format'Identity,
+					Code => APQ02,
+					Where => "Port" );
+				return ""; -- so GNAT won't complaint
+			when UNIX_Port =>
+				return To_String(C.Port_Name);
+		end case;
+	end Get_Port;
+
+	procedure Set_Port(C : in out Root_Connection_Type; Port_Name : String) is
+		-- Set the Unix Port
+	begin
+		C.Port_Format     := UNIX_Port;
+		C.Port_Name       := new String(1..Port_Name'Length);
+		C.Port_Name.all   := Set_Port.Port_Name;
+	end Set_Port;
+
+
+	
+	function Get_DB_Name(C : Root_Connection_Type) return String is
+		-- Get the Database name used in this connection. 
+	begin
+		return To_String(C.DB_Name);
+	end Get_DB_Name;
+
+	procedure Set_DB_Name(C : in out Root_Connection_Type; DB_Name : String) is
+		-- Set the Database name used in this connection. 
+	begin
+		Replace_String(C.DB_Name,Set_DB_Name.DB_Name);
+	end Set_DB_Name;
+
+
+
+  	function Get_User( C: in Root_Connection_Type ) return String is
+		-- Get the Username for this connection.
+	begin
+		return To_String(C.User_Name);
+	end Get_User;
+
+	procedure Set_User( C: in out Root_Connection_Type; User: in String ) is
+		-- Set the Username for this connection.
+	begin
+		Replace_String( C.User_Name, User );
+	end Set_User;
+
+
+	function Get_Password( C: Root_Connection_Type ) return String is
+		-- Get the Password for this connection.
+	begin
+		return To_String( C.User_Password );
+	end Get_Password;
+	
+	procedure Set_Password( C: in out Root_Connection_Type; Password: in String ) is
+		-- Get the Password for this connection.
+	begin
+		Replace_String( C.User_Password, Password );
+	end Set_Password;
+
+	
+	procedure Set_User_Password(C : in out Root_Connection_Type; User_Name, User_Password : String) is
+		-- Set both the username and the password for this connection.
+	begin
+		Set_User( C, Set_User_Password.User_Name );
+		Set_Password( C, Set_User_Password.User_Password );
+	end Set_User_Password;
+   
+
+
+	function In_Abort_State(C : Root_Connection_Type) return Boolean is
+		-- Some database products (eg, PostgreSQL) can enter in a status where
+		-- every operation is ignored.
+		-- There is the Abort_State Exception for this, but there is also
+		-- this function that checks if the connection is in this state.
+	begin
+		return C.Abort_State;
+	end In_Abort_State;
+
+
+
+	function Get_Rollback_On_Finalize(C : Root_Connection_Type) return Boolean is
+		-- Get if the work will be rollbacked when finalizing.
+	begin
+		return C.Rollback_Finalize;
+	end Get_Rollback_On_Finalize;
+	
+	procedure Set_Rollback_On_Finalize(C : in out Root_Connection_Type; Rollback : Boolean) is
+		-- Set if the work will be rollbacked when finalizing
+	begin
+		C.Rollback_Finalize := Rollback;
+	end Set_Rollback_On_Finalize;
+	
+
+
+
+	---------------------
+	-- ROOT_QUERY_TYPE --
+   	---------------------
+
+
+
+	-- Query setup ...
+
+	function Get_Case(Q : Root_Query_Type) return SQL_Case_Type is
+		-- Get the case used by this query
+		-- This case might be different from the one used by default
+	begin
+		return Q.SQL_Case;
+	end Get_Case;
+
+	procedure Set_Case(Q : in out Root_Query_Type; SQL_Case : SQL_Case_Type) is
+		-- Set the case used by this query.
+	begin
+		Q.SQL_Case := Set_Case.SQL_Case;
+	end Set_Case;
+	
+
+
+	function Get_Fetch_Mode(Q : Root_Query_Type) return Fetch_Mode_Type is
+		-- Get the fetch mode used by this query.
+	begin
+		return Q.Mode;
+	end Get_Fetch_Mode;
+	
+	procedure Set_Fetch_Mode(Q : in out Root_Query_Type; Mode : Fetch_Mode_Type) is
+		-- Set the fetch mode used by this query.
+	begin
+		Q.Mode := Mode;
+	end Set_Fetch_Mode;
+
+
+
+	procedure Raise_Exceptions(Query : in out Root_Query_Type; Raise_On : Boolean := True) is
+		-- when Execute_Checked is called, should raise the exception back to the caller?
+	begin
+		Query.Raise_Exceptions := Raise_On;
+	end Raise_Exceptions;
+	
+	procedure Report_Errors(Query : in out Root_Query_Type; Report_On : Boolean := True) is
+		-- report sql erros when Execute_Checked is called?
+	begin
+		Query.Report_Errors := Report_On;
+	end Report_Errors;
+
+
+
+	-- SQL creation ...
+
+	procedure Clear(Q : in out Root_Query_Type) is
+		-- Clear the query so one can start a new SQL expression.
+	begin
+		for X in 1..Q.Count loop
+			Free_Ptr(Q.Collection(X));
+		end loop;
+		Free(Q.Collection);
+		Q.Count := 0;
+		Q.Tuple_Index := Tuple_Index_Type'First;
+		Q.Rewound := True;
+	end Clear;
+
+
+	procedure Prepare(Q : in out Root_Query_Type; SQL : String; After : String := Line_Feed) is
+		-- Clear the query, starting a new one.
+	begin
+		Clear(Root_Query_Type'Class(Q));
+		Append(Root_Query_Type'Class(Q),SQL,After);
+	end Prepare;
+
+
+	procedure Grow(Q : in out Root_Query_Type) is
+		-- used internally to grow the query size so Append works
+	begin
+		if Q.Count <= 0 then
+			Q.Alloc := 64;
+			Q.Collection := new String_Ptr_Array(1..Q.Alloc);
+			Q.Caseless   := new Boolean_Array(1..Q.Alloc);
+		elsif Q.Count >= Q.Alloc then
+			declare
+				New_Alloc : Natural := Q.Alloc + 128;
+				New_Array : String_Ptr_Array_Access := new String_Ptr_Array(1..New_Alloc);
+				New_Case  : Boolean_Array_Access    := new Boolean_Array(1..New_Alloc);
+			begin
+				New_Array(1..Q.Alloc) := Q.Collection.all;
+				New_Case(1..Q.Alloc)  := Q.Caseless.all;
+				Free(Q.Collection);
+				Free(Q.Caseless);
+				Q.Alloc := New_Alloc;
+				Q.Collection := New_Array;
+				Q.Caseless   := New_Case;
+			end;
+		end if;
+	end Grow;
+
+	
+	procedure Append(Q : in out Root_Query_Type; SQL : String; After : String := "") is
+		-- Append a string to the query
+		use Ada.Characters.Latin_1;
+		NSL : Natural := SQL'Length + After'Length;
+	begin
+		Grow(Q);
+		Q.Count := Q.Count + 1;
+		Q.Collection(Q.Count) := new String(1..NSL);
+		Q.Collection(Q.Count).all(1..SQL'Length) := SQL;
+		Q.Collection(Q.Count).all(SQL'Length+1..NSL) := After;
+		Q.Caseless(Q.Count) := True;    -- Don't preserve case
+	end Append;
+
+
+
+	procedure Append(Q: in out Root_Query_Type; SQL: in Ada.Strings.Unbounded.Unbounded_String; After: String := "") is
+		-- Append an Unbounded_String to the query
+		Pragma Inline(Append);
+	begin
+		Append( Q, Ada.Strings.Unbounded.To_String( SQL ), After );
+	end Append;
+--	procedure Append(Q : in out Root_Query_Type; SQL : Ada.Strings.Unbounded.Unbounded_String; After : String := "") is
+--		use Ada.Characters.Latin_1, Ada.Strings.Unbounded;
+--		Len : Natural := Length(SQL);
+--		NSL : Natural := Len + After'Length;
+--	begin
+--		Grow(Q);
+--		Q.Count := Q.Count + 1;
+--		Q.Collection(Q.Count) := new String(1..NSL);
+--		Q.Collection(Q.Count).all(1..Len) := To_String(SQL);
+--		Q.Collection(Q.Count).all(Len+1..NSL) := After;
+--		Q.Caseless(Q.Count) := True;    -- Don't preserve case
+--	end Append;
+
+	procedure Append_Line(Q : in out Root_Query_Type; SQL : String := "") is
+		New_Line : String(1..1);
+	begin
+		New_Line(1) := Ada.Characters.Latin_1.LF;
+		Append(Q, SQL, New_Line);
+	end Append_Line;
+
+
+
+	procedure Append(Q : in out Root_Query_Type; V : APQ_Boolean; After : String := "") is
+		-- Append a boolean to the query
+	begin
+		Append(Root_Query_Type'Class(Q),To_String(V),After);
+	end Append;
+
+
+
+	procedure Append(Q : in out Root_Query_Type; V : APQ_Date; After : String := "") is
+		-- Append a date to the query
+		use Ada.Calendar;
+		S : String := To_String(V);
+	begin
+		Append(Root_Query_Type'Class(Q),"'",S);
+		Append(Root_Query_Type'Class(Q),"'",After);
+	end Append;
+
+
+
+	procedure Append(Q : in out Root_Query_Type; V : APQ_Time; After : String := "") is
+		-- Append a time...
+		use Ada.Calendar;
+		S : String := To_String(V);
+	begin
+		Append(Root_Query_Type'Class(Q),"'",S);
+		Append(Root_Query_Type'Class(Q),"'",After);
+	end Append;
+	
+
+
+	procedure Append(Q : in out Root_Query_Type; V : APQ_Timestamp; After : String := "") is
+		-- Append a timestamp...
+		use Ada.Calendar;
+		D : String := To_String(V);
+	begin
+		Append(Root_Query_Type'Class(Q),"'",D);
+		Append(Root_Query_Type'Class(Q),"'",After);
+	end Append;
+	
+	procedure Append(Q : in out Root_Query_Type; TS : APQ_Timestamp; TZ : APQ_Timezone; After : String := "") is
+		-- Append a timestamp at a timezone...
+		use Ada.Calendar, Ada.Strings, Ada.Strings.Fixed;
+		D : String := To_String(TS);
+		Z : String := APQ_Timezone'Image(TZ);
+	begin
+		Append(Root_Query_Type'Class(Q),"'",D);
+		Append(Root_Query_Type'Class(Q),Trim(Z,Left),"'");
+		if After'Length > 0 then
+			Append(Root_Query_Type'Class(Q),After);
+		end if;
+	end Append;
+	
+	
+
+	procedure Append(Q : in out Root_Query_Type; V : Row_ID_Type; After : String := "") is
+		-- Append a row_id_type...
+		function To_String is new Modular_String(Row_ID_Type);
+	begin
+		Append(Root_Query_Type'Class(Q),To_String(V),After);
+	end Append;
+
+
+
+	procedure Append(Q : in out Root_Query_Type; V : APQ_Bitstring; After : String := "") is
+		-- Append a bitstring...
+		S : String := To_String(V);
+	begin
+		Append(Root_Query_Type'Class(Q),"B'",S);
+		Append(Root_Query_Type'Class(Q),"'",After);
+	end Append;
+
+
+
+	procedure Append_Quoted(Q : in out Root_Query_Type; Connection : Root_Connection_Type'Class; SQL : String; After : String := "") is
+		-- Append a quoted String.
+		-- The case of this String isn't changed.
+		-- This primitive should normally be overriden for a specific database.
+		-- PostgreSQL and MySQL will potentially have different quoting requirements.
+	begin
+		Append(Root_Query_Type'Class(Q),"'" & SQL & "'",After);    
+		Q.Caseless(Q.Count) := False;   -- Preserve case here
+	end Append_Quoted;
+
+	procedure Append_Quoted(Q : in out Root_Query_Type; Connection : Root_Connection_Type'Class; SQL : Ada.Strings.Unbounded.Unbounded_String; After : String := "") is
+		-- Append a quoted String.
+		-- The case of this String isn't changed.
+		-- This primitive should normally be overriden for a specific database.
+		-- PostgreSQL and MySQL will potentially have different quoting requirements.
+	begin
+		Append_Quoted(Root_Query_Type'Class(Q),Connection,Ada.Strings.Unbounded.To_String(SQL),After);
+	end Append_Quoted;
+
+-- TODO:
+   
+	procedure Adjust(Q : in out Root_Query_Type) is
+   begin
+      Q.Count := 0;
+      Q.Alloc := 0;
+      Q.Collection := null;
+      Q.Caseless   := null;
+      Q.Tuple_Index := Tuple_Index_Type'First;
+   end Adjust;
+
+   function To_String(Query : Root_Query_Type) return String is
+      use Ada.Characters.Latin_1;
+      Total_Length : Natural := 0;
+      Append_NL    : Boolean := False;
+   begin
+
+      for X in 1..Query.Count loop
+         Total_Length := Total_Length + Query.Collection(X).all'Length;
+      end loop;
+
+      if Total_Length <= 0 then
+         return "";        -- No query started
+      end if;
+
+      Append_NL := Query.Collection(Query.Count).all(Query.Collection(Query.Count).all'Last) /= LF;
+      if Append_NL then
+         Total_Length := Total_Length + 1;
+      end if;
+
+      declare
+         Return_String :   String(1..Total_Length);
+         RX :              Positive := Return_String'First;
+         EX :              Positive;
+      begin
+         for X in 1..Query.Count loop
+            EX := RX + Query.Collection(X).all'Length - 1;
+            case Query.SQL_Case is
+               when Preserve_Case =>
+                  Return_String(RX..EX) := Query.Collection(X).all;
+               when Upper_Case | Lower_Case =>
+                  if Query.Caseless(X) = True then
+                     Return_String(RX..EX) := To_Case(Query.Collection(X).all,Query.SQL_Case);
+                  else
+                     Return_String(RX..EX) := Query.Collection(X).all;
+                  end if;
+            end case;
+            RX := EX + 1;
+         end loop;
+         if Append_NL then
+            Return_String(Return_String'Last) := LF;
+         end if;
+         return Return_String;
+      end;
+   end To_String;
+   
+
 
 
    function Value_Of(C_String : Interfaces.C.Strings.chars_ptr) return String is
@@ -191,257 +722,10 @@ package body APQ is
       end if;
    end Replace_String;
 
-   procedure Set_Instance(C : in out Root_Connection_Type; Instance : String) is
-   begin
-      Replace_String(C.Instance,"");
-      Replace_String(C.Instance,Instance);
-   end Set_Instance;
-
-   function Instance(C : Root_Connection_type) return String is
-   begin
-      return To_String(C.Instance);
-   end Instance;
-
-   procedure Set_Host_Name(C : in out Root_Connection_Type; Host_Name : String) is
-   begin
-      Replace_String(C.Host_Address,"");
-      Replace_String(C.Host_Name,Set_Host_Name.Host_Name);
-   end Set_Host_Name;
-   
-   function Host_Name(C : Root_Connection_Type) return String is
-   begin
-      if C.Host_Name /= null then
-         return C.Host_Name.all;
-      else
-         return To_String(C.Host_Address);
-      end if;
-   end Host_Name;
-
-   procedure Set_Host_Address(C : in out Root_Connection_Type; Host_Address : String) is
-   begin
-      Replace_String(C.Host_Name,"");
-      Replace_String(C.Host_Address,Set_Host_Address.Host_Address);
-   end Set_Host_Address;
-   
-   procedure Set_Port(C : in out Root_Connection_Type; Port_Number : Integer) is
-   begin
-      C.Port_Format := IP_Port;
-      C.Port_Number := Set_Port.Port_Number;
-   end Set_Port;
-   
-   function Port(C : Root_Connection_Type) return Integer is
-   begin
-      case C.Port_Format is
-         when IP_Port =>
-            return C.Port_Number;
-         when UNIX_Port =>
-		Raise_APQ_Error_Exception( 
-			E => Invalid_Format'Identity,
-			Code => APQ01,
-			Where => "Port" );
-		return 0; -- so GNAT won't complaint
-      end case;
-   end Port;
-
-   procedure Set_Port(C : in out Root_Connection_Type; Port_Name : String) is
-   begin
-      C.Port_Format     := UNIX_Port;
-      C.Port_Name       := new String(1..Port_Name'Length);
-      C.Port_Name.all   := Set_Port.Port_Name;
-   end Set_Port;
-
-   function Port(C : Root_Connection_Type) return String is
-   begin
-      case C.Port_Format is
-         when IP_Port =>
-		Raise_APQ_Error_Exception( 
-			E => Invalid_Format'Identity,
-			Code => APQ02,
-			Where => "Port" );
-		return ""; -- so GNAT won't complaint
-         when UNIX_Port =>
-            return To_String(C.Port_Name);
-      end case;
-   end Port;
-
-   procedure Set_DB_Name(C : in out Root_Connection_Type; DB_Name : String) is
-   begin
-      Replace_String(C.DB_Name,Set_DB_Name.DB_Name);
-   end Set_DB_Name;
-
-   function DB_Name(C : Root_Connection_Type) return String is
-   begin
-      return To_String(C.DB_Name);
-   end DB_Name;
-   
-   procedure Set_User_Password(C : in out Root_Connection_Type; User_Name, User_Password : String) is
-   begin
-      Replace_String(C.User_Name,Set_User_Password.User_Name);
-      Replace_String(C.User_Password,Set_User_Password.User_Password);
-   end Set_User_Password;
-   
-   function User(C : Root_Connection_Type) return String is
-   begin
-      return To_String(C.User_Name);
-   end User;
-   
-   function Password(C : Root_Connection_Type) return String is
-   begin
-      return To_String(C.User_Password);
-   end Password;
 
 
-   procedure Clear(Q : in out Root_Query_Type) is
-   begin
-      for X in 1..Q.Count loop
-         Free_Ptr(Q.Collection(X));
-      end loop;
-      Free(Q.Collection);
-      Q.Count := 0;
-      Q.Tuple_Index := Tuple_Index_Type'First;
-      Q.Rewound := True;
-   end Clear;
 
-   function Fetch_Mode(Q : Root_Query_Type) return Fetch_Mode_Type is
-   begin
-      return Q.Mode;
-   end Fetch_Mode;
 
-   procedure Set_Fetch_Mode(Q : in out Root_Query_Type; Mode : Fetch_Mode_Type) is
-   begin
-      Q.Mode := Mode;
-   end Set_Fetch_Mode;
-
-   procedure Grow(Q : in out Root_Query_Type) is
-   begin
-      if Q.Count <= 0 then
-         Q.Alloc := 64;
-         Q.Collection := new String_Ptr_Array(1..Q.Alloc);
-         Q.Caseless   := new Boolean_Array(1..Q.Alloc);
-      elsif Q.Count >= Q.Alloc then
-         declare
-            New_Alloc : Natural := Q.Alloc + 128;
-            New_Array : String_Ptr_Array_Access := new String_Ptr_Array(1..New_Alloc);
-            New_Case  : Boolean_Array_Access    := new Boolean_Array(1..New_Alloc);
-         begin
-            New_Array(1..Q.Alloc) := Q.Collection.all;
-            New_Case(1..Q.Alloc)  := Q.Caseless.all;
-            Free(Q.Collection);
-            Free(Q.Caseless);
-            Q.Alloc := New_Alloc;
-            Q.Collection := New_Array;
-            Q.Caseless   := New_Case;
-         end;
-      end if;
-   end Grow;
-
-   procedure Prepare(Q : in out Root_Query_Type; SQL : String; After : String := Line_Feed) is
-   begin
-      Clear(Root_Query_Type'Class(Q));
-      Append(Root_Query_Type'Class(Q),SQL,After);
-   end Prepare;
-
-   procedure Append(Q : in out Root_Query_Type; SQL : String; After : String := "") is
-      use Ada.Characters.Latin_1;
-      NSL : Natural := SQL'Length + After'Length;
-   begin
-      Grow(Q);
-      Q.Count := Q.Count + 1;
-      Q.Collection(Q.Count) := new String(1..NSL);
-      Q.Collection(Q.Count).all(1..SQL'Length) := SQL;
-      Q.Collection(Q.Count).all(SQL'Length+1..NSL) := After;
-      Q.Caseless(Q.Count) := True;    -- Don't preserve case
-   end Append;
-
-   procedure Append(Q : in out Root_Query_Type; SQL : Ada.Strings.Unbounded.Unbounded_String; After : String := "") is
-      use Ada.Characters.Latin_1, Ada.Strings.Unbounded;
-      Len : Natural := Length(SQL);
-      NSL : Natural := Len + After'Length;
-   begin
-      Grow(Q);
-      Q.Count := Q.Count + 1;
-      Q.Collection(Q.Count) := new String(1..NSL);
-      Q.Collection(Q.Count).all(1..Len) := To_String(SQL);
-      Q.Collection(Q.Count).all(Len+1..NSL) := After;
-      Q.Caseless(Q.Count) := True;    -- Don't preserve case
-   end Append;
-
-   procedure Append_Line(Q : in out Root_Query_Type; SQL : String := "") is
-      New_Line : String(1..1);
-   begin
-      New_Line(1) := Ada.Characters.Latin_1.LF;
-
-      Append(Root_Query_Type'Class(Q),SQL,New_Line);
-   end Append_Line;
-
-   -- This primitive should normally be overriden for a specific database.
-   -- PostgreSQL and MySQL will potentially have different quoting requirements.
-
-   procedure Append_Quoted(Q : in out Root_Query_Type; Connection : Root_Connection_Type'Class; SQL : String; After : String := "") is
-   begin
-      Append(Root_Query_Type'Class(Q),"'" & SQL & "'",After);    
-      Q.Caseless(Q.Count) := False;   -- Preserve case here
-   end Append_Quoted;
-
-   procedure Append_Quoted(Q : in out Root_Query_Type; Connection : Root_Connection_Type'Class; SQL : Ada.Strings.Unbounded.Unbounded_String; After : String := "") is
-   begin
-      Append_Quoted(Root_Query_Type'Class(Q),Connection,Ada.Strings.Unbounded.To_String(SQL),After);
-   end Append_Quoted;
-
-   procedure Adjust(Q : in out Root_Query_Type) is
-   begin
-      Q.Count := 0;
-      Q.Alloc := 0;
-      Q.Collection := null;
-      Q.Caseless   := null;
-      Q.Tuple_Index := Tuple_Index_Type'First;
-   end Adjust;
-
-   function To_String(Query : Root_Query_Type) return String is
-      use Ada.Characters.Latin_1;
-      Total_Length : Natural := 0;
-      Append_NL    : Boolean := False;
-   begin
-
-      for X in 1..Query.Count loop
-         Total_Length := Total_Length + Query.Collection(X).all'Length;
-      end loop;
-
-      if Total_Length <= 0 then
-         return "";        -- No query started
-      end if;
-
-      Append_NL := Query.Collection(Query.Count).all(Query.Collection(Query.Count).all'Last) /= LF;
-      if Append_NL then
-         Total_Length := Total_Length + 1;
-      end if;
-
-      declare
-         Return_String :   String(1..Total_Length);
-         RX :              Positive := Return_String'First;
-         EX :              Positive;
-      begin
-         for X in 1..Query.Count loop
-            EX := RX + Query.Collection(X).all'Length - 1;
-            case Query.SQL_Case is
-               when Preserve_Case =>
-                  Return_String(RX..EX) := Query.Collection(X).all;
-               when Upper_Case | Lower_Case =>
-                  if Query.Caseless(X) = True then
-                     Return_String(RX..EX) := To_Case(Query.Collection(X).all,Query.SQL_Case);
-                  else
-                     Return_String(RX..EX) := Query.Collection(X).all;
-                  end if;
-            end case;
-            RX := EX + 1;
-         end loop;
-         if Append_NL then
-            Return_String(Return_String'Last) := LF;
-         end if;
-         return Return_String;
-      end;
-   end To_String;
-   
    
 
    function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Ada.Strings.Unbounded.Unbounded_String is
@@ -450,35 +734,13 @@ package body APQ is
       return To_Unbounded_String(Value(Root_Query_Type'Class(Query),CX));
    end Value;
 
-   procedure Raise_Exceptions(Query : in out Root_Query_Type; Raise_On : Boolean := True) is
-   begin
-      Query.Raise_Exceptions := Raise_On;
-   end Raise_Exceptions;
 
-   procedure Report_Errors(Query : in out Root_Query_Type; Report_On : Boolean := True) is
-   begin
-      Query.Report_Errors := Report_On;
-   end Report_Errors;
-
-   function In_Abort_State(C : Root_Connection_Type) return Boolean is
-   begin
-      return C.Abort_State;
-   end In_Abort_State;
 
    procedure Clear_Abort_State(C : in out Root_Connection_Type) is
    begin
       C.Abort_State := False;
    end Clear_Abort_State;
 
-   procedure Set_Rollback_On_Finalize(C : in out Root_Connection_Type; Rollback : Boolean) is
-   begin
-      C.Rollback_Finalize := Rollback;
-   end Set_Rollback_On_Finalize;
-
-   function Will_Rollback_On_Finalize(C : Root_Connection_Type) return Boolean is
-   begin
-      return C.Rollback_Finalize;
-   end Will_Rollback_On_Finalize;
 
 
 
@@ -870,53 +1132,6 @@ package body APQ is
 
    end Convert_To_Timestamp;
 
-   procedure Append(Q : in out Root_Query_Type; V : APQ_Boolean; After : String := "") is
-   begin
-      Append(Root_Query_Type'Class(Q),To_String(V),After);
-   end Append;
-
-   procedure Append(Q : in out Root_Query_Type; V : Row_ID_Type; After : String := "") is
-      function To_String is new Modular_String(Row_ID_Type);
-   begin
-      Append(Root_Query_Type'Class(Q),To_String(V),After);
-   end Append;
-                     
-   procedure Append(Q : in out Root_Query_Type; V : APQ_Date; After : String := "") is
-      use Ada.Calendar;
-      S : String := To_String(V);
-   begin
-      Append(Root_Query_Type'Class(Q),"'",S);
-      Append(Root_Query_Type'Class(Q),"'",After);
-   end Append;
-
-   procedure Append(Q : in out Root_Query_Type; V : APQ_Time; After : String := "") is
-      use Ada.Calendar;
-      S : String := To_String(V);
-   begin
-      Append(Root_Query_Type'Class(Q),"'",S);
-      Append(Root_Query_Type'Class(Q),"'",After);
-   end Append;
-
-   procedure Append(Q : in out Root_Query_Type; V : APQ_Timestamp; After : String := "") is
-      use Ada.Calendar;
-      D : String := To_String(V);
-   begin
-      Append(Root_Query_Type'Class(Q),"'",D);
-      Append(Root_Query_Type'Class(Q),"'",After);
-   end Append;
-
-   procedure Append(Q : in out Root_Query_Type; TS : APQ_Timestamp; TZ : APQ_Timezone; After : String := "") is
-      use Ada.Calendar, Ada.Strings, Ada.Strings.Fixed;
-      D : String := To_String(TS);
-      Z : String := APQ_Timezone'Image(TZ);
-   begin
-      Append(Root_Query_Type'Class(Q),"'",D);
-      Append(Root_Query_Type'Class(Q),Trim(Z,Left),"'");
-      if After'Length > 0 then
-         Append(Root_Query_Type'Class(Q),After);
-      end if;
-   end Append;
-
    procedure Append_Timestamp(Q : in out Root_Query_Type'Class; V : Val_Type; After : String := "") is
       function To_String is new Timestamp_String(Val_Type);
    begin
@@ -935,12 +1150,6 @@ package body APQ is
       end if;
    end Append_Timezone;
 
-   procedure Append(Q : in out Root_Query_Type; V : APQ_Bitstring; After : String := "") is
-      S : String := To_String(V);
-   begin
-      Append(Root_Query_Type'Class(Q),"B'",S);
-      Append(Root_Query_Type'Class(Q),"'",After);
-   end Append;
 
    procedure Append_Bitstring(Q : in out Root_Query_Type'Class; V : Val_Type; After : String := "") is
    begin
@@ -1767,19 +1976,16 @@ package body APQ is
 
    end Extract_Timezone;
 
-   -- This function is provided to avoid "possible recursion" error message
 
-   function Factory(C : Root_Connection_Type) return Root_Query_Type'Class is
-   begin
-      return New_Query(Root_Connection_Type'Class(C));
-   end Factory;
 
-   function New_Query(C : Root_Connection_Type) return Root_Query_Type'Class is
-      Q : Root_Query_Type'Class := Factory(C);
-   begin
-      Q.SQL_Case := C.SQL_Case;  -- Preserve setting in connection
-      return Q;
-   end New_Query;
+
+
+
+
+
+
+
+
 
    function Is_Select(Q : Root_Query_Type) return Boolean is
    begin
@@ -1806,38 +2012,7 @@ package body APQ is
       return "?";  -- For compiler only
    end Cursor_Name;
 
-   function Get_Case(C : Root_Connection_Type) return SQL_Case_Type is
-   begin
-      return C.SQL_Case;
-   end Get_Case;
 
-   procedure Set_Case(C : in out Root_Connection_Type; SQL_Case : SQL_Case_Type) is
-   begin
-      C.SQL_Case := Set_Case.SQL_Case;
-   end Set_Case;
-
-   function Get_Case(Q : Root_Query_Type) return SQL_Case_Type is
-   begin
-      return Q.SQL_Case;
-   end Get_Case;
-
-   procedure Set_Case(Q : in out Root_Query_Type; SQL_Case : SQL_Case_Type) is
-   begin
-      Q.SQL_Case := Set_Case.SQL_Case;
-   end Set_Case;
-
-   function To_Case(S : String; C : SQL_Case_Type) return String is
-      use Ada.Characters.Handling;
-   begin
-      case C is
-         when Preserve_Case =>
-            return S;
-         when Lower_Case =>
-            return To_Lower(S);
-         when Upper_case =>
-            return To_Upper(S);
-      end case;
-   end To_Case;
 
    --
    -- Return True, if the SQL query is an INSERT statement
@@ -1862,5 +2037,25 @@ package body APQ is
          return SQL(X..X+5) = "INSERT";
       end;
    end Is_Insert;
+
+
+
+
+
+
+
+ -- private
+	function To_Case(S : String; C : SQL_Case_Type) return String is
+		use Ada.Characters.Handling;
+	begin
+		case C is
+			when Preserve_Case =>
+				return S;
+			when Lower_Case =>
+				return To_Lower(S);
+			when Upper_case =>
+				return To_Upper(S);
+		end case;
+	end To_Case;
 
 end APQ;
