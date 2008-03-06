@@ -460,7 +460,7 @@ package APQ is
 	procedure Set_Case(C : in out Root_Connection_Type; SQL_Case : SQL_Case_Type);
 	-- Set the SQL case used by default in this connection.
 	-- All new queries will use this casing by default.
-
+	pragma Inline(Get_Case,Set_Case);
 
 
 	function Get_Instance(C: Root_Connection_Type) return String;
@@ -633,6 +633,7 @@ package APQ is
 	-- PostgreSQL and MySQL will potentially have different quoting requirements.
 
 
+
 	-- Data retrieval:
 
 
@@ -650,14 +651,19 @@ package APQ is
 	-- Get the value of the CXth column as Bitstring.
 
 
--- TODO:
+
+	----------------------------------------------------------------------------------
+	--				GENERIC METHODS FOR				--
+	-- 	. Root_Query_Type							--
+	----------------------------------------------------------------------------------
+	-- These  methods  are  implemented  using the abstract and implemented methods	--
+	-- that are listed before this block.						--
+	--										--
+	-- They  are  meant  to  enforce  strong  typing  with  Database  programming.	--
+	----------------------------------------------------------------------------------
 
 
-
-	generic
-	type Ind_Type is new Boolean;
-	function Column_Is_Null(Q : Root_Query_Type'Class; CX : Column_Index_Type) return Ind_Type;
-
+	-- SQL creation :: append ...
 
 	generic
 	type Val_Type is new Boolean;
@@ -696,13 +702,13 @@ package APQ is
 	procedure Append_Timestamp(Q : in out Root_Query_Type'Class; V : Val_Type; After : String := "");
 
 	generic
-	type Val_Type is new APQ_Bitstring;
-	procedure Append_Bitstring(Q : in out Root_Query_Type'Class; V : Val_Type; After : String := "");
-
-	generic
 	type Date_Type is new Ada.Calendar.Time;
 	type Zone_Type is new APQ_Timezone;
 	procedure Append_Timezone(Q : in out Root_Query_Type'Class; V : Date_Type; Z : Zone_Type; After : String := "");
+
+	generic
+	type Val_Type is new APQ_Bitstring;
+	procedure Append_Bitstring(Q : in out Root_Query_Type'Class; V : Val_Type; After : String := "");
 
 	generic
 	with package P is new Ada.Strings.Bounded.Generic_Bounded_Length(<>);
@@ -712,18 +718,10 @@ package APQ is
 	with package P is new Ada.Strings.Bounded.Generic_Bounded_Length(<>);
 	procedure Append_Bounded_Quoted(Q : in out Root_Query_Type'Class; Connection : Root_Connection_Type'Class; SQL : P.Bounded_String; After : String := "");
 
-	generic
-	type Ind_Type is new Boolean;
-	procedure Encode_String_Quoted(Q : in out Root_Query_Type'Class; Connection : Root_Connection_Type'Class; SQL : String; Indicator : Ind_Type; After : String := "");
 
-	generic
-	type Ind_Type is new Boolean;
-	procedure Encode_Unbounded_Quoted(Q : in out Root_Query_Type'Class; Connection : Root_Connection_Type'Class; SQL : Ada.Strings.Unbounded.Unbounded_String; Indicator : Ind_Type; After : String := "");
+	-- SQL creation :: encode...
+	-- encode is the same as append, but supporting null values.
 
-	generic
-	type Ind_Type is new Boolean;
-	with package P is new Ada.Strings.Bounded.Generic_Bounded_Length(<>);
-	procedure Encode_Bounded_Quoted(Q : in out Root_Query_Type'Class; Connection : Root_Connection_Type'Class; SQL : P.Bounded_String; Indicator : Ind_Type; After : String := "");
 
 	generic
 	type Val_Type is new Boolean;
@@ -771,17 +769,100 @@ package APQ is
 	procedure Encode_Timestamp(Q : in out Root_Query_Type'Class; V : Val_Type; Indicator : Ind_Type; After : String := "");
 
 	generic
-	type Val_Type is new APQ_Bitstring;
-	type Ind_Type is new Boolean;
-	procedure Encode_Bitstring(Q : in out Root_Query_Type'Class; V: Val_Type; Indicator : Ind_Type; After : String := "");
-
-	generic
 	type Date_Type is new APQ_Timestamp;
 	type Zone_Type is new APQ_Timezone;
 	type Ind_Type is new Boolean;
 	procedure Encode_Timezone(Q : in out Root_Query_Type'Class; D : Date_Type; Z : Zone_Type; Indicator : Ind_Type; After : String := "");
 
+	generic
+	type Val_Type is new APQ_Bitstring;
+	type Ind_Type is new Boolean;
+	procedure Encode_Bitstring(Q : in out Root_Query_Type'Class; V: Val_Type; Indicator : Ind_Type; After : String := "");
 
+	generic
+	type Ind_Type is new Boolean;
+	procedure Encode_String_Quoted(Q : in out Root_Query_Type'Class; Connection : Root_Connection_Type'Class; SQL : String; Indicator : Ind_Type; After : String := "");
+
+	generic
+	type Ind_Type is new Boolean;
+	with package P is new Ada.Strings.Bounded.Generic_Bounded_Length(<>);
+	procedure Encode_Bounded_Quoted(Q : in out Root_Query_Type'Class; Connection : Root_Connection_Type'Class; SQL : P.Bounded_String; Indicator : Ind_Type; After : String := "");
+
+	generic
+	type Ind_Type is new Boolean;
+	procedure Encode_Unbounded(Q : in out Root_Query_Type'Class; Connection : Root_Connection_Type'Class; SQL : Ada.Strings.Unbounded.Unbounded_String; Indicator : Ind_Type; After : String := "");
+
+	generic
+	type Ind_Type is new Boolean;
+	procedure Encode_Unbounded_Quoted(Q : in out Root_Query_Type'Class; Connection : Root_Connection_Type'Class; SQL : Ada.Strings.Unbounded.Unbounded_String; Indicator : Ind_Type; After : String := "");
+
+
+
+
+	-- Data retrieval :: misc ...
+	
+	generic
+	type Ind_Type is new Boolean;
+	function Column_Is_Null(Q : Root_Query_Type'Class; CX : Column_Index_Type) return Ind_Type;
+	-- checks if the result in the CXth column is null.
+
+
+
+
+	-- Data retrieval :: value operations ...
+	--
+
+	generic
+	type Val_Type is new Boolean;
+	function Boolean_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
+
+	generic
+	type Val_Type is range <>;
+	function Integer_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
+
+	generic
+	type Val_Type is mod <>;
+	function Modular_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
+
+	generic
+	type Val_Type is digits <>;
+	function Float_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
+
+	generic
+	type Val_Type is delta <>;
+	function Fixed_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
+
+	generic
+	type Val_Type is delta <> digits <>;
+	function Decimal_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
+
+	generic
+	type Val_Type is new APQ_Date;
+	function Date_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
+
+	generic
+	type Val_Type is new APQ_Time;
+	function Time_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
+
+	generic
+	type Val_Type is new Ada.Calendar.Time;
+	function Timestamp_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
+
+	generic
+	type Date_Type is new Ada.Calendar.Time;
+	type Zone_Type is new APQ_Timezone;
+	procedure Timezone_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type; TS : out Date_Type; TZ : out Zone_Type);
+
+	generic
+	with package P is new Ada.Strings.Bounded.Generic_Bounded_Length(<>);
+	function Bounded_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return P.Bounded_String;
+
+
+
+	-- Data retrieval :: fetch operations ...
+	-- They are the same as the value operations, but with null support
+	
+	
 	generic
 	type Ind_Type is new Boolean;
 	procedure Char_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Indicator : out Ind_Type);
@@ -857,9 +938,22 @@ package APQ is
 	procedure Timezone_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Date_Type; Z : out Zone_Type; Indicator : out Ind_Type);
 
 
-	generic
-	type Val_Type is mod <>;
-	function Modular_String(V : Val_Type) return String;
+
+	-- Conversion :: anything to string (APQ types) ...
+
+
+	function To_String(V : APQ_Boolean) return String;
+	function To_String(V : APQ_Date) return String;
+	function To_String(V : APQ_Time) return String;
+
+	function To_String(V : APQ_Timestamp) return String;
+	function To_String(V : APQ_Timestamp; TZ : APQ_Timezone) return String;
+	function To_String(V : APQ_Timezone) return String;
+
+	function To_String(V : APQ_Bitstring) return String;
+
+
+	-- Conversion :: anything to string (generic types) ...
 
 	generic
 	type Val_Type is new Boolean;
@@ -868,6 +962,10 @@ package APQ is
 	generic
 	type Val_Type is range <>;
 	function Integer_String(V : Val_Type) return String;
+
+	generic
+	type Val_Type is mod <>;
+	function Modular_String(V : Val_Type) return String;
 
 	generic
 	type Val_Type is digits <>;
@@ -880,60 +978,6 @@ package APQ is
 	generic
 	type Val_Type is delta <> digits <>;
 	function Decimal_String(V : Val_Type) return String;
-
-	------------------------------
-	-- Values
-	------------------------------
-
-	generic
-	type Val_Type is new Boolean;
-	function Boolean_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
-
-	generic
-	type Val_Type is range <>;
-	function Integer_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
-
-	generic
-	type Val_Type is mod <>;
-	function Modular_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
-
-	generic
-	type Val_Type is digits <>;
-	function Float_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
-
-	generic
-	type Val_Type is delta <>;
-	function Fixed_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
-
-	generic
-	type Val_Type is delta <> digits <>;
-	function Decimal_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
-
-	generic
-	type Val_Type is new APQ_Date;
-	function Date_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
-
-	generic
-	type Val_Type is new APQ_Time;
-	function Time_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
-
-	generic
-	type Val_Type is new Ada.Calendar.Time;
-	function Timestamp_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type;
-
-	generic
-	type Date_Type is new Ada.Calendar.Time;
-	type Zone_Type is new APQ_Timezone;
-	procedure Timezone_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type; TS : out Date_Type; TZ : out Zone_Type);
-
-	generic
-	with package P is new Ada.Strings.Bounded.Generic_Bounded_Length(<>);
-	function Bounded_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return P.Bounded_String;
-
-
-	------------------------------
-	-- Conversion :
-	------------------------------
 
 	generic
 	type Val_Type is new Ada.Calendar.Time;
@@ -950,6 +994,11 @@ package APQ is
 	generic
 	type Val_Type is new APQ_Timezone;
 	function Timezone_String(V : Val_Type) return String;
+
+
+
+	-- Conversion :: anything from string ...
+
 
 	generic
 	type Val_Type is new Boolean;
@@ -1012,22 +1061,9 @@ package APQ is
 	type Time_Type is new Ada.Calendar.Day_Duration;
 	function Generic_Second(TM : Time_Type) return Second_Number;
 
-	------------------------------
-	-- To_String Functions
-	------------------------------
-
-	function To_String(V : APQ_Boolean) return String;
-	function To_String(V : APQ_Date) return String;
-	function To_String(V : APQ_Time) return String;
-
-	function To_String(V : APQ_Timestamp) return String;
-	function To_String(V : APQ_Timestamp; TZ : APQ_Timezone) return String;
-	function To_String(V : APQ_Timezone) return String;
-
-	function To_String(V : APQ_Bitstring) return String;
 
 
-	pragma Inline(Get_Case,Set_Case);
+
 
 	procedure Finalize(Q : in out Root_Query_Type) is abstract;
 	-- TODO: colocar no seu devido lugar..
