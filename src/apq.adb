@@ -30,6 +30,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+
 with Aw_Lib.String_Util;
 
 with Ada.Characters.Latin_1;
@@ -100,13 +101,15 @@ package body APQ is
 	procedure Raise_APQ_Error_Exception( E: in Exception_Id; Code: in APQ_Error; Where: in String; Patterns: in Pattern_Array ) is
 		-- Raise the Exception E with a comprehensive error message
 
-		use Aw_lib.String_Util;
+		use Ada.Strings;		-- for selecting the sides to Trim
+		use Ada.Strings.Fixed;		-- Trim
+		use Aw_Lib.String_Util;		-- Str_Replace
 
 		function Process_Message return String is
 			Desc: Unbounded_String := Unbounded_String(APQ_Error_Descriptions(Code));
 
 			function Get_Pattern( i: in Integer ) return Unbounded_String is
-				P: String := "%" & Trim( Integer'Image( i ) ) & "%";
+				P: String := "%" & Trim( Integer'Image( i ), Ada.Strings.Both ) & "%";
 			begin
 				return To_Unbounded_String( P );
 			end Get_Pattern;
@@ -390,8 +393,94 @@ package body APQ is
 
 
 
+	-- Query information ...
+
+
+
+	function To_String(Query : Root_Query_Type) return String is
+		-- get the query text
+		use Ada.Characters.Latin_1;
+		Total_Length : Natural := 0;
+		Append_NL    : Boolean := False;
+	begin
+		
+		for X in 1..Query.Count loop
+			Total_Length := Total_Length + Query.Collection(X).all'Length;
+		end loop;
+		
+		if Total_Length <= 0 then
+			return "";        -- No query started
+		end if;
+		
+		Append_NL := Query.Collection(Query.Count).all(Query.Collection(Query.Count).all'Last) /= LF;
+		if Append_NL then
+			Total_Length := Total_Length + 1;
+		end if;
+		
+		declare
+			Return_String :   String(1..Total_Length);
+			RX :              Positive := Return_String'First;
+			EX :              Positive;
+		begin
+			for X in 1..Query.Count loop
+				EX := RX + Query.Collection(X).all'Length - 1;
+				case Query.SQL_Case is
+					when Preserve_Case =>
+						Return_String(RX..EX) := Query.Collection(X).all;
+					when Upper_Case | Lower_Case =>
+						if Query.Caseless(X) = True then
+							Return_String(RX..EX) := To_Case(Query.Collection(X).all,Query.SQL_Case);
+						else
+							Return_String(RX..EX) := Query.Collection(X).all;
+						end if;
+				end case;
+				RX := EX + 1;
+			end loop;
+			if Append_NL then
+				Return_String(Return_String'Last) := LF;
+			end if;
+			return Return_String;
+		end;
+	end To_String;
+
+
+
+	function Is_Select(Q : Root_Query_Type) return Boolean is
+		-- is this query a select statement?
+	begin
+		if Q.Count < 1 then
+			return False;
+		end if;
+		
+		declare
+			use Ada.Characters.Handling, Ada.Strings, Ada.Strings.Fixed;
+			-- Get start of query :
+			Query_Start : String := To_Upper(Trim(Q.Collection(1).all,Left));
+		begin
+			return Query_Start'Length >= 6 and then Query_Start(1..6) = "SELECT";
+		end;
+		
+	end Is_Select;
+
+
+	
+	function Cursor_Name(Query : Root_Query_Type) return String is
+		-- get the cursor name for the current result
+		-- this function is meant to be overwriten by the driver if it supports cursor
+	begin
+		Raise_APQ_Error_Exception(
+			E	=> Not_Supported'Identity,
+			Code	=> APQ28,
+			Where	=> "Cursor_Name");
+		return "?";  -- For compiler only
+	end Cursor_Name;
+
+
+
 	-- SQL creation ...
 
+	
+	
 	procedure Clear(Q : in out Root_Query_Type) is
 		-- Clear the query so one can start a new SQL expression.
 	begin
@@ -436,6 +525,7 @@ package body APQ is
 			end;
 		end if;
 	end Grow;
+
 
 	
 	procedure Append(Q : in out Root_Query_Type; SQL : String; After : String := "") is
@@ -573,70 +663,84 @@ package body APQ is
 		Append_Quoted(Root_Query_Type'Class(Q),Connection,Ada.Strings.Unbounded.To_String(SQL),After);
 	end Append_Quoted;
 
--- TODO:
+
+	-- Data retrieval:
+  
+
+	procedure Value(Query: Root_Query_Type; CX : Column_Index_Type; V : out String) is
+		-- Get the value of the CXth column as String.
+		-- Fixed length String Fetch
+		S : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		if S'Length = V'Length then
+			V := S;
+		elsif S'Length > V'Length then
+			Raise_APQ_Error_Exception(
+				E	=> Small_Buffer'Identity,
+				Code	=> APQ09,
+				Where	=> "Value",
+				Zero	=> Column_Index_Type'Image(CX) );
+		else
+			V(V'First..S'Length) := S;
+			V(S'Length+1..V'Last) := ( others => ' ' );
+		end if;
+	end Value;
+
+
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Ada.Strings.Unbounded.Unbounded_String is
+		-- Get the value of the CXth column as Unbounded_String.
+		use Ada.Strings.Unbounded;
+	begin
+		return To_Unbounded_String(Value(Root_Query_Type'Class(Query),CX));
+	end Value;
+
+
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Row_ID_Type is
+		-- Get the value of the CXth column as Row_Id_Type.
+		S : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		return Row_ID_Type'Value(S);
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ08,
+				Where	=> "Value",
+				Zero	=> Column_Index_Type'Image(CX) );
+			return 0; -- so GNAT won't complaint
+	end Value;
+
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Bitstring is
+		-- Get the value of the CXth column as Bitstring.
+		use Ada.Strings, Ada.Strings.Fixed;
+		S : String := Trim(Value(Root_Query_Type'Class(Query),CX),Both);
+		R : APQ_Bitstring(1..S'Length);
+	begin
+		for X in S'Range loop
+			R(X) := S(X) /= '0';
+		end loop;
+		return R;
+	end Value;
+
+	
+	-- TODO:
+  
+
+	function Value_Of(C_String : Interfaces.C.Strings.chars_ptr) return String is
+		use Interfaces.C.Strings, Interfaces.C;
+	begin
+		return To_Ada(Value(C_String));
+	end Value_Of;
+
+
+
    
-	procedure Adjust(Q : in out Root_Query_Type) is
-   begin
-      Q.Count := 0;
-      Q.Alloc := 0;
-      Q.Collection := null;
-      Q.Caseless   := null;
-      Q.Tuple_Index := Tuple_Index_Type'First;
-   end Adjust;
-
-   function To_String(Query : Root_Query_Type) return String is
-      use Ada.Characters.Latin_1;
-      Total_Length : Natural := 0;
-      Append_NL    : Boolean := False;
-   begin
-
-      for X in 1..Query.Count loop
-         Total_Length := Total_Length + Query.Collection(X).all'Length;
-      end loop;
-
-      if Total_Length <= 0 then
-         return "";        -- No query started
-      end if;
-
-      Append_NL := Query.Collection(Query.Count).all(Query.Collection(Query.Count).all'Last) /= LF;
-      if Append_NL then
-         Total_Length := Total_Length + 1;
-      end if;
-
-      declare
-         Return_String :   String(1..Total_Length);
-         RX :              Positive := Return_String'First;
-         EX :              Positive;
-      begin
-         for X in 1..Query.Count loop
-            EX := RX + Query.Collection(X).all'Length - 1;
-            case Query.SQL_Case is
-               when Preserve_Case =>
-                  Return_String(RX..EX) := Query.Collection(X).all;
-               when Upper_Case | Lower_Case =>
-                  if Query.Caseless(X) = True then
-                     Return_String(RX..EX) := To_Case(Query.Collection(X).all,Query.SQL_Case);
-                  else
-                     Return_String(RX..EX) := Query.Collection(X).all;
-                  end if;
-            end case;
-            RX := EX + 1;
-         end loop;
-         if Append_NL then
-            Return_String(Return_String'Last) := LF;
-         end if;
-         return Return_String;
-      end;
-   end To_String;
-   
 
 
 
-   function Value_Of(C_String : Interfaces.C.Strings.chars_ptr) return String is
-      use Interfaces.C.Strings, Interfaces.C;
-   begin
-      return To_Ada(Value(C_String));
-   end Value_Of;
 
    function Is_Null(C_String : Interfaces.C.Strings.chars_ptr) return Boolean is
       use Interfaces.C.Strings;
@@ -644,83 +748,8 @@ package body APQ is
       return C_String = Null_Ptr;
    end Is_Null;
 
-   function To_String(S : String_Ptr) return String is
-   begin
-      if S /= null then
-         return S.all;
-      else
-         return "";
-      end if;
-   end To_String;
 
-   function To_Ada_String(P : Interfaces.C.Strings.chars_ptr) return String is
-      use Interfaces.C, Interfaces.C.Strings;
-   begin
-      if P = Null_Ptr then
-         return "";
-      end if;
-      return To_Ada(Value(P));
-   end To_Ada_String;
 
-   procedure Free_Ptr(SP : in out String_Ptr) is
-   begin
-      if SP /= null then
-         Free(SP);
-      end if;
-   end Free_Ptr;
-
-   function Blanks_To_Zero(S : String) return String is
-      R : String(S'Range) := S;
-   begin
-      for X in S'Range loop
-         if R(X) = ' ' then
-            R(X) := '0';
-         end if;
-      end loop;
-      return R;
-   end Blanks_To_Zero;
-
-   procedure C_String(S : String_Ptr; CP : out Interfaces.C.Strings.char_array_access; Addr : out System.Address) is
-      use Interfaces.C;
-   begin
-      if S /= null then
-         CP   := new char_array'(To_C(S.all));
-         Addr := CP.all'Address;
-      else
-         CP := null;
-         Addr := System.Null_Address;
-      end if;
-   end C_String;
-
-   procedure C_String(S : String; CP : out Interfaces.C.Strings.char_array_access; Addr : out System.Address) is
-      use Interfaces.C;
-   begin
-      CP   := new char_array'(To_C(S));
-      Addr := CP.all'Address;
-   end C_String;
-
-   function Strip_NL(S : String) return String is
-      use Ada.Characters.Latin_1;
-      NX : Natural := S'Last;
-   begin
-      for X in S'Range loop
-         if S(X) = LF or S(X) = CR then
-            return S(S'First..X-1);
-         end if;
-      end loop;
-      return S;
-   end Strip_NL;
-
-   procedure Replace_String(SP : in out String_Ptr; S : String) is
-   begin
-      if SP /= null then
-         Free(SP);
-      end if;
-      if S'Length > 1 then
-         SP := new String(1..S'Length);
-         SP.all := S;
-      end if;
-   end Replace_String;
 
 
 
@@ -728,18 +757,9 @@ package body APQ is
 
    
 
-   function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Ada.Strings.Unbounded.Unbounded_String is
-      use Ada.Strings.Unbounded;
-   begin
-      return To_Unbounded_String(Value(Root_Query_Type'Class(Query),CX));
-   end Value;
 
 
 
-   procedure Clear_Abort_State(C : in out Root_Connection_Type) is
-   begin
-      C.Abort_State := False;
-   end Clear_Abort_State;
 
 
 
@@ -1394,50 +1414,7 @@ package body APQ is
       return Ind_Type(Is_Null(Root_Query_Type'Class(Q),CX));
    end Column_Is_Null;
 
-   function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Row_ID_Type is
-      S : String := Value(Root_Query_Type'Class(Query),CX);
-   begin
-      begin
-         return Row_ID_Type'Value(S);
-      exception
-         when Constraint_Error =>
-	       	Raise_APQ_Error_Exception(
-			 E	=> Constraint_Error'Identity,
-			 Code	=> APQ08,
-			 Where	=> "Value",
-			 Zero	=> Column_Index_Type'Image(CX) );
-		return 0; -- so GNAT won't complaint
-      end;
-   end Value;
 
-   function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Bitstring is
-      use Ada.Strings, Ada.Strings.Fixed;
-      S : String := Trim(Value(Root_Query_Type'Class(Query),CX),Both);
-      R : APQ_Bitstring(1..S'Length);
-   begin
-      for X in S'Range loop
-         R(X) := S(X) /= '0';
-      end loop;
-      return R;
-   end Value;
-
-   -- Fixed length String Fetch
-   procedure Value(Query: Root_Query_Type; CX : Column_Index_Type; V : out String) is
-      S : String := Value(Root_Query_Type'Class(Query),CX);
-   begin
-      if S'Length = V'Length then
-         V := S;
-      elsif S'Length > V'Length then
-	       	Raise_APQ_Error_Exception(
-			 E	=> Small_Buffer'Identity,
-			 Code	=> APQ09,
-			 Where	=> "Value",
-			 Zero	=> Column_Index_Type'Image(CX) );
-      else
-         V(V'First..S'Length) := S;
-         V(S'Length+1..V'Last) := ( others => ' ' );
-      end if;
-   end Value;
 
    function Boolean_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
       function To_Boolean is new Convert_To_Boolean(Val_Type);
@@ -1987,56 +1964,12 @@ package body APQ is
 
 
 
-   function Is_Select(Q : Root_Query_Type) return Boolean is
-   begin
-      if Q.Count < 1 then
-         return False;
-      end if;
-
-      declare
-         use Ada.Characters.Handling, Ada.Strings, Ada.Strings.Fixed;
-         -- Get start of query :
-         Query_Start : String := To_Upper(Trim(Q.Collection(1).all,Left));
-      begin
-         return Query_Start'Length >= 6 and then Query_Start(1..6) = "SELECT";
-      end;
-
-   end Is_Select;
-
-   function Cursor_Name(Query : Root_Query_Type) return String is
-   begin
-  	Raise_APQ_Error_Exception(
-		 E	=> Not_Supported'Identity,
-		 Code	=> APQ28,
-		 Where	=> "Cursor_Name");
-      return "?";  -- For compiler only
-   end Cursor_Name;
 
 
 
    --
    -- Return True, if the SQL query is an INSERT statement
    --
-   function Is_Insert(Q : Root_Query_Type) return Boolean is
-   begin
-      if Q.Count < 1 or else Q.Collection = null then
-         return False;
-      end if;
-      declare
-         use Ada.Characters.Handling;
-         SQL : String := To_Upper(Q.Collection(Q.Collection'First).all);
-         X :   Positive := SQL'First;
-      begin
-         while X <= SQL'Last loop
-            exit when SQL(X) /= ' ';
-            X := X + 1;
-         end loop;
-         if X + 5 > SQL'Last then
-            return False;
-         end if;
-         return SQL(X..X+5) = "INSERT";
-      end;
-   end Is_Insert;
 
 
 
@@ -2046,6 +1979,7 @@ package body APQ is
 
  -- private
 	function To_Case(S : String; C : SQL_Case_Type) return String is
+		-- convert the string to the selected case
 		use Ada.Characters.Handling;
 	begin
 		case C is
@@ -2057,5 +1991,141 @@ package body APQ is
 				return To_Upper(S);
 		end case;
 	end To_Case;
+	
+
+
+	procedure Clear_Abort_State(C : in out Root_Connection_Type) is
+	begin
+		C.Abort_State := False;
+	end Clear_Abort_State;
+
+
+
+	procedure Adjust(Q : in out Root_Query_Type) is
+	begin
+		Q.Count := 0;
+		Q.Alloc := 0;
+		Q.Collection := null;
+		Q.Caseless   := null;
+		Q.Tuple_Index := Tuple_Index_Type'First;
+	end Adjust;
+
+
+
+
+	function Is_Insert(Q : Root_Query_Type) return Boolean is
+	begin
+		if Q.Count < 1 or else Q.Collection = null then
+			return False;
+		end if;
+		declare
+			use Ada.Characters.Handling;
+			SQL : String := To_Upper(Q.Collection(Q.Collection'First).all);
+			X :   Positive := SQL'First;
+		begin
+			while X <= SQL'Last loop
+				exit when SQL(X) /= ' ';
+				X := X + 1;
+			end loop;
+			if X + 5 > SQL'Last then
+				return False;
+			end if;
+			return SQL(X..X+5) = "INSERT";
+		end;
+	end Is_Insert;
+
+
+
+	procedure Free_Ptr(SP : in out String_Ptr) is
+	begin
+		if SP /= null then
+			Free(SP);
+		end if;
+	end Free_Ptr;
+
+
+
+	function To_String(S : String_Ptr) return String is
+	begin
+		if S /= null then
+			return S.all;
+		else
+			return "";
+		end if;
+	end To_String;
+	
+
+
+	function To_Ada_String(P : Interfaces.C.Strings.chars_ptr) return String is
+		use Interfaces.C, Interfaces.C.Strings;
+	begin
+		if P = Null_Ptr then
+			return "";
+		end if;
+		return To_Ada(Value(P));
+	end To_Ada_String;
+
+
+
+	function Blanks_To_Zero(S : String) return String is
+		R : String(S'Range) := S;
+	begin
+		for X in S'Range loop
+			if R(X) = ' ' then
+				R(X) := '0';
+			end if;
+		end loop;
+		return R;
+	end Blanks_To_Zero;
+
+	
+
+	procedure C_String(S : String_Ptr; CP : out Interfaces.C.Strings.char_array_access; Addr : out System.Address) is
+		use Interfaces.C;
+	begin
+		if S /= null then
+			CP   := new char_array'(To_C(S.all));
+			Addr := CP.all'Address;
+		else
+			CP := null;
+			Addr := System.Null_Address;
+		end if;
+	end C_String;
+	
+	
+	
+	procedure C_String(S : String; CP : out Interfaces.C.Strings.char_array_access; Addr : out System.Address) is
+		use Interfaces.C;
+	begin
+		CP   := new char_array'(To_C(S));
+		Addr := CP.all'Address;
+	end C_String;
+
+
+	
+	function Strip_NL(S : String) return String is
+		use Ada.Characters.Latin_1;
+		NX : Natural := S'Last;
+	begin
+		for X in S'Range loop
+			if S(X) = LF or S(X) = CR then
+				return S(S'First..X-1);
+			end if;
+		end loop;
+		return S;
+	end Strip_NL;
+
+
+
+	procedure Replace_String(SP : in out String_Ptr; S : String) is
+	begin
+		if SP /= null then
+			Free(SP);
+		end if;
+		if S'Length > 1 then
+			SP := new String(1..S'Length);
+			SP.all := S;
+		end if;
+	end Replace_String;
 
 end APQ;

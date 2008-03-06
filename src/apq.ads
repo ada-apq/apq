@@ -567,13 +567,26 @@ package APQ is
 	-- report sql erros when Execute_Checked is called?
 
 
+	-- Query information ...
+	
+	function To_String(Query : Root_Query_Type) return String;
+	-- get the query text
+	
+	function Is_Select(Q : Root_Query_Type) return Boolean;
+	-- is this query a select statement?
+	
+	function Cursor_Name(Query : Root_Query_Type) return String;
+	-- get the cursor name for the current result
+	-- this function is meant to be overwriten by the driver if it supports cursor
+
+
 	-- SQL creation ...
 
 	procedure Clear(Q : in out Root_Query_Type);
 	-- Clear the query so one can start a new SQL expression.
 
 	procedure Grow(Q : in out Root_Query_Type);
-	-- used internally to grow the query size so Append works
+	-- used internally to grow the query lines size so one can Append to it.
 
 	procedure Prepare(Q : in out Root_Query_Type; SQL : String; After : String := Line_Feed);
 	-- Clear the query, starting a new one.
@@ -619,9 +632,16 @@ package APQ is
 	-- This primitive should normally be overriden for a specific database.
 	-- PostgreSQL and MySQL will potentially have different quoting requirements.
 
-	
+
+	-- Data retrieval:
+
+
+	--Note: there is an abstract function value() which returns string;
+	-- This function is used in all these following methods:
+
 	procedure Value(Query: Root_Query_Type; CX : Column_Index_Type; V : out String);
 	-- Get the value of the CXth column as String.
+	-- Fixed length String Fetch
 	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Ada.Strings.Unbounded.Unbounded_String;
 	-- Get the value of the CXth column as Unbounded_String.
 	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Row_ID_Type;
@@ -633,9 +653,6 @@ package APQ is
 -- TODO:
 
 
-	function To_String(Query : Root_Query_Type) return String;
-	function Is_Select(Q : Root_Query_Type) return Boolean;
-	function Cursor_Name(Query : Root_Query_Type) return String;
 
 	generic
 	type Ind_Type is new Boolean;
@@ -1029,7 +1046,6 @@ private
 	subtype Port_Integer is Integer range 0..32768;
 	type Port_Format_Type is ( IP_Port, UNIX_Port );
 
-	function To_Case(S : String; C : SQL_Case_Type) return String;
 
 	type Root_Connection_Type is abstract new Ada.Finalization.Limited_Controlled with
 		record
@@ -1052,7 +1068,6 @@ private
 			SQL_Case :        SQL_Case_Type := Upper_Case;     -- How to map SQL "case"
 		end record;
 
-	procedure Clear_Abort_State(C : in out Root_Connection_Type);
 
 	type Root_Query_Type is abstract new Ada.Finalization.Controlled with
 		record
@@ -1067,6 +1082,13 @@ private
 			Tuple_Index :     Tuple_Index_Type := Tuple_Index_Type'First;  -- Current tuple index
 			SQL_Case :        SQL_Case_Type := Upper_Case;                 -- How to map SQL "case"
 		end record;
+
+
+	function To_Case(S : String; C : SQL_Case_Type) return String;
+	-- convert the string to the selected case
+
+
+	procedure Clear_Abort_State(C : in out Root_Connection_Type);
 
 	procedure Adjust(Q : in out Root_Query_Type);
 	function Is_Insert(Q : Root_Query_Type) return Boolean;              -- True if query is an INSERT statement
