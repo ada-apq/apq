@@ -31,6 +31,18 @@
 ------------------------------------------------------------------------------
 
 
+-- TODO: move all the database dependent code to the database driver!
+-- TIP for Time and Date values:
+-- 	make the Value() return String abstract in such way that, when it's
+-- 	a date value, it should be automatically translated to a standard way
+--
+-- 	This way should be the ISO way so it's a lot easier to develop.
+--
+-- 	An equivalent technique should be applied whenever needed.
+-- Other approach might be implemeting Value() for each primitive APQ supports.
+-- Then the generic methods would use those primitives whever needed.
+-- These generic methods would have to be changed in other to receive Class wide objetcs.
+
 with Aw_Lib.String_Util;
 
 with Ada.Characters.Latin_1;
@@ -1041,7 +1053,7 @@ package body APQ is
 
 
 
-	-- Data retrieval
+	-- Data retrieval :: misc ... 
 
 
 
@@ -1052,17 +1064,302 @@ package body APQ is
 	end Column_Is_Null;
 
 
-	-- TODO:
-  
-
-	
-
-
-
-
-
 
    
+	-- Data retrieval :: value operations ...
+
+
+
+	function Boolean_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
+		function To_Boolean is new Convert_To_Boolean(Val_Type);
+		Text : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		case Engine_Of(Query) is
+			when Engine_PostgreSQL =>
+				return To_Boolean(Text);
+			when Engine_MySQL =>
+				declare
+					I : Integer;
+				begin
+					I := Integer'Value(Text);  -- May raise Constraint_Error 
+					return Val_Type(I /= 0);   -- Tinyint or Bit is TRUE when /= 0 for MySQL
+				end;
+			when Engine_Sybase =>
+				return To_Boolean(Text);
+			when Engine_Other =>
+				return To_Boolean(Text);
+		end case;
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ10,
+				Where	=> "Boolean_Value",
+				Zero	=> Column_Index_Type'Image(CX) );
+	end Boolean_Value;
+
+	
+	
+	function Integer_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
+		S : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		return Val_Type'Value(S);
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ11,
+				Where	=> "Integer_Value",
+				Zero	=> Column_Index_Type'Image(CX) );
+	end Integer_Value;
+
+	
+	
+	function Modular_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
+		S : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		return Val_Type'Value(S);
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ12,
+				Where	=> "Modular_Value",
+				Zero	=> Column_Index_Type'Image(CX) );
+	end Modular_Value;
+
+	
+	
+	function Float_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
+		S : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		return Val_Type'Value(S);
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ13,
+				Where	=> "Float_Value",
+				Zero	=> Column_Index_Type'Image(CX) );
+	end Float_Value;
+
+
+	
+	function Fixed_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
+		S : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		return Val_Type'Value(S);
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ14,
+				Where	=> "Fixed_Value",
+				Zero	=> Column_Index_Type'Image(CX) );
+			return 0.0; -- so GNAT won't complaint
+	end Fixed_Value;
+
+	
+	
+	function Decimal_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
+		S : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		return Val_Type'Value(S);
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ16,
+				Where	=> "Decimal_Value",
+				Zero	=> Column_Index_Type'Image(CX) );
+			return 0.0; -- so GNAT won't complaint
+	end Decimal_Value;
+	
+	
+	
+	function Date_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
+		function To_Date is new Convert_To_Date(Val_Type);
+	begin
+		return To_Date(Value(Root_Query_Type'Class(Query),CX));
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ17,
+				Where	=> "Date_Value",
+				Zero	=> Column_Index_Type'Image(CX) );
+		when Invalid_Format =>
+			Raise_APQ_Error_Exception(
+				E	=> Invalid_Format'Identity,
+				Code	=> APQ18,
+				Where	=> "Date_Value",
+				Zero	=> Value( Root_Query_Type'Class(Query), CX ),
+				One	=> Column_Index_Type'Image(CX) );
+	end Date_Value;
+
+
+
+	-- MySQL does not format the result: Explode it into YYYY-MM-DD HH:MM:SS format.
+	--
+	-- Acceptable formats:
+	--
+	--    "YYYY-MM-DD HH:MM:SS"   S'Length = 19
+	--     1234567890123456789
+	--    "YYYYMMDDHHMMSS"        S'Length = 14
+	--     1234567890123456789
+	--    "YYMMDDHHMMSS"          S'Length = 12
+	--
+	function MySQL_YYYYMMDDHHMMSS(S : String) return String is
+		T : String(1..S'Length) := S;
+	begin
+		case T'Length is
+			when 19 =>
+				return T;
+			when 14 =>
+				return T(1..4) & "-" & T(5..6) & "-" & T(7..8) & " "
+					& T(9..10) & ":" & T(11..12) & ":" & T(13..14);
+			when 12 =>
+				declare
+					YY : Natural;
+				begin
+					YY := Natural'Value(T(1..2));
+					if YY >= 50 then
+						YY := YY + 1900;
+					else
+						YY := YY + 2000;
+					end if;
+					declare
+						YYYY : String(1..5) := Natural'Image(YY);
+					begin
+						return YYYY(2..5) & "-" & T(3..4) & "-" & T(5..6) & " "
+							& T(7..8) & ":" & T(9..10) & ":" & T(11..12);
+					end;
+				exception
+					when others =>
+						raise Constraint_Error;
+				end;
+			when others =>
+				raise Constraint_Error;
+		end case;
+	end MySQL_YYYYMMDDHHMMSS;
+
+	--
+	-- MySQL does not format the result: Explode it into YYYY-MM-DD HH:MM:SS format.
+	--
+	-- Acceptable formats:
+	--
+	--    "HH:MM:SS"  S'Length = 8
+	--     12345678
+	--    "HHMMSS"    S'Length = 6
+	--
+	function MySQL_HHMMSS(S : String) return String is
+		T : String(1..S'Length) := S;
+	begin
+		case T'Length is
+			when 8 =>
+				return T;
+			when 6 =>
+				return T(1..2) & ":" & T(3..4) & ":" & T(5..6);
+			when others =>
+				raise Constraint_Error;
+		end case;
+	end MySQL_HHMMSS;
+
+
+
+	function Time_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
+		function To_Time is new Convert_To_Time(Val_Type);
+		Text : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		case Engine_Of(Query) is
+			when Engine_PostgreSQL =>
+				return To_Time(Text);
+			when Engine_Sybase =>
+				return To_Time(Text);
+			when Engine_MySQL =>
+				return To_Time(MySQL_HHMMSS(Text));
+			when Engine_Other =>
+				return To_Time(Text);
+		end case;
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ19,
+				Where	=> "Time_Value",
+				Zero	=> Text,
+				One	=> Column_Index_Type'Image(CX) );
+	end Time_Value;
+
+
+	
+	function Timestamp_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
+		function To_Timestamp is new Convert_To_Timestamp(Val_Type);
+		Text : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		case Engine_Of(Query) is
+			when Engine_PostgreSQL =>
+				return To_Timestamp(Text);
+			when Engine_Sybase =>
+				return To_Timestamp(Text);
+			when Engine_MySQL =>
+				return To_Timestamp(MySQL_YYYYMMDDHHMMSS(Text));
+			when Engine_Other =>
+				return To_Timestamp(Text);
+		end case;
+	exception
+		when Constraint_Error | Invalid_Format =>
+			Raise_APQ_Error_Exception(
+				E	=> Invalid_Format'Identity,
+				Code	=> APQ20,
+				Where	=> "Timestamp_Value",
+				Zero	=> Text,
+				One	=> Column_Index_Type'Image(CX) );
+	end Timestamp_Value;
+	
+	procedure Timezone_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type; TS : out Date_Type; TZ : out Zone_Type) is
+		use Ada.Strings, Ada.Strings.Fixed;
+		function To_Timestamp is new Convert_To_Timestamp(Date_Type);
+		S : String := Trim(Value(Root_Query_Type'Class(Query),CX),Both);
+	begin
+		TS := To_Timestamp(S);
+		for X in reverse S'Range loop
+			if S(X) = '-' or else S(X) = '+' then
+				if S(X..S'Last)'Length <= 3 then
+					begin
+						TZ := Zone_Type'Value(S(X..S'Last));
+						return;
+					exception
+						when others =>
+							Raise_APQ_Error_Exception(
+								E	=> Invalid_Format'Identity,
+								Code	=> APQ21,
+								Where	=> "Timezone_Value",
+								Zero	=> Column_Index_Type'Image(CX) );
+					end;
+				else
+					Raise_APQ_Error_Exception(
+						E	=> Invalid_Format'Identity,
+						Code	=> APQ22,
+						Where	=> "Timezone_Value",
+						Zero	=> Column_Index_Type'Image(CX) );
+				end if;
+			end if;
+		end loop;
+		Raise_APQ_Error_Exception(
+			E	=> Invalid_Format'Identity,
+			Code	=> APQ23,
+			Where	=> "Timezone_Value",
+			Zero	=> Column_Index_Type'Image(CX) );
+	end Timezone_Value;
+
+	
+	
+	function Bounded_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return P.Bounded_String is
+		use Ada.Strings.Bounded;
+	begin
+		return P.To_Bounded_String(Value(Root_Query_Type'Class(Query),CX));
+	end Bounded_Value;
 
 
 
@@ -1071,21 +1368,25 @@ package body APQ is
 
 
 
-   function Time_Component(TM : Ada.Calendar.Day_Duration; Unit : Time_Unit) return Natural is
-   begin
-      case Unit is
-         when Hour =>
-            return Natural(TM) / 3600;
-         when Minute =>
-            declare
-               M3600 : Natural := Natural(TM) mod 3600;
-            begin
-               return M3600 / 60;
-            end;
-         when Second =>
-            return Natural(TM) mod 60;
-      end case;
-   end Time_Component;
+
+
+
+
+	function Time_Component(TM : Ada.Calendar.Day_Duration; Unit : Time_Unit) return Natural is
+	begin
+		case Unit is
+			when Hour =>
+				return Natural(TM) / 3600;
+			when Minute =>
+				declare
+					M3600 : Natural := Natural(TM) mod 3600;
+				begin
+					return M3600 / 60;
+				end;
+			when Second =>
+				return Natural(TM) mod 60;
+		end case;
+	end Time_Component;
 
    function Time_Component(TM : Ada.Calendar.Time; Unit : Time_Unit) return Natural is
       use Ada.Calendar;
@@ -1498,299 +1799,8 @@ package body APQ is
 
 
 
-   function Boolean_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-      function To_Boolean is new Convert_To_Boolean(Val_Type);
-   begin
-      declare
-         Text : String := Value(Root_Query_Type'Class(Query),CX);
-      begin
-         case Engine_Of(Query) is
-            when Engine_PostgreSQL =>
-               return To_Boolean(Text);
-            when Engine_MySQL =>
-               declare
-                  I : Integer;
-               begin
-                  I := Integer'Value(Text);  -- May raise Constraint_Error 
-                  return Val_Type(I /= 0);   -- Tinyint or Bit is TRUE when /= 0 for MySQL
-               end;
-            when Engine_Sybase =>
-               return To_Boolean(Text);
-	    when Engine_Other =>
-		    return To_Boolean(Text);
-         end case;
-      exception
-         when Constraint_Error =>
-	       	Raise_APQ_Error_Exception(
-			 E	=> Constraint_Error'Identity,
-			 Code	=> APQ10,
-			 Where	=> "Boolean_Value",
-			 Zero	=> Column_Index_Type'Image(CX) );
-      end;
-   end Boolean_Value;
 
-   function Integer_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-      S : String := Value(Root_Query_Type'Class(Query),CX);
-   begin
-      begin
-         return Val_Type'Value(S);
-      exception
-         when Constraint_Error =>
-	       	Raise_APQ_Error_Exception(
-			 E	=> Constraint_Error'Identity,
-			 Code	=> APQ11,
-			 Where	=> "Integer_Value",
-			 Zero	=> Column_Index_Type'Image(CX) );
-      end;
-   end Integer_Value;
-
-   function Modular_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-      S : String := Value(Root_Query_Type'Class(Query),CX);
-   begin
-      begin
-         return Val_Type'Value(S);
-      exception
-         when Constraint_Error =>
-	       	Raise_APQ_Error_Exception(
-			 E	=> Constraint_Error'Identity,
-			 Code	=> APQ12,
-			 Where	=> "Modular_Value",
-			 Zero	=> Column_Index_Type'Image(CX) );
-      end;         
-   end Modular_Value;
-
-   function Float_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-      S : String := Value(Root_Query_Type'Class(Query),CX);
-   begin
-      begin
-         return Val_Type'Value(S);
-      exception
-         when Constraint_Error =>
-	       	Raise_APQ_Error_Exception(
-			 E	=> Constraint_Error'Identity,
-			 Code	=> APQ13,
-			 Where	=> "Float_Value",
-			 Zero	=> Column_Index_Type'Image(CX) );
-      end;
-   end Float_Value;
-
-   function Fixed_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-      S : String := Value(Root_Query_Type'Class(Query),CX);
-   begin
-      begin
-         return Val_Type'Value(S);
-      exception
-         when Constraint_Error =>
-	       	Raise_APQ_Error_Exception(
-			 E	=> Constraint_Error'Identity,
-			 Code	=> APQ14,
-			 Where	=> "Fixed_Value",
-			 Zero	=> Column_Index_Type'Image(CX) );
-		return 0.0; -- so GNAT won't complaint
-      end;
-   end Fixed_Value;
-
-   function Decimal_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-      S : String := Value(Root_Query_Type'Class(Query),CX);
-   begin
-      begin
-         return Val_Type'Value(S);
-      exception
-         when Constraint_Error =>
-	       	Raise_APQ_Error_Exception(
-			 E	=> Constraint_Error'Identity,
-			 Code	=> APQ16,
-			 Where	=> "Decimal_Value",
-			 Zero	=> Column_Index_Type'Image(CX) );
-		return 0.0; -- so GNAT won't complaint
-      end;
-   end Decimal_Value;
-
-   function Date_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-      function To_Date is new Convert_To_Date(Val_Type);
-   begin
-      begin
-         return To_Date(Value(Root_Query_Type'Class(Query),CX));
-      exception
-         when Constraint_Error =>
-	       	Raise_APQ_Error_Exception(
-			 E	=> Constraint_Error'Identity,
-			 Code	=> APQ17,
-			 Where	=> "Date_Value",
-			 Zero	=> Column_Index_Type'Image(CX) );
-         when Invalid_Format =>
-	       	Raise_APQ_Error_Exception(
-			 E	=> Invalid_Format'Identity,
-			 Code	=> APQ18,
-			 Where	=> "Date_Value",
-			 Zero	=> Value( Root_Query_Type'Class(Query), CX ),
-			 One	=> Column_Index_Type'Image(CX) );
-      end;
-   end Date_Value;
-
-   --
-   -- MySQL does not format the result: Explode it into YYYY-MM-DD HH:MM:SS format.
-   --
-   -- Acceptable formats:
-   --
-   --    "YYYY-MM-DD HH:MM:SS"   S'Length = 19
-   --     1234567890123456789
-   --    "YYYYMMDDHHMMSS"        S'Length = 14
-   --     1234567890123456789
-   --    "YYMMDDHHMMSS"          S'Length = 12
-   --
-   function MySQL_YYYYMMDDHHMMSS(S : String) return String is
-      T : String(1..S'Length) := S;
-   begin
-      case T'Length is
-         when 19 =>
-            return T;
-         when 14 =>
-            return T(1..4) & "-" & T(5..6) & "-" & T(7..8) & " "
-               & T(9..10) & ":" & T(11..12) & ":" & T(13..14);
-         when 12 =>
-            declare
-               YY : Natural;
-            begin
-               YY := Natural'Value(T(1..2));
-               if YY >= 50 then
-                  YY := YY + 1900;
-               else
-                  YY := YY + 2000;
-               end if;
-               declare
-                  YYYY : String(1..5) := Natural'Image(YY);
-               begin
-                  return YYYY(2..5) & "-" & T(3..4) & "-" & T(5..6) & " "
-                     & T(7..8) & ":" & T(9..10) & ":" & T(11..12);
-               end;
-            exception
-               when others =>
-                  raise Constraint_Error;
-            end;
-         when others =>
-            raise Constraint_Error;
-      end case;
-   end MySQL_YYYYMMDDHHMMSS;
-
-   --
-   -- MySQL does not format the result: Explode it into YYYY-MM-DD HH:MM:SS format.
-   --
-   -- Acceptable formats:
-   --
-   --    "HH:MM:SS"  S'Length = 8
-   --     12345678
-   --    "HHMMSS"    S'Length = 6
-   --
-   function MySQL_HHMMSS(S : String) return String is
-      T : String(1..S'Length) := S;
-   begin
-      case T'Length is
-         when 8 =>
-            return T;
-         when 6 =>
-            return T(1..2) & ":" & T(3..4) & ":" & T(5..6);
-         when others =>
-            raise Constraint_Error;
-      end case;
-   end MySQL_HHMMSS;
-
-   function Time_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-      function To_Time is new Convert_To_Time(Val_Type);
-   begin
-      declare
-         Text : String := Value(Root_Query_Type'Class(Query),CX);
-      begin
-         case Engine_Of(Query) is
-            when Engine_PostgreSQL =>
-               return To_Time(Text);
-            when Engine_Sybase =>
-               return To_Time(Text);
-            when Engine_MySQL =>
-               return To_Time(MySQL_HHMMSS(Text));
-	    when Engine_Other =>
-		    return To_Time(Text);
-         end case;
-      exception
-         when Constraint_Error =>
-	       	Raise_APQ_Error_Exception(
-			 E	=> Constraint_Error'Identity,
-			 Code	=> APQ19,
-			 Where	=> "Time_Value",
-			 Zero	=> Text,
-			 One	=> Column_Index_Type'Image(CX) );
-      end;
-   end Time_Value;
-
-   function Timestamp_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-      function To_Timestamp is new Convert_To_Timestamp(Val_Type);
-   begin
-      declare
-         Text : String := Value(Root_Query_Type'Class(Query),CX);
-      begin
-         case Engine_Of(Query) is
-            when Engine_PostgreSQL =>
-               return To_Timestamp(Text);
-            when Engine_Sybase =>
-               return To_Timestamp(Text);
-            when Engine_MySQL =>
-               return To_Timestamp(MySQL_YYYYMMDDHHMMSS(Text));
-	    when Engine_Other =>
-		    return To_Timestamp(Text);
-         end case;
-      exception
-         when Constraint_Error | Invalid_Format =>
-	       	Raise_APQ_Error_Exception(
-			 E	=> Invalid_Format'Identity,
-			 Code	=> APQ20,
-			 Where	=> "Timestamp_Value",
-			 Zero	=> Text,
-			 One	=> Column_Index_Type'Image(CX) );
-      end;
-   end Timestamp_Value;
-
-   procedure Timezone_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type; TS : out Date_Type; TZ : out Zone_Type) is
-      use Ada.Strings, Ada.Strings.Fixed;
-      function To_Timestamp is new Convert_To_Timestamp(Date_Type);
-      S : String := Trim(Value(Root_Query_Type'Class(Query),CX),Both);
-   begin
-      TS := To_Timestamp(S);
-      for X in reverse S'Range loop
-         if S(X) = '-' or else S(X) = '+' then
-            if S(X..S'Last)'Length <= 3 then
-               begin
-                  TZ := Zone_Type'Value(S(X..S'Last));
-                  return;
-               exception
-                  when others =>
-		       	Raise_APQ_Error_Exception(
-				 E	=> Invalid_Format'Identity,
-				 Code	=> APQ21,
-				 Where	=> "Timezone_Value",
-				 Zero	=> Column_Index_Type'Image(CX) );
-               end;
-            else
-	       	Raise_APQ_Error_Exception(
-			 E	=> Invalid_Format'Identity,
-			 Code	=> APQ22,
-			 Where	=> "Timezone_Value",
-			 Zero	=> Column_Index_Type'Image(CX) );
-            end if;
-         end if;
-      end loop;
-       	Raise_APQ_Error_Exception(
-		 E	=> Invalid_Format'Identity,
-		 Code	=> APQ23,
-		 Where	=> "Timezone_Value",
-		 Zero	=> Column_Index_Type'Image(CX) );
-   end Timezone_Value;
-
-   function Bounded_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return P.Bounded_String is
-      use Ada.Strings.Bounded;
-   begin
-      return P.To_Bounded_String(Value(Root_Query_Type'Class(Query),CX));
-   end Bounded_Value;
-
+   
 
    procedure Integer_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
       function Value is new Integer_Value(Val_Type);

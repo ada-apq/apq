@@ -801,6 +801,8 @@ package APQ is
 
 	-- Data retrieval :: misc ...
 	
+
+	
 	generic
 	type Ind_Type is new Boolean;
 	function Column_Is_Null(Q : Root_Query_Type'Class; CX : Column_Index_Type) return Ind_Type;
@@ -808,9 +810,9 @@ package APQ is
 
 
 
-
 	-- Data retrieval :: value operations ...
-	--
+
+
 
 	generic
 	type Val_Type is new Boolean;
@@ -861,29 +863,6 @@ package APQ is
 
 	-- Data retrieval :: fetch operations ...
 	-- They are the same as the value operations, but with null support
-	
-	
-	generic
-	type Ind_Type is new Boolean;
-	procedure Char_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Indicator : out Ind_Type);
-
-	generic
-	type Ind_Type is new Boolean;
-	procedure Unbounded_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Ada.Strings.Unbounded.Unbounded_String; Indicator : out Ind_Type);
-
-
-	generic
-	type Ind_Type is new Boolean;
-	procedure Varchar_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Last : out Natural; Indicator : out Ind_Type);
-
-	generic
-	type Ind_Type is new Boolean;
-	procedure Bitstring_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out APQ_Bitstring; Last : out Natural; Indicator : out Ind_Type);
-
-	generic
-	type Ind is new Boolean;
-	with package P is new Ada.Strings.Bounded.Generic_Bounded_Length(<>);
-	procedure Bounded_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out P.Bounded_String; Indicator : out Ind);
 
 
 	generic
@@ -937,6 +916,26 @@ package APQ is
 	type Ind_Type is new Boolean;
 	procedure Timezone_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Date_Type; Z : out Zone_Type; Indicator : out Ind_Type);
 
+	generic
+	type Ind_Type is new Boolean;
+	procedure Bitstring_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out APQ_Bitstring; Last : out Natural; Indicator : out Ind_Type);
+
+	generic
+	type Ind is new Boolean;
+	with package P is new Ada.Strings.Bounded.Generic_Bounded_Length(<>);
+	procedure Bounded_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out P.Bounded_String; Indicator : out Ind);
+
+	generic
+	type Ind_Type is new Boolean;
+	procedure Unbounded_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Ada.Strings.Unbounded.Unbounded_String; Indicator : out Ind_Type);
+
+	generic
+	type Ind_Type is new Boolean;
+	procedure Char_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Indicator : out Ind_Type);
+
+	generic
+	type Ind_Type is new Boolean;
+	procedure Varchar_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Last : out Natural; Indicator : out Ind_Type);
 
 
 	-- Conversion :: anything to string (APQ types) ...
