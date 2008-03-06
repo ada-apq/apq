@@ -1368,6 +1368,217 @@ package body APQ is
 
 
 
+   procedure Integer_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+      function Value is new Integer_Value(Val_Type);
+   begin
+      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         V := Value(Root_Query_Type'Class(Query),CX);
+      else
+         V := Val_Type'First;
+      end if;
+   end Integer_Fetch;
+
+   procedure Modular_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+      function Value is new Modular_Value(Val_Type);
+   begin
+      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         V := Value(Root_Query_Type'Class(Query),CX);
+      else
+         V := Val_Type'First;
+      end if;
+   end Modular_Fetch;
+
+   procedure Float_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+      function Value is new Float_Value(Val_Type);
+   begin
+      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         V := Value(Root_Query_Type'Class(Query),CX);
+      else
+         V := Val_Type'First;
+      end if;
+   end Float_Fetch;
+
+   procedure Fixed_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+      function Value is new Fixed_Value(Val_Type);
+   begin
+      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         V := Value(Root_Query_Type'Class(Query),CX);
+      else
+         V := Val_Type'First;
+      end if;
+   end Fixed_Fetch;
+
+   procedure Decimal_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+      function Value is new Decimal_Value(Val_Type);
+   begin
+      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         V := Value(Root_Query_Type'Class(Query),CX);
+      else
+         V := Val_Type'First;
+      end if;
+   end Decimal_Fetch;
+
+   procedure Boolean_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+      function Value is new Boolean_Value(Val_Type);
+   begin
+      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         V := Value(Root_Query_Type'Class(Query),CX);
+      else
+         V := Val_Type'First;
+      end if;
+   end Boolean_Fetch;
+
+   procedure Date_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+      function Value is new Date_Value(Val_Type);
+   begin
+      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         V := Value(Root_Query_Type'Class(Query),CX);
+      end if;
+   end Date_Fetch;
+
+   procedure Time_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+      function Value is new Time_Value(Val_Type);
+   begin
+      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         V := Value(Root_Query_Type'Class(Query),CX);
+      else
+         V := Val_Type'First;
+      end if;
+   end Time_Fetch;
+
+   procedure Timestamp_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+      function Value is new Timestamp_Value(Val_Type);
+   begin
+      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         V := Value(Root_Query_Type'Class(Query),CX);
+      end if;
+   end Timestamp_Fetch;
+
+   procedure Timezone_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Date_Type; Z : out Zone_Type; Indicator : out Ind_Type) is
+      procedure Value is new Timezone_Value(Date_Type,Zone_Type);
+   begin
+      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         Value(Root_Query_Type'Class(Query),CX,V,Z);   -- Get Timestamp and Timezone
+      else
+         Z := Zone_Type'First;
+      end if;
+   end Timezone_Fetch;
+
+   procedure Varchar_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Last : out Natural; Indicator : out Ind_Type) is
+   begin
+      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         declare
+            S : String := Value(Root_Query_Type'Class(Query),CX);
+         begin
+            if S'Length > V'Length then
+       		Raise_APQ_Error_Exception(
+			 E	=> Small_Buffer'Identity,
+			 Code	=> APQ24,
+			 Where	=> "Varchar_Fetch",
+			 Zero	=> Column_Index_Type'Image(CX) );
+            end if;
+            Last := V'First + S'Length - 1;
+            V(V'First..Last) := S;
+         end;
+      end if;
+   end Varchar_Fetch;
+
+   procedure Char_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Indicator : out Ind_Type) is
+   begin
+      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         declare
+            S :      String := Value(Root_Query_Type'Class(Query),CX);
+            Last :   Natural := V'First + S'Length - 1;
+         begin
+            if S'Length > V'Length then
+       		Raise_APQ_Error_Exception(
+			 E	=> Small_Buffer'Identity,
+			 Code	=> APQ25,
+			 Where	=> "Char_Fetch",
+			 Zero	=> Column_Index_Type'Image(CX) );
+            end if;
+            if S'Length > 0 then
+               V(V'First..Last) := S;
+               if Last < V'Last then
+                  V(Last+1..V'Last) := ( others => ' ' );
+               end if;
+            else
+               V := ( others => ' ' );
+            end if;
+         end;
+      end if;
+   end Char_Fetch;
+
+   procedure Unbounded_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Ada.Strings.Unbounded.Unbounded_String; Indicator : out Ind_Type) is
+      use Ada.Strings.Unbounded;
+   begin
+      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         V := To_Unbounded_String(Value(Root_Query_Type'Class(Query),CX));
+      else
+         V := Null_Unbounded_String;
+      end if;
+   end Unbounded_Fetch;
+
+   procedure Bounded_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out P.Bounded_String; Indicator : out Ind) is
+      use Ada.Strings, P;
+   begin
+      Indicator := Ind( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         declare
+            S : String := Value(Root_Query_Type'Class(Query),CX);
+         begin
+            if S'Length > Max_Length then
+       		Raise_APQ_Error_Exception(
+			 E	=> Small_Buffer'Identity,
+			 Code	=> APQ26,
+			 Where	=> "Bounded_Fetch",
+			 Zero	=> Column_Index_Type'Image(CX) );
+            else
+               V := To_Bounded_String(S,Error);
+            end if;
+         end;
+      else
+         V := Null_Bounded_String;
+      end if;
+   end Bounded_Fetch;
+
+   procedure Bitstring_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out APQ_Bitstring; Last : out Natural; Indicator : out Ind_Type) is
+   begin
+      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+      if not Indicator then
+         declare
+            B : APQ_Bitstring := Value(Root_Query_Type'Class(Query),CX);
+         begin
+            if B'Length > V'Length then
+       		Raise_APQ_Error_Exception(
+			 E	=> Small_Buffer'Identity,
+			 Code	=> APQ27,
+			 Where	=> "Bitstring_Fetch",
+			 Zero	=> Column_Index_Type'Image(CX) );
+            end if;
+            Last := V'First + B'Length - 1;
+            V(V'First..Last) := B;
+         end;
+      end if;
+   end Bitstring_Fetch;
+
+
+
+
+
 
 
 
@@ -1802,212 +2013,6 @@ package body APQ is
 
    
 
-   procedure Integer_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Integer_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      else
-         V := Val_Type'First;
-      end if;
-   end Integer_Fetch;
-
-   procedure Modular_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Modular_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      else
-         V := Val_Type'First;
-      end if;
-   end Modular_Fetch;
-
-   procedure Float_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Float_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      else
-         V := Val_Type'First;
-      end if;
-   end Float_Fetch;
-
-   procedure Fixed_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Fixed_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      else
-         V := Val_Type'First;
-      end if;
-   end Fixed_Fetch;
-
-   procedure Decimal_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Decimal_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      else
-         V := Val_Type'First;
-      end if;
-   end Decimal_Fetch;
-
-   procedure Boolean_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Boolean_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      else
-         V := Val_Type'First;
-      end if;
-   end Boolean_Fetch;
-
-   procedure Date_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Date_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      end if;
-   end Date_Fetch;
-
-   procedure Time_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Time_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      else
-         V := Val_Type'First;
-      end if;
-   end Time_Fetch;
-
-   procedure Timestamp_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Timestamp_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      end if;
-   end Timestamp_Fetch;
-
-   procedure Timezone_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Date_Type; Z : out Zone_Type; Indicator : out Ind_Type) is
-      procedure Value is new Timezone_Value(Date_Type,Zone_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         Value(Root_Query_Type'Class(Query),CX,V,Z);   -- Get Timestamp and Timezone
-      else
-         Z := Zone_Type'First;
-      end if;
-   end Timezone_Fetch;
-
-   procedure Varchar_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Last : out Natural; Indicator : out Ind_Type) is
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         declare
-            S : String := Value(Root_Query_Type'Class(Query),CX);
-         begin
-            if S'Length > V'Length then
-       		Raise_APQ_Error_Exception(
-			 E	=> Small_Buffer'Identity,
-			 Code	=> APQ24,
-			 Where	=> "Varchar_Fetch",
-			 Zero	=> Column_Index_Type'Image(CX) );
-            end if;
-            Last := V'First + S'Length - 1;
-            V(V'First..Last) := S;
-         end;
-      end if;
-   end Varchar_Fetch;
-
-   procedure Char_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Indicator : out Ind_Type) is
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         declare
-            S :      String := Value(Root_Query_Type'Class(Query),CX);
-            Last :   Natural := V'First + S'Length - 1;
-         begin
-            if S'Length > V'Length then
-       		Raise_APQ_Error_Exception(
-			 E	=> Small_Buffer'Identity,
-			 Code	=> APQ25,
-			 Where	=> "Char_Fetch",
-			 Zero	=> Column_Index_Type'Image(CX) );
-            end if;
-            if S'Length > 0 then
-               V(V'First..Last) := S;
-               if Last < V'Last then
-                  V(Last+1..V'Last) := ( others => ' ' );
-               end if;
-            else
-               V := ( others => ' ' );
-            end if;
-         end;
-      end if;
-   end Char_Fetch;
-
-   procedure Unbounded_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Ada.Strings.Unbounded.Unbounded_String; Indicator : out Ind_Type) is
-      use Ada.Strings.Unbounded;
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := To_Unbounded_String(Value(Root_Query_Type'Class(Query),CX));
-      else
-         V := Null_Unbounded_String;
-      end if;
-   end Unbounded_Fetch;
-
-   procedure Bounded_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out P.Bounded_String; Indicator : out Ind) is
-      use Ada.Strings, P;
-   begin
-      Indicator := Ind( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         declare
-            S : String := Value(Root_Query_Type'Class(Query),CX);
-         begin
-            if S'Length > Max_Length then
-       		Raise_APQ_Error_Exception(
-			 E	=> Small_Buffer'Identity,
-			 Code	=> APQ26,
-			 Where	=> "Bounded_Fetch",
-			 Zero	=> Column_Index_Type'Image(CX) );
-            else
-               V := To_Bounded_String(S,Error);
-            end if;
-         end;
-      else
-         V := Null_Bounded_String;
-      end if;
-   end Bounded_Fetch;
-
-   procedure Bitstring_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out APQ_Bitstring; Last : out Natural; Indicator : out Ind_Type) is
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         declare
-            B : APQ_Bitstring := Value(Root_Query_Type'Class(Query),CX);
-         begin
-            if B'Length > V'Length then
-       		Raise_APQ_Error_Exception(
-			 E	=> Small_Buffer'Identity,
-			 Code	=> APQ27,
-			 Where	=> "Bitstring_Fetch",
-			 Zero	=> Column_Index_Type'Image(CX) );
-            end if;
-            Last := V'First + B'Length - 1;
-            V(V'First..Last) := B;
-         end;
-      end if;
-   end Bitstring_Fetch;
 
 -- GNAT 3.14p falls over and dies compiling this one. I have yet
 -- to find a work-around for it.
