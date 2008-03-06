@@ -42,6 +42,21 @@
 -------------------------------------------------------------------------------
 
 
+
+-- TODO: move all the database dependent code to the database driver!
+-- TIP for Time and Date values:
+-- 	make the Value() return String abstract in such way that, when it's
+-- 	a date value, it should be automatically translated to a standard way
+--
+-- 	This way should be the ISO way so it's a lot easier to develop.
+--
+-- 	An equivalent technique should be applied whenever needed.
+-- Other approach might be implemeting Value() for each primitive APQ supports.
+-- Then the generic methods would use those primitives whever needed.
+-- These generic methods would have to be changed in other to receive Class wide objetcs.
+
+
+
 with Ada.Calendar;
 with Ada.Exceptions;	use Ada.Exceptions;
 with Ada.Text_IO;
@@ -938,26 +953,30 @@ package APQ is
 	procedure Varchar_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Last : out Natural; Indicator : out Ind_Type);
 
 
-	-- Conversion :: anything to string (APQ types) ...
+	-- Conversion :: anything to string (APQ primitives) ...
 
 
 	function To_String(V : APQ_Boolean) return String;
+
 	function To_String(V : APQ_Date) return String;
+
 	function To_String(V : APQ_Time) return String;
 
 	function To_String(V : APQ_Timestamp) return String;
-	function To_String(V : APQ_Timestamp; TZ : APQ_Timezone) return String;
+
 	function To_String(V : APQ_Timezone) return String;
+
+	function To_String(V : APQ_Timestamp; TZ : APQ_Timezone) return String;
 
 	function To_String(V : APQ_Bitstring) return String;
 
 
-	-- Conversion :: anything to string (generic types) ...
+	-- Conversion :: anything to string (generic for derived types) ...
 
 	generic
 	type Val_Type is new Boolean;
 	function Boolean_String(V : Val_Type) return String;
-
+	
 	generic
 	type Val_Type is range <>;
 	function Integer_String(V : Val_Type) return String;
@@ -1005,15 +1024,18 @@ package APQ is
 
 	generic
 	type Val_Type is new Ada.Calendar.Time;
-	function Convert_To_Date(S : String) return Val_Type; -- YYYY-MM-DD format
+	function Convert_To_Date(S : String) return Val_Type;
+	-- S must be YYYY-MM-DD format
 
 	generic
 	type Val_Type is new Ada.Calendar.Day_Duration;
-	function Convert_To_Time(S : String) return Val_Type; -- HH:MM:SS format
+	function Convert_To_Time(S : String) return Val_Type;
+	-- S must be HH:MM:SS[.FFF] format
 
 	generic
 	type Val_Type is new Ada.Calendar.Time;
-	function Convert_To_Timestamp(S : String) return Val_Type;  -- YYYY-MM-DD HH:MM:SS format
+	function Convert_To_Timestamp(S : String) return Val_Type;
+	-- S must be YYYY-MM-DD HH:MM:SS[.FFF] format
 
 	generic
 	type Date_Type is new Ada.Calendar.Time;
@@ -1021,18 +1043,17 @@ package APQ is
 	type Result_Type is new Ada.Calendar.Time;
 	function Convert_Date_and_Time(DT : Date_Type; TM : Time_Type) return Result_Type;
 
-	------------------------------
-	-- MISC.
-	------------------------------
 
-	-- The Generic_Command_Oid causes GNAT 3.14p to fall over and die.
-	--
-	-- It isn't really required, since Command_Oid(Query) can be used instead,
-	-- and the return value converted to whatever Oid_Type is.
+	-- Misc ...
+
 
 	generic
 	type Oid_Type is new Row_ID_Type;
 	function Generic_Command_Oid(Query : Root_Query_Type'Class) return Oid_Type;
+	-- The Generic_Command_Oid causes GNAT 3.14p to fall over and die.
+	--
+	-- It isn't really required, since Command_Oid(Query) can be used instead,
+	-- and the return value converted to whatever Oid_Type is.
 
 	generic
 	type Date_Type is new Ada.Calendar.Time;

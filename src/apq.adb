@@ -31,17 +31,6 @@
 ------------------------------------------------------------------------------
 
 
--- TODO: move all the database dependent code to the database driver!
--- TIP for Time and Date values:
--- 	make the Value() return String abstract in such way that, when it's
--- 	a date value, it should be automatically translated to a standard way
---
--- 	This way should be the ISO way so it's a lot easier to develop.
---
--- 	An equivalent technique should be applied whenever needed.
--- Other approach might be implemeting Value() for each primitive APQ supports.
--- Then the generic methods would use those primitives whever needed.
--- These generic methods would have to be changed in other to receive Class wide objetcs.
 
 with Aw_Lib.String_Util;
 
@@ -1364,225 +1353,727 @@ package body APQ is
 
 
 
+	-- Data retrieval :: fetch operations ...
+	-- They are the same as the value operations, but with null support
+
+
+
+	procedure Boolean_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+		function Value is new Boolean_Value(Val_Type);
+	begin
+		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			V := Value(Root_Query_Type'Class(Query),CX);
+		else
+			V := Val_Type'First;
+		end if;
+	end Boolean_Fetch;
+
+
+	
+	procedure Integer_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+		function Value is new Integer_Value(Val_Type);
+	begin
+		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			V := Value(Root_Query_Type'Class(Query),CX);
+		else
+			V := Val_Type'First;
+		end if;
+	end Integer_Fetch;
+	
+	
+	
+	procedure Modular_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+		function Value is new Modular_Value(Val_Type);
+	begin
+		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			V := Value(Root_Query_Type'Class(Query),CX);
+		else
+			V := Val_Type'First;
+		end if;
+	end Modular_Fetch;
+	
+	
+	
+	procedure Float_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+		function Value is new Float_Value(Val_Type);
+	begin
+		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			V := Value(Root_Query_Type'Class(Query),CX);
+		else
+			V := Val_Type'First;
+		end if;
+	end Float_Fetch;
+	
+
+	
+	procedure Fixed_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+		function Value is new Fixed_Value(Val_Type);
+	begin
+		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			V := Value(Root_Query_Type'Class(Query),CX);
+		else
+			V := Val_Type'First;
+		end if;
+	end Fixed_Fetch;
+	
+	
+
+	procedure Decimal_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+		function Value is new Decimal_Value(Val_Type);
+	begin
+		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			V := Value(Root_Query_Type'Class(Query),CX);
+		else
+			V := Val_Type'First;
+		end if;
+	end Decimal_Fetch;
+	
+	
+	
+	procedure Date_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+		function Value is new Date_Value(Val_Type);
+	begin
+		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			V := Value(Root_Query_Type'Class(Query),CX);
+		end if;
+	end Date_Fetch;
+
+	
+	
+	procedure Time_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+		function Value is new Time_Value(Val_Type);
+	begin
+		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			V := Value(Root_Query_Type'Class(Query),CX);
+		else
+			V := Val_Type'First;
+		end if;
+	end Time_Fetch;
+	
+	
+	
+	procedure Timestamp_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
+		function Value is new Timestamp_Value(Val_Type);
+	begin
+		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			V := Value(Root_Query_Type'Class(Query),CX);
+		end if;
+	end Timestamp_Fetch;
+	
+	
+	
+	procedure Timezone_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Date_Type; Z : out Zone_Type; Indicator : out Ind_Type) is
+		procedure Value is new Timezone_Value(Date_Type,Zone_Type);
+	begin
+		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			Value(Root_Query_Type'Class(Query),CX,V,Z);   -- Get Timestamp and Timezone
+		else
+			Z := Zone_Type'First;
+		end if;
+	end Timezone_Fetch;
+
+
+
+	procedure Bitstring_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out APQ_Bitstring; Last : out Natural; Indicator : out Ind_Type) is
+	begin
+		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			declare
+				B : APQ_Bitstring := Value(Root_Query_Type'Class(Query),CX);
+			begin
+				if B'Length > V'Length then
+					Raise_APQ_Error_Exception(
+						E	=> Small_Buffer'Identity,
+						Code	=> APQ27,
+						Where	=> "Bitstring_Fetch",
+						Zero	=> Column_Index_Type'Image(CX) );
+				end if;
+				Last := V'First + B'Length - 1;
+				V(V'First..Last) := B;
+			end;
+		end if;
+	end Bitstring_Fetch;
+	
+
+	
+	procedure Bounded_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out P.Bounded_String; Indicator : out Ind) is
+		use Ada.Strings, P;
+	begin
+		Indicator := Ind( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			declare
+				S : String := Value(Root_Query_Type'Class(Query),CX);
+			begin
+				if S'Length > Max_Length then
+					Raise_APQ_Error_Exception(
+						E	=> Small_Buffer'Identity,
+						Code	=> APQ26,
+						Where	=> "Bounded_Fetch",
+						Zero	=> Column_Index_Type'Image(CX) );
+				else
+					V := To_Bounded_String(S,Error);
+				end if;
+			end;
+		else
+			V := Null_Bounded_String;
+		end if;
+	end Bounded_Fetch;
+
+	
+	
+	procedure Unbounded_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Ada.Strings.Unbounded.Unbounded_String; Indicator : out Ind_Type) is
+		use Ada.Strings.Unbounded;
+	begin
+		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			V := To_Unbounded_String(Value(Root_Query_Type'Class(Query),CX));
+		else
+			V := Null_Unbounded_String;
+		end if;
+	end Unbounded_Fetch;
+	
+
+	
+	procedure Char_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Indicator : out Ind_Type) is
+	begin
+		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			declare
+				S :      String := Value(Root_Query_Type'Class(Query),CX);
+				Last :   Natural := V'First + S'Length - 1;
+			begin
+				if S'Length > V'Length then
+					Raise_APQ_Error_Exception(
+						E	=> Small_Buffer'Identity,
+						Code	=> APQ25,
+						Where	=> "Char_Fetch",
+						Zero	=> Column_Index_Type'Image(CX) );
+				end if;
+				if S'Length > 0 then
+					V(V'First..Last) := S;
+					if Last < V'Last then
+						V(Last+1..V'Last) := ( others => ' ' );
+					end if;
+				else
+					V := ( others => ' ' );
+				end if;
+			end;
+		end if;
+	end Char_Fetch;
+
+
+
+	procedure Varchar_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Last : out Natural; Indicator : out Ind_Type) is
+	begin
+		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
+		if not Indicator then
+			declare
+				S : String := Value(Root_Query_Type'Class(Query),CX);
+			begin
+				if S'Length > V'Length then
+					Raise_APQ_Error_Exception(
+						E	=> Small_Buffer'Identity,
+						Code	=> APQ24,
+						Where	=> "Varchar_Fetch",
+						Zero	=> Column_Index_Type'Image(CX) );
+				end if;
+				Last := V'First + S'Length - 1;
+				V(V'First..Last) := S;
+			end;
+		end if;
+	end Varchar_Fetch;
 
 
 
 
-   procedure Integer_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Integer_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      else
-         V := Val_Type'First;
-      end if;
-   end Integer_Fetch;
 
-   procedure Modular_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Modular_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      else
-         V := Val_Type'First;
-      end if;
-   end Modular_Fetch;
+	-- Conversion :: anything to string (APQ primitives) ...
 
-   procedure Float_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Float_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      else
-         V := Val_Type'First;
-      end if;
-   end Float_Fetch;
-
-   procedure Fixed_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Fixed_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      else
-         V := Val_Type'First;
-      end if;
-   end Fixed_Fetch;
-
-   procedure Decimal_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Decimal_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      else
-         V := Val_Type'First;
-      end if;
-   end Decimal_Fetch;
-
-   procedure Boolean_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Boolean_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      else
-         V := Val_Type'First;
-      end if;
-   end Boolean_Fetch;
-
-   procedure Date_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Date_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      end if;
-   end Date_Fetch;
-
-   procedure Time_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Time_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      else
-         V := Val_Type'First;
-      end if;
-   end Time_Fetch;
-
-   procedure Timestamp_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
-      function Value is new Timestamp_Value(Val_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := Value(Root_Query_Type'Class(Query),CX);
-      end if;
-   end Timestamp_Fetch;
-
-   procedure Timezone_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Date_Type; Z : out Zone_Type; Indicator : out Ind_Type) is
-      procedure Value is new Timezone_Value(Date_Type,Zone_Type);
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         Value(Root_Query_Type'Class(Query),CX,V,Z);   -- Get Timestamp and Timezone
-      else
-         Z := Zone_Type'First;
-      end if;
-   end Timezone_Fetch;
-
-   procedure Varchar_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Last : out Natural; Indicator : out Ind_Type) is
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         declare
-            S : String := Value(Root_Query_Type'Class(Query),CX);
-         begin
-            if S'Length > V'Length then
-       		Raise_APQ_Error_Exception(
-			 E	=> Small_Buffer'Identity,
-			 Code	=> APQ24,
-			 Where	=> "Varchar_Fetch",
-			 Zero	=> Column_Index_Type'Image(CX) );
-            end if;
-            Last := V'First + S'Length - 1;
-            V(V'First..Last) := S;
-         end;
-      end if;
-   end Varchar_Fetch;
-
-   procedure Char_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Indicator : out Ind_Type) is
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         declare
-            S :      String := Value(Root_Query_Type'Class(Query),CX);
-            Last :   Natural := V'First + S'Length - 1;
-         begin
-            if S'Length > V'Length then
-       		Raise_APQ_Error_Exception(
-			 E	=> Small_Buffer'Identity,
-			 Code	=> APQ25,
-			 Where	=> "Char_Fetch",
-			 Zero	=> Column_Index_Type'Image(CX) );
-            end if;
-            if S'Length > 0 then
-               V(V'First..Last) := S;
-               if Last < V'Last then
-                  V(Last+1..V'Last) := ( others => ' ' );
-               end if;
-            else
-               V := ( others => ' ' );
-            end if;
-         end;
-      end if;
-   end Char_Fetch;
-
-   procedure Unbounded_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Ada.Strings.Unbounded.Unbounded_String; Indicator : out Ind_Type) is
-      use Ada.Strings.Unbounded;
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         V := To_Unbounded_String(Value(Root_Query_Type'Class(Query),CX));
-      else
-         V := Null_Unbounded_String;
-      end if;
-   end Unbounded_Fetch;
-
-   procedure Bounded_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out P.Bounded_String; Indicator : out Ind) is
-      use Ada.Strings, P;
-   begin
-      Indicator := Ind( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         declare
-            S : String := Value(Root_Query_Type'Class(Query),CX);
-         begin
-            if S'Length > Max_Length then
-       		Raise_APQ_Error_Exception(
-			 E	=> Small_Buffer'Identity,
-			 Code	=> APQ26,
-			 Where	=> "Bounded_Fetch",
-			 Zero	=> Column_Index_Type'Image(CX) );
-            else
-               V := To_Bounded_String(S,Error);
-            end if;
-         end;
-      else
-         V := Null_Bounded_String;
-      end if;
-   end Bounded_Fetch;
-
-   procedure Bitstring_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out APQ_Bitstring; Last : out Natural; Indicator : out Ind_Type) is
-   begin
-      Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-      if not Indicator then
-         declare
-            B : APQ_Bitstring := Value(Root_Query_Type'Class(Query),CX);
-         begin
-            if B'Length > V'Length then
-       		Raise_APQ_Error_Exception(
-			 E	=> Small_Buffer'Identity,
-			 Code	=> APQ27,
-			 Where	=> "Bitstring_Fetch",
-			 Zero	=> Column_Index_Type'Image(CX) );
-            end if;
-            Last := V'First + B'Length - 1;
-            V(V'First..Last) := B;
-         end;
-      end if;
-   end Bitstring_Fetch;
+	
+	
+	function To_String(V : APQ_Boolean) return String is
+	begin
+		if V then
+			return "TRUE";
+		else
+			return "FALSE";
+		end if;
+	end To_String;
+	
+	
+	
+	function To_String(V : APQ_Date) return String is
+		use Ada.Calendar;
+		package INTIO2 is new Ada.Text_IO.Integer_IO(Integer);
+		YY :           Integer        := Integer(Year(V));
+		MM :           Integer        := Integer(Month(V));
+		DD :           Integer        := Integer(Day(V));
+		YYYY_MM_DD :   String(1..10)  := "YYYY-MM-DD";
+	begin
+		INTIO2.Put(To => YYYY_MM_DD(1..4), Item => YY, Base => 10);
+		INTIO2.Put(To => YYYY_MM_DD(6..7), Item => MM, Base => 10);
+		INTIO2.Put(To => YYYY_MM_DD(9..10), Item => DD, Base => 10);
+		return Blanks_To_Zero(YYYY_MM_DD);
+	end To_String;
+	
+	
+	
+	function To_String(V : APQ_Time) return String is
+		use Ada.Calendar;
+		package INTIO3 is new Ada.Text_IO.Integer_IO(Integer);
+		function Hour is new Generic_Hour(APQ_Time);
+		function Minute is new Generic_Minute(APQ_Time);
+		function Second is new Generic_Second(APQ_Time);
+		HH :        Integer        := Integer(Hour(V));
+		MM :        Integer        := Integer(Minute(V));
+		SS :        Integer        := Integer(Second(V));
+		HH_MM_SS :  String(1..8)   := "HH:MM:SS";
+	begin
+		INTIO3.Put(To => HH_MM_SS(1..2), Item => HH, Base => 10);
+		INTIO3.Put(To => HH_MM_SS(4..5), Item => MM, Base => 10);
+		INTIO3.Put(To => HH_MM_SS(7..8), Item => SS, Base => 10);
+		return Blanks_To_Zero(HH_MM_SS);
+	end To_String;
+	
+	
+	
+	function To_String(V : APQ_Timestamp) return String is
+		function Time_of_Day is new Generic_Time_of_Day(APQ_Timestamp,APQ_Time);
+		DS : String := To_String(APQ_Date(V));
+		ST : String := To_String(Time_of_Day(V));
+	begin
+		return DS & " " & ST;
+	end To_String;
+	
+	
+	
+	function To_String(V : APQ_Timezone) return String is
+		package ZONEIO is new Ada.Text_IO.Integer_IO(APQ_Timezone);
+		ZS : String(1..3);
+	begin
+		ZONEIO.Put(To => ZS, Item => V, Base => 10);
+		if ZS(1) = ' ' then
+			ZS(1) := ZS(2);
+			ZS(2) := '0';
+		end if;
+		return ZS;
+	end To_String;
+	
+	
+	
+	function To_String(V : APQ_Timestamp; TZ : APQ_Timezone) return String is
+		ST : String := To_String(V);
+		ZS : String := To_String(TZ);
+	begin
+		return ST & ZS;
+	end To_String;
+	
+	
+	
+	function To_String(V : APQ_Bitstring) return String is
+		S : String(V'Range);
+	begin
+		for X in V'Range loop
+			if V(X) then
+				S(X) := '1';
+			else
+				S(X) := '0';
+			end if;
+		end loop;
+		return S;
+	end To_String;
 
 
 
+	-- Conversion :: anything to string (generic for derived types) ...
+
+
+	
+	function Boolean_String(V : Val_Type) return String is
+	begin
+		return To_String(APQ_Boolean(V));
+	end Boolean_String;
+	
+	
+	
+	function Modular_String(V : Val_Type) return String is
+		use Ada.Strings.Fixed, Ada.Strings;
+		package MODIO is new Ada.Text_IO.Modular_IO(Val_Type);
+		S : String(1..40);
+	begin
+		MODIO.Put(To => S, Item => V, Base => 10);
+		return Trim(S,Both);
+	end Modular_String;
+	
+	
+	
+	function Integer_String(V : Val_Type) return String is
+		use Ada.Strings.Fixed, Ada.Strings;
+		package INTIO1 is new Ada.Text_IO.Integer_IO(Val_Type);
+		S : String(1..40);
+	begin
+		INTIO1.Put(To => S, Item => V, Base => 10);
+		return Trim(S,Both);
+	end Integer_String;
+	
+	
+	
+	function Float_String(V : Val_Type) return String is
+		use Ada.Strings.Fixed, Ada.Strings;
+		package FLTIO is new Ada.Text_IO.Float_IO(Val_Type);
+		S : String(1..50);
+	begin
+		FLTIO.Put(To => S, Item => V, Exp => 3);
+		return Trim(S,Both);
+	end Float_String;
+	
+	
+	
+	function Fixed_String(V : Val_Type) return String is
+		use Ada.Strings.Fixed, Ada.Strings;
+		package FXTIO is new Ada.Text_IO.Fixed_IO(Val_Type);
+		S : String(1..50);
+	begin
+		FXTIO.Put(To => S, Item => V, Exp => 3);
+		return Trim(S,Both);
+	end Fixed_String;
+	
+	
+	
+	function Decimal_String(V : Val_Type) return String is
+		use Ada.Strings.Fixed, Ada.Strings;
+		package DECIO is new Ada.Text_IO.Decimal_IO(Val_Type);
+		S : String(1..50);
+	begin
+		DECIO.Put(To => S, Item => V);
+		return Trim(S,Both);
+	end Decimal_String;   
+
+
+	
+	function Date_String(V : Val_Type) return String is
+	begin
+		return To_String(APQ_Date(V));
+	end Date_String;
+	
+	
+	
+	function Time_String(V : Val_Type) return String is
+	begin
+		return To_String(APQ_Time(V));
+	end Time_String;
+
+
+	
+	function Timestamp_String(V : Val_Type) return String is
+	begin
+		return To_String(APQ_Timestamp(V));
+	end Timestamp_String;
+	
+	
+	
+	function Timezone_String(V : Val_Type) return String is
+	begin
+		return To_String(APQ_Timezone(V));
+	end Timezone_String;
+	
+
+
+	-- Conversion :: anything from string ...
+
+
+
+	function Convert_To_Boolean(S : String) return Val_Type is
+		use Ada.Characters.Handling, Ada.Strings, Ada.Strings.Fixed;
+		UC : String := To_Upper(Trim(S,Both));
+	begin
+		if UC = "FALSE" then
+			return False;
+		elsif UC = "TRUE" then
+			return True;
+		end if;
+
+		if UC'Length = 1 then
+			if UC = "T" then
+				return True;
+			elsif UC = "F" then
+				return False;
+			end if;
+		end if;
+		
+		Raise_APQ_Error_Exception(
+			E	=> Invalid_Format'Identity,
+			Code	=> APQ07,
+			Where	=> "Convert_To_Boolean",
+			Zero	=> S );
+	end Convert_To_Boolean;
+
+
+
+	function Convert_To_Date(S : String) return Val_Type is
+		-- S must be YYYY-MM-DD format
+		use Ada.Strings, Ada.Strings.Fixed, Ada.Calendar;
+		T : String := Trim(S,Both);
+		Hyphen_X1 :    Positive := T'Last + 1;
+		Hyphen_X2 :    Positive := T'Last + 1;
+		Both_Found :   Boolean := False;
+	begin
+		
+		
+		for X in T'Range loop
+			if T(X) = '-' or T(X) = '/' then
+				Hyphen_X1 := X;
+				if X < T'Last then
+					for Y in X+1..T'Last loop
+						if T(Y) = '-' or T(Y) = '/' then
+							Hyphen_X2 := Y;
+							Both_Found := True;
+						end if;
+					end loop;
+				end if;
+				exit;
+			end if;
+		end loop;
+		
+		if not Both_Found then
+			Raise_APQ_Error_Exception(
+				E	=> Invalid_Format'Identity,
+				Code	=> APQ03,
+				Where	=> "Convert_To_Date",
+				Zero	=> S );
+		end if;
+		
+
+		begin
+			declare
+				Year :   Year_Number    := Year_Number'Value(T(1..Hyphen_X1-1));
+				Month :  Month_Number   := Month_Number'Value(T(Hyphen_X1+1..Hyphen_X2-1));
+				Day :    Day_Number     := Day_Number'Value(T(Hyphen_X2+1..T'Last));
+				R :      Ada.Calendar.Time := Ada.Calendar.Time_Of(Year,Month,Day);
+			begin
+				return Val_Type(R);
+			end;
+		exception
+			when others =>
+					Raise_APQ_Error_Exception(
+						E	=> Invalid_Format'Identity,
+						Code	=> APQ04,
+						Where	=> "Convert_To_Date",
+						Zero	=> S );
+		end;
+	end Convert_To_Date;
+
+
+
+	function Convert_To_Time(S : String) return Val_Type is
+		-- S must be HH:MM:SS[.FFF] format
+		use Ada.Strings, Ada.Strings.Fixed, Ada.Calendar;
+		T : String := Trim(S,Both);
+		Last :         Positive := T'Last;
+		Colon_X1 :     Positive;
+		Colon_X2 :     Positive;
+		Colon_1F :     Boolean := False;
+		Colon_2F :     Boolean := False;
+	begin
+		
+		for X in reverse T'Range loop
+			if T(X) = '.' then
+				Last := X-1;    -- Ignore fractional part
+				exit;
+			end if;
+		end loop;
+		
+		-- 00:00:00.000
+
+		for X in T'Range loop
+			if T(X) = ':' then
+				Colon_X1 := X;
+				Colon_1F := True;
+				if X < Last then
+					for Y in X+1..Last loop
+						if T(Y) = ':' then
+							Colon_X2 := Y;
+							Colon_2F := True;
+						end if;
+					end loop;
+				end if;
+				exit;
+			end if;
+		end loop;
+		
+		if not Colon_1F then
+			Raise_APQ_Error_Exception(
+				E	=> Invalid_Format'Identity,
+				Code	=> APQ05,
+				Where	=> "Convert_To_Time",
+				Zero	=> S );
+		end if;
+		
+		if not Colon_2F then
+			Colon_X2 := Last + 1;
+		end if;
+		
+		begin
+			declare
+				Hour :   Natural        := Natural'Value(T(1..Colon_X1-1));
+				Minute : Natural        := Natural'Value(T(Colon_X1+1..Colon_X2-1));
+				Second : Natural        := 0;
+			begin
+				if Colon_2F then
+					Second := Natural'Value(T(Colon_X2+1..Last));
+				end if;
+				
+				return Val_Type( Hour * 60 * 60 + Minute * 60 + Second );
+			end;
+		exception
+			when others =>
+				Raise_APQ_Error_Exception(
+					E	=> Invalid_Format'Identity,
+					Code	=> APQ06,
+					Where	=> "Convert_To_Time",
+					Zero	=> S );
+		end;
+	end Convert_To_Time;
+
+	function Convert_To_Timestamp(S : String) return Val_Type is
+		-- S must be YYYY-MM-DD HH:MM:SS[.FFF] format
+		use Ada.Strings, Ada.Strings.Fixed;
+		function To_Date is new Convert_To_Date(Val_Type);
+		T :   String := Trim(S,Both);
+		BX :  Positive := T'Last + 1;
+		BF :  Boolean := False;
+	begin
+		
+		for X in T'Range loop
+			if T(X) = ' ' then
+				BF := True;
+				BX := X;
+				exit;
+			end if;
+		end loop;
+		
+		if not BF then
+			return To_Date(T);
+		else
+			declare
+				TZX :    Positive := T'Last + 1;       -- Location of the Time zone sign character
+			begin
+				for X in reverse T'Range loop
+					if T(X) = '-' or T(X) = '+' then
+						if T(X..T'Last)'Length <= 3 then
+							TZX := X;
+						end if;
+					end if;
+				end loop;
+				
+				declare
+					function To_Date is new Convert_To_Date(APQ_Date);
+					function To_Time is new Convert_To_Time(APQ_Time);
+					function To_Val_Type is new Convert_Date_and_Time(APQ_Date,APQ_Time,Val_Type);
+					DT :  APQ_Date;
+					TM :  APQ_Time;
+				begin
+					DT := To_Date(T(1..BX-1));
+					TM := To_Time(T(BX+1..TZX-1));
+					return To_Val_Type(DT,TM);
+				end;
+			end;
+		end if;
+		
+	end Convert_To_Timestamp;
+
+
+
+
+	function Convert_Date_and_Time(DT : Date_Type; TM : Time_Type) return Result_Type is
+		
+		function Internal_Date_and_Time(DT : Ada.Calendar.Time; TM : Ada.Calendar.Day_Duration) return Ada.Calendar.Time is
+			use Ada.Calendar;
+			Year :      Year_Number;
+			Month :     Month_Number;
+			Day :       Day_Number;
+			Second :    Day_Duration;
+		begin
+			Split(DT,Year,Month,Day,Second);
+			Second := Day_Duration(TM);
+			return Time_Of(Year,Month,Day,Second);
+		end Internal_Date_and_Time;
+		
+		
+		use Ada.Calendar;
+	begin
+		-- Internal_Date_and_Time() function necessary to avoid 3.13p compiler bug
+		return Result_Type( Internal_Date_and_Time(Time(DT),Day_Duration(TM)) );
+	end Convert_Date_and_Time;
 
 
 
 
 
+	-- Misc ...
 
+
+	function Generic_Command_Oid(Query : Root_Query_Type'Class) return Oid_Type is
+		-- The Generic_Command_Oid causes GNAT 3.14p to fall over and die.
+		--
+		-- It isn't really required, since Command_Oid(Query) can be used instead,
+		-- and the return value converted to whatever Oid_Type is.
+
+		Row : Row_ID_Type := Command_Oid(Query);
+	begin
+		return Oid_Type(Row);
+	end Generic_Command_Oid;
+
+	
+	procedure Extract_Timezone(S : String; DT : out Date_Type; TZ : out Zone_Type) is
+		use Ada.Strings, Ada.Strings.Fixed;
+		function To_Timestamp is new Convert_To_Timestamp(Date_Type);
+		T :            String := Trim(S,Both);
+		Have_TZ :      Boolean := False;
+		End_X :        Positive := T'Last + 1;
+	begin
+		
+		for X in reverse T'Range loop
+			if T(X) = '-' or T(X) = '+' then
+				Have_TZ := True;
+				End_X := X;
+				exit;
+			elsif T(X) = ':' or T(X) = ' ' then
+				exit;
+			end if;
+		end loop;
+		
+		DT := To_Timestamp(T(1..End_X-1));
+		if Have_TZ then
+			TZ := Zone_Type'Value(T(End_X+1..T'Last));
+		else
+			TZ := 0;
+		end if;
+		
+	end Extract_Timezone;
+
+
+	------------------------------
+	-- EXTENDED CALENDAR FUNCTIONS :
+	------------------------------
+
+
+	-- A special note on these functions:
+	--
+	-- They have been split out to avoid a GNAT 3.13p compiler bug.
+
+	-- internal functions ...
+	
 	function Time_Component(TM : Ada.Calendar.Day_Duration; Unit : Time_Unit) return Natural is
 	begin
 		case Unit is
@@ -1599,462 +2090,57 @@ package body APQ is
 		end case;
 	end Time_Component;
 
-   function Time_Component(TM : Ada.Calendar.Time; Unit : Time_Unit) return Natural is
-      use Ada.Calendar;
-      Year :      Year_Number;
-      Month :     Month_Number;
-      Day :       Day_Number;
-      Seconds :   Day_Duration;
-   begin
-      Split(TM,Year,Month,Day,Seconds);
-      return Time_Component(Seconds,Unit);
-   end Time_Component;
-      
-   -- This function split out to avoid GNAT 3.13p compiler bug
-   function Internal_Time_of_Day(DT : Ada.Calendar.Time) return Ada.Calendar.Day_Duration is
-      use Ada.Calendar;
-      Year :      Year_Number;
-      Month :     Month_Number;
-      Day :       Day_Number;
-      Seconds :   Day_Duration;
-   begin
-      Split(DT,Year,Month,Day,Seconds);
-      return Seconds;
-   end Internal_Time_of_Day;
-
-   function Generic_Time_of_Day(V : Date_Type) return Time_Type is
-   begin
-      return Time_Type(Internal_Time_of_Day(Ada.Calendar.Time(V)));
-   end Generic_Time_of_Day;
-
-   function Generic_Hour(TM : Time_Type) return Hour_Number is
-   begin
-      return Hour_Number(Time_Component(Ada.Calendar.Day_Duration(TM),Hour));
-   end Generic_Hour;
-
-   function Generic_Minute(TM : Time_Type) return Minute_Number is
-   begin
-      return Minute_Number(Time_Component(Ada.Calendar.Day_Duration(TM),Minute));
-   end Generic_Minute;
-
-   function Generic_Second(TM : Time_Type) return Second_Number is
-   begin
-      return Second_Number(Time_Component(Ada.Calendar.Day_Duration(TM),Second));
-   end Generic_Second;
-
-   function To_String(V : APQ_Boolean) return String is
-      TF :  String(1..5) := "FALSE";
-      L  :  Positive := 5;
-   begin
-      if V then
-         TF := "TRUE ";
-         L := 4;
-      end if;
-      return TF(1..L);
-   end To_String;
    
-   function To_String(V : APQ_Date) return String is
-      use Ada.Calendar;
-      package INTIO2 is new Ada.Text_IO.Integer_IO(Integer);
-      YY :           Integer        := Integer(Year(V));
-      MM :           Integer        := Integer(Month(V));
-      DD :           Integer        := Integer(Day(V));
-      YYYY_MM_DD :   String(1..10)  := "YYYY-MM-DD";
-   begin
-      INTIO2.Put(To => YYYY_MM_DD(1..4), Item => YY, Base => 10);
-      INTIO2.Put(To => YYYY_MM_DD(6..7), Item => MM, Base => 10);
-      INTIO2.Put(To => YYYY_MM_DD(9..10), Item => DD, Base => 10);
-      return Blanks_To_Zero(YYYY_MM_DD);
-   end To_String;
-
-   function To_String(V : APQ_Time) return String is
-      use Ada.Calendar;
-      package INTIO3 is new Ada.Text_IO.Integer_IO(Integer);
-      function Hour is new Generic_Hour(APQ_Time);
-      function Minute is new Generic_Minute(APQ_Time);
-      function Second is new Generic_Second(APQ_Time);
-      HH :        Integer        := Integer(Hour(V));
-      MM :        Integer        := Integer(Minute(V));
-      SS :        Integer        := Integer(Second(V));
-      HH_MM_SS :  String(1..8)   := "HH:MM:SS";
-   begin
-      INTIO3.Put(To => HH_MM_SS(1..2), Item => HH, Base => 10);
-      INTIO3.Put(To => HH_MM_SS(4..5), Item => MM, Base => 10);
-      INTIO3.Put(To => HH_MM_SS(7..8), Item => SS, Base => 10);
-      return Blanks_To_Zero(HH_MM_SS);
-   end To_String;
-
-   function To_String(V : APQ_Timestamp) return String is
-      function Time_of_Day is new Generic_Time_of_Day(APQ_Timestamp,APQ_Time);
-      DS : String := To_String(APQ_Date(V));
-      ST : String := To_String(Time_of_Day(V));
-   begin
-      return DS & " " & ST;
-   end To_String;
-
-   function To_String(V : APQ_Timezone) return String is
-      package ZONEIO is new Ada.Text_IO.Integer_IO(APQ_Timezone);
-      ZS : String(1..3);
-   begin
-      ZONEIO.Put(To => ZS, Item => V, Base => 10);
-      if ZS(1) = ' ' then
-         ZS(1) := ZS(2);
-         ZS(2) := '0';
-      end if;
-      return ZS;
-   end To_String;
-
-   function To_String(V : APQ_Timestamp; TZ : APQ_Timezone) return String is
-      ST : String := To_String(V);
-      ZS : String := To_String(TZ);
-   begin
-      return ST & ZS;
-   end To_String;
-
-   function To_String(V : APQ_Bitstring) return String is
-      S : String(V'Range);
-   begin
-      for X in V'Range loop
-         if V(X) then
-            S(X) := '1';
-         else
-            S(X) := '0';
-         end if;
-      end loop;
-      return S;
-   end To_String;
-
-   function Boolean_String(V : Val_Type) return String is
-   begin
-      return To_String(APQ_Boolean(V));
-   end Boolean_String;
-
-   function Modular_String(V : Val_Type) return String is
-      use Ada.Strings.Fixed, Ada.Strings;
-      package MODIO is new Ada.Text_IO.Modular_IO(Val_Type);
-      S : String(1..40);
-   begin
-      MODIO.Put(To => S, Item => V, Base => 10);
-      return Trim(S,Both);
-   end Modular_String;
-
-   function Integer_String(V : Val_Type) return String is
-      use Ada.Strings.Fixed, Ada.Strings;
-      package INTIO1 is new Ada.Text_IO.Integer_IO(Val_Type);
-      S : String(1..40);
-   begin
-      INTIO1.Put(To => S, Item => V, Base => 10);
-      return Trim(S,Both);
-   end Integer_String;
-
-   function Float_String(V : Val_Type) return String is
-      use Ada.Strings.Fixed, Ada.Strings;
-      package FLTIO is new Ada.Text_IO.Float_IO(Val_Type);
-      S : String(1..50);
-   begin
-      FLTIO.Put(To => S, Item => V, Exp => 3);
-      return Trim(S,Both);
-   end Float_String;
-
-   function Fixed_String(V : Val_Type) return String is
-      use Ada.Strings.Fixed, Ada.Strings;
-      package FXTIO is new Ada.Text_IO.Fixed_IO(Val_Type);
-      S : String(1..50);
-   begin
-      FXTIO.Put(To => S, Item => V, Exp => 3);
-      return Trim(S,Both);
-   end Fixed_String;
-   
-   function Date_String(V : Val_Type) return String is
-   begin
-      return To_String(APQ_Date(V));
-   end Date_String;
-
-   function Time_String(V : Val_Type) return String is
-   begin
-      return To_String(APQ_Time(V));
-   end Time_String;
-
-   function Timestamp_String(V : Val_Type) return String is
-   begin
-      return To_String(APQ_Timestamp(V));
-   end Timestamp_String;
-
-   function Timezone_String(V : Val_Type) return String is
-   begin
-      return To_String(APQ_Timezone(V));
-   end Timezone_String;
-
-   -- S must be YYYY-MM-DD format
-   function Convert_To_Date(S : String) return Val_Type is
-      use Ada.Strings, Ada.Strings.Fixed, Ada.Calendar;
-      T : String := Trim(S,Both);
-      Hyphen_X1 :    Positive := T'Last + 1;
-      Hyphen_X2 :    Positive := T'Last + 1;
-      Both_Found :   Boolean := False;
-   begin
-
-      for X in T'Range loop
-         if T(X) = '-' or T(X) = '/' then
-            Hyphen_X1 := X;
-            if X < T'Last then
-               for Y in X+1..T'Last loop
-                  if T(Y) = '-' or T(Y) = '/' then
-                     Hyphen_X2 := Y;
-                     Both_Found := True;
-                  end if;
-               end loop;
-            end if;
-            exit;
-         end if;
-      end loop;
-
-      if not Both_Found then
-	 Raise_APQ_Error_Exception(
-		 E	=> Invalid_Format'Identity,
-		 Code	=> APQ03,
-		 Where	=> "Convert_To_Date",
-		 Zero	=> S );
-      end if;
-
-      begin
-         declare
-            Year :   Year_Number    := Year_Number'Value(T(1..Hyphen_X1-1));
-            Month :  Month_Number   := Month_Number'Value(T(Hyphen_X1+1..Hyphen_X2-1));
-            Day :    Day_Number     := Day_Number'Value(T(Hyphen_X2+1..T'Last));
-            R :      Ada.Calendar.Time := Ada.Calendar.Time_Of(Year,Month,Day);
-         begin
-            return Val_Type(R);
-         end;
-      exception
-         when others =>
-            Raise_APQ_Error_Exception(
-		 E	=> Invalid_Format'Identity,
-		 Code	=> APQ04,
-		 Where	=> "Convert_To_Date",
-		 Zero	=> S );
-      end;
-   end Convert_To_Date;
-
-   function Internal_Date_and_Time(DT : Ada.Calendar.Time; TM : Ada.Calendar.Day_Duration) return Ada.Calendar.Time is
-      use Ada.Calendar;
-      Year :      Year_Number;
-      Month :     Month_Number;
-      Day :       Day_Number;
-      Second :    Day_Duration;
-   begin
-      Split(DT,Year,Month,Day,Second);
-      Second := Day_Duration(TM);
-      return Time_Of(Year,Month,Day,Second);
-   end Internal_Date_and_Time;
-
-   function Convert_Date_and_Time(DT : Date_Type; TM : Time_Type) return Result_Type is
-      use Ada.Calendar;
-   begin
-      -- Internal_Date_and_Time() function necessary to avoid 3.13p compiler bug
-      return Result_Type( Internal_Date_and_Time(Time(DT),Day_Duration(TM)) );
-   end Convert_Date_and_Time;
-
-   -- S must be HH:MM:SS[.FFF] format
-   function Convert_To_Time(S : String) return Val_Type is
-      use Ada.Strings, Ada.Strings.Fixed, Ada.Calendar;
-      T : String := Trim(S,Both);
-      Last :         Positive := T'Last;
-      Colon_X1 :     Positive;
-      Colon_X2 :     Positive;
-      Colon_1F :     Boolean := False;
-      Colon_2F :     Boolean := False;
-   begin
-
-      for X in reverse T'Range loop
-         if T(X) = '.' then
-            Last := X-1;    -- Ignore fractional part
-            exit;
-         end if;
-      end loop;
-
-      -- 00:00:00.000
-      for X in T'Range loop
-         if T(X) = ':' then
-            Colon_X1 := X;
-            Colon_1F := True;
-            if X < Last then
-               for Y in X+1..Last loop
-                  if T(Y) = ':' then
-                     Colon_X2 := Y;
-                     Colon_2F := True;
-                  end if;
-               end loop;
-            end if;
-            exit;
-         end if;
-      end loop;
-
-      if not Colon_1F then
-         Raise_APQ_Error_Exception(
-		 E	=> Invalid_Format'Identity,
-		 Code	=> APQ05,
-		 Where	=> "Convert_To_Time",
-		 Zero	=> S );
-      end if;
-
-      if not Colon_2F then
-         Colon_X2 := Last + 1;
-      end if;
-
-      begin
-         declare
-            Hour :   Natural        := Natural'Value(T(1..Colon_X1-1));
-            Minute : Natural        := Natural'Value(T(Colon_X1+1..Colon_X2-1));
-            Second : Natural        := 0;
-         begin
-            if Colon_2F then
-               Second := Natural'Value(T(Colon_X2+1..Last));
-            end if;
-
-            return Val_Type( Hour * 60 * 60 + Minute * 60 + Second );
-         end;
-      exception
-         when others =>
-         	Raise_APQ_Error_Exception(
-			 E	=> Invalid_Format'Identity,
-			 Code	=> APQ06,
-			 Where	=> "Convert_To_Time",
-			 Zero	=> S );
-      end;
-   end Convert_To_Time;
-
-   -- S must be YYYY-MM-DD HH:MM:SS[.FFF] format
-   function Convert_To_Timestamp(S : String) return Val_Type is
-      use Ada.Strings, Ada.Strings.Fixed;
-      function To_Date is new Convert_To_Date(Val_Type);
-      T :   String := Trim(S,Both);
-      BX :  Positive := T'Last + 1;
-      BF :  Boolean := False;
-   begin
-
-      for X in T'Range loop
-         if T(X) = ' ' then
-            BF := True;
-            BX := X;
-            exit;
-         end if;
-      end loop;
-
-      if not BF then
-         return To_Date(T);
-      else
-         declare
-            TZX :    Positive := T'Last + 1;       -- Location of the Time zone sign character
-         begin
-            for X in reverse T'Range loop
-               if T(X) = '-' or T(X) = '+' then
-                  if T(X..T'Last)'Length <= 3 then
-                     TZX := X;
-                  end if;
-               end if;
-            end loop;
-
-            declare
-               function To_Date is new Convert_To_Date(APQ_Date);
-               function To_Time is new Convert_To_Time(APQ_Time);
-               function To_Val_Type is new Convert_Date_and_Time(APQ_Date,APQ_Time,Val_Type);
-               DT :  APQ_Date;
-               TM :  APQ_Time;
-            begin
-               DT := To_Date(T(1..BX-1));
-               TM := To_Time(T(BX+1..TZX-1));
-               return To_Val_Type(DT,TM);
-            end;
-         end;
-      end if;
-
-   end Convert_To_Timestamp;
+	
+	function Internal_Time_of_Day(DT : Ada.Calendar.Time) return Ada.Calendar.Day_Duration is
+		use Ada.Calendar;
+		Year :      Year_Number;
+		Month :     Month_Number;
+		Day :       Day_Number;
+		Seconds :   Day_Duration;
+	begin
+		Split(DT,Year,Month,Day,Seconds);
+		return Seconds;
+	end Internal_Time_of_Day;
+	
 
 
-   function Decimal_String(V : Val_Type) return String is
-      use Ada.Strings.Fixed, Ada.Strings;
-      package DECIO is new Ada.Text_IO.Decimal_IO(Val_Type);
-      S : String(1..50);
-   begin
-      DECIO.Put(To => S, Item => V);
-      return Trim(S,Both);
-   end Decimal_String;   
-
-
-   function Convert_To_Boolean(S : String) return Val_Type is
-      use Ada.Characters.Handling, Ada.Strings, Ada.Strings.Fixed;
-      UC : String := To_Upper(Trim(S,Both));
-   begin
-      if UC = "FALSE" then
-         return False;
-      elsif UC = "TRUE" then
-         return True;
-      end if;
-      if UC'Length = 1 then
-         if UC = "T" then
-            return True;
-         elsif UC = "F" then
-            return False;
-         end if;
-      end if;
-       	Raise_APQ_Error_Exception(
-		 E	=> Invalid_Format'Identity,
-		 Code	=> APQ07,
-		 Where	=> "Convert_To_Boolean",
-		 Zero	=> S );
-   end Convert_To_Boolean;
+	-- implementation of the package spec ...
 
 
 
+	function Generic_Time_of_Day(V : Date_Type) return Time_Type is
+	begin
+		return Time_Type(Internal_Time_of_Day(Ada.Calendar.Time(V)));
+	end Generic_Time_of_Day;
+	
 
 
+	function Generic_Hour(TM : Time_Type) return Hour_Number is
+	begin
+		return Hour_Number(Time_Component(Ada.Calendar.Day_Duration(TM),Hour));
+	end Generic_Hour;
+	
+
+	
+	function Generic_Minute(TM : Time_Type) return Minute_Number is
+	begin
+		return Minute_Number(Time_Component(Ada.Calendar.Day_Duration(TM),Minute));
+	end Generic_Minute;
 
 
-   
-
-
--- GNAT 3.14p falls over and dies compiling this one. I have yet
--- to find a work-around for it.
-
-   function Generic_Command_Oid(Query : Root_Query_Type'Class) return Oid_Type is
-      Row : Row_ID_Type := Command_Oid(Query);
-   begin
-      return Oid_Type(Row);
-   end Generic_Command_Oid;
-
-   procedure Extract_Timezone(S : String; DT : out Date_Type; TZ : out Zone_Type) is
-      use Ada.Strings, Ada.Strings.Fixed;
-      function To_Timestamp is new Convert_To_Timestamp(Date_Type);
-      T :            String := Trim(S,Both);
-      Have_TZ :      Boolean := False;
-      End_X :        Positive := T'Last + 1;
-   begin
-
-      for X in reverse T'Range loop
-         if T(X) = '-' or T(X) = '+' then
-            Have_TZ := True;
-            End_X := X;
-            exit;
-         elsif T(X) = ':' or T(X) = ' ' then
-            exit;
-         end if;
-      end loop;
-
-      DT := To_Timestamp(T(1..End_X-1));
-      if Have_TZ then
-         TZ := Zone_Type'Value(T(End_X+1..T'Last));
-      else
-         TZ := 0;
-      end if;
-
-   end Extract_Timezone;
-
-
+	
+	function Generic_Second(TM : Time_Type) return Second_Number is
+	begin
+		return Second_Number(Time_Component(Ada.Calendar.Day_Duration(TM),Second));
+	end Generic_Second;
 
 
 
  -- private
+	
+	
+	
 	function To_Case(S : String; C : SQL_Case_Type) return String is
 		-- convert the string to the selected case
 		use Ada.Characters.Handling;
@@ -2086,7 +2172,6 @@ package body APQ is
 		Q.Caseless   := null;
 		Q.Tuple_Index := Tuple_Index_Type'First;
 	end Adjust;
-
 
 
 
