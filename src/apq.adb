@@ -118,9 +118,9 @@ package body APQ is
 		begin
 			for i in Patterns'Range
 			loop
-				Str_Replace(	From	=> Get_Pattern(i),
-						To 	=> Patterns(i),
-						Str	=> Desc );
+				Desc := Str_Replace(	From	=> Get_Pattern(i),
+							To 	=> Patterns(i),
+							Str	=> Desc );
 			end loop;
 			return To_String( Desc );
 		end Process_Message;
