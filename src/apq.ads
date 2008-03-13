@@ -342,6 +342,8 @@ package APQ is
 	-- To be used when the No_Connection exception is raised by the Connect predicate
 
 
+	procedure Open_DB_Trace(C : in out Root_Connection_Type; Filename : String; Mode : Trace_Mode_Type := Trace_APQ) is abstract;
+	-- Initialize the tracing
 
 	---------------------
 	-- ROOT_QUERY_TYPE --
