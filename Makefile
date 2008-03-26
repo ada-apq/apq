@@ -2,19 +2,18 @@
 #
 # @author Marcelo Coraça de Freitas <marcelo.batera@gmail.com> 
 
-ADA_PROJECT_PATH=.:../awlib
 
 projectFile="apq.gpr"
 
 
 libs:
-	ADA_PROJECT_PATH=${ADA_PROJECT_PATH} gnatmake -P ${projectFile}
+	gnatmake -P ${projectFile}
 
 all: libs
 
 
 clean:
-	@ADA_PROJECT_PATH=${ADA_PROJECT_PATH} gnatclean -P ${projectFile}
+	gnatclean -P ${projectFile}
 	@echo "All clean"
 
 docs:
