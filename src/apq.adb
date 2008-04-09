@@ -7,7 +7,7 @@
 --                                 B o d y                                  --
 --                                                                          --
 --         Copyright (C) 2002-2007, Warren W. Gay VE3WWG                    --
---         Copyright (C) 2007-2008, Marcelo C. de Freitas (OgRo)            --
+--         Copyright (C) 2007-2008, Ydea Desenv. de Softwares Ltda          --
 --                                                                          --
 --                                                                          --
 -- APQ is free software;  you can  redistribute it  and/or modify it under  --
@@ -64,7 +64,8 @@ package body APQ is
 	end To_Pattern_Array;
 
 
-	function To_Pattern_Array(Zero, One, Two: in String) return Pattern_Array is
+	function To_Pattern_Array(Zero, One, Two: in String)
+		return Pattern_Array is
 		-- same as the previous, but including both zero, one and two.
 		A: Pattern_Array := (	0 => To_Unbounded_String(Zero),
 					1 => To_Unbounded_String(One),
@@ -74,7 +75,8 @@ package body APQ is
 	end To_Pattern_Array;
 
 	
-	procedure Raise_APQ_Error_Exception( E: in Exception_Id; Code: in APQ_Error; Where: in String; Zero: in String := "" ) is
+	procedure Raise_APQ_Error_Exception( E: in Exception_Id;
+		Code: in APQ_Error; Where: in String; Zero: in String := "" ) is
 		-- Raise the Exception E with a comprehensive error message
 		Pragma Inline(Raise_APQ_Error_Exception);
 		A: Pattern_Array := To_Pattern_Array( Zero );
@@ -82,7 +84,8 @@ package body APQ is
 		Raise_APQ_Error_Exception( E, Code, Where, A );
 	end Raise_APQ_Error_Exception;
 
-	procedure Raise_APQ_Error_Exception( E: in Exception_Id; Code: in APQ_Error; Where: in String; Zero, One: in String ) is
+	procedure Raise_APQ_Error_Exception( E: in Exception_Id; 
+		Code: in APQ_Error; Where: in String; Zero, One: in String ) is
 		-- Raise the Exception E with a comprehensive error message
 		Pragma Inline(Raise_APQ_Error_Exception);
 		A: Pattern_Array := To_Pattern_Array( Zero, One );
@@ -90,16 +93,21 @@ package body APQ is
 		Raise_APQ_Error_Exception( E, Code, Where, A );
 	end Raise_APQ_Error_Exception;
 
-	procedure Raise_APQ_Error_Exception( E: in Exception_Id; Code: in APQ_Error; Where: in String; Zero, One, Two: in String ) is
+	procedure Raise_APQ_Error_Exception( E: in Exception_Id; 
+		Code: in APQ_Error; Where: in String;
+		Zero, One, Two: in String ) is
 		-- Raise the Exception E with a comprehensive error message
 		Pragma Inline(Raise_APQ_Error_Exception);
+		
 		A: Pattern_Array := To_Pattern_Array( Zero, One, Two );
 	begin
 		Raise_APQ_Error_Exception( E, Code, Where, A );
 	end Raise_APQ_Error_Exception;
 
 
-	procedure Raise_APQ_Error_Exception( E: in Exception_Id; Code: in APQ_Error; Where: in String; Patterns: in Pattern_Array ) is
+	procedure Raise_APQ_Error_Exception( E: in Exception_Id;
+		Code: in APQ_Error; Where: in String;
+		Patterns: in Pattern_Array ) is
 		-- Raise the Exception E with a comprehensive error message
 
 		use Ada.Strings;		-- for selecting the sides to Trim
@@ -107,7 +115,8 @@ package body APQ is
 		use Aw_Lib.String_Util;		-- Str_Replace
 
 		function Process_Message return String is
-			Desc: Unbounded_String := Unbounded_String(APQ_Error_Descriptions(Code));
+			Desc: Unbounded_String := 
+				Unbounded_String(APQ_Error_Descriptions(Code));
 
 			function Get_Pattern( i: in Integer ) return Unbounded_String is
 				P: String := "%" & Trim( Integer'Image( i ), Ada.Strings.Both ) & "%";
@@ -495,13 +504,6 @@ package body APQ is
 	end Clear;
 
 
-	procedure Prepare(Q : in out Root_Query_Type; SQL : String; After : String := Line_Feed) is
-		-- Clear the query, starting a new one.
-	begin
-		Clear(Root_Query_Type'Class(Q));
-		Append(Root_Query_Type'Class(Q),SQL,After);
-	end Prepare;
-
 
 	procedure Grow(Q : in out Root_Query_Type) is
 		-- used internally to grow the query size so Append works
@@ -527,6 +529,13 @@ package body APQ is
 		end if;
 	end Grow;
 
+
+	procedure Prepare(Q : in out Root_Query_Type; SQL : String; After : String := Line_Feed) is
+		-- Clear the query, starting a new one.
+	begin
+		Clear(Root_Query_Type'Class(Q));
+		Append(Root_Query_Type'Class(Q),SQL,After);
+	end Prepare;
 
 	
 	procedure Append(Q : in out Root_Query_Type; SQL : String; After : String := "") is
