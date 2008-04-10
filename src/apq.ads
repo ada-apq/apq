@@ -250,7 +250,7 @@ package APQ is
 	-------------------------------------
 	-- SQL Fetch, Indexing and Tracing --
 	-------------------------------------
-	
+
 
 	-- INDEX:
 	type Row_ID_Type is mod 2 ** 64;
@@ -258,7 +258,7 @@ package APQ is
 	type Tuple_Index_Type is mod 2 ** 64;
 	-- Related concept to Row_ID_Type
 	First_Tuple_Index : constant Tuple_Index_Type := 1;
-	
+
 	subtype Tuple_Count_Type is Tuple_Index_Type;
 
 	type Column_Index_Type is new Positive;
@@ -266,7 +266,7 @@ package APQ is
 	-- FETCH:
 
 	type Fetch_Mode_Type is (
-		Sequential_Fetch,		-- All databases : sequential fetch mode 
+		Sequential_Fetch,		-- All databases : sequential fetch mode
 		Random_Fetch,			-- PostgreSQL, MySQL, not Sybase
 		Cursor_For_Update,		-- Sybase
 		Cursor_For_Read_Only		-- Sybase
@@ -320,15 +320,15 @@ package APQ is
 	--------------------------
 	function Engine_Of(C : Root_Connection_Type) return Database_Type is abstract;
 	-- Return a identifier for the connection used.
-	
+
 
 	procedure Connect(C : in out Root_Connection_Type) is abstract;
 	-- Connect to the Database C.
-	
+
 	procedure Connect(C : in out Root_Connection_Type; Same_As : Root_Connection_Type'Class) is abstract;
 	-- Clone the connection Same_As to C
 
-	procedure Disconnect(C : in out Root_Connection_Type) is abstract; 
+	procedure Disconnect(C : in out Root_Connection_Type) is abstract;
 	-- Close the database connection
 
 	function Is_Connected(C : Root_Connection_Type) return Boolean is abstract;
@@ -390,7 +390,7 @@ package APQ is
 
 	procedure Fetch(Q : in out Root_Query_Type) is abstract;
 	-- Fetch the next result of the query when in Random_Fetch or Sequential_Fetch mode
-	
+
 	procedure Fetch(Q : in out Root_Query_Type; TX : Tuple_Index_Type) is abstract;
 	-- Fetch the TXth result when in the Random_Fetch mode.
 
@@ -400,10 +400,10 @@ package APQ is
 	-- This won't work as expected with MySQL due to a bug in the client library used
 	--
 	-- Checks if there are more results to be fetched.
-	
+
 	function Tuple(Q : Root_Query_Type) return Tuple_Index_Type is abstract;
 	-- return the last tuple fetched
-	
+
 	function Tuples(Q : Root_Query_Type) return Tuple_Count_Type is abstract;
 	-- count the tuples returned by the query
 
@@ -415,7 +415,7 @@ package APQ is
 
 	function Column_Name(Query : Root_Query_Type; Index : Column_Index_Type) return String is abstract;
 	-- get the Index'th column name.
-	
+
 	function Column_Index(Query : Root_Query_Type; Name : String) return Column_Index_Type is abstract;
 	-- get the index for the column "Name"
 
@@ -441,7 +441,7 @@ package APQ is
 
 	function Error_Message(Query : Root_Query_Type) return String is abstract;
 	-- Return an error message when the query has failed.
-	
+
 	function Is_Duplicate_Key(Query : Root_Query_Type) return Boolean is abstract;
 	-- When an INSERT statement runs it might have a duplicated key.
 	-- When it does, SQL_Error is raised and then the developer might use
@@ -459,6 +459,28 @@ package APQ is
 	-- NOTE: DO NOT USE THIS FUNCTION AS IT'S MEANT TO BE USED INTERNALLY ONLY!
 	-- NOTE: USE New_Query INSTEAD
 
+
+
+	--           METHODS THAT SHOULD BE OVERRIDDEN BY THE DATABASE DRIVER           --
+
+	--TODO: change the types to APQ_Something.
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Boolean;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Integer;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Float;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Date;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Time;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Timestamp;
+
+	procedure Value(Query : Root_Query_Type; CX : Column_Index_Type; TS : out APQ_Timestamp; TZ : out APQ_Timezone);
+
+--	generic
+--	with package P is new Ada.Strings.Bounded.Generic_Bounded_Length(<>);
+--	function Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return P.Bounded_String;
 
 
 
@@ -481,7 +503,7 @@ package APQ is
 	--------------------------
 	-- ROOT_CONNECTION_TYPE --
 	--------------------------
-	
+
 	function Get_Case(C : Root_Connection_Type) return SQL_Case_Type;
 	-- Get the SQL case used by default in this connection.
 	-- All new queries will use this casing by default.
@@ -504,7 +526,7 @@ package APQ is
 	-- Get the host name for the Database server. It's an alias for Get_Host_Name
 	procedure Set_Host_Name(C : in out Root_Connection_Type; Host_Name : String);
 	-- Set the host name for the Database server.
-	
+
 	function Get_Host_Address(C: in Root_Connection_Type) return String;
 	-- Set the host address for the database server.
 	function Host_Address(C: in Root_Connection_Type) return String renames Get_Host_Address;
@@ -527,7 +549,7 @@ package APQ is
 	-- Set the Unix Port
 
 	function Get_DB_Name(C : Root_Connection_Type) return String;
-	-- Get the Database name used in this connection. 
+	-- Get the Database name used in this connection.
 	function DB_Name(C : Root_Connection_Type) return String renames Get_DB_Name;
 	-- Get the Database name used in this connection. It's an alias for Get_DB_Name.
 	procedure Set_DB_Name(C : in out Root_Connection_Type; DB_Name : String);
@@ -559,7 +581,7 @@ package APQ is
 	-- There is the Abort_State Exception for this, but there is also
 	-- this function that checks if the connection is in this state.
 
-	
+
 	function Get_Rollback_On_Finalize( C: in Root_Connection_Type ) return Boolean;
 	-- Get if the work will be rollbacked when finalizing.
 	function Will_Rollback_On_Finalize(C : Root_Connection_Type)
@@ -594,19 +616,19 @@ package APQ is
 
 	procedure Raise_Exceptions(Query : in out Root_Query_Type; Raise_On : Boolean := True);
 	-- when Execute_Checked is called, should raise the exception back to the caller?
-	
+
 	procedure Report_Errors(Query : in out Root_Query_Type; Report_On : Boolean := True);
 	-- report sql erros when Execute_Checked is called?
 
 
 	-- Query information ...
-	
+
 	function To_String(Query : Root_Query_Type) return String;
 	-- get the query text
-	
+
 	function Is_Select(Q : Root_Query_Type) return Boolean;
 	-- is this query a select statement?
-	
+
 	function Cursor_Name(Query : Root_Query_Type) return String;
 	-- get the cursor name for the current result
 	-- this function is meant to be overwriten by the driver if it supports cursor
@@ -635,13 +657,13 @@ package APQ is
 
 	procedure Append(Q : in out Root_Query_Type; V : APQ_Boolean; After : String := "");
 	-- Append a boolean to the query
-	
+
 	procedure Append(Q : in out Root_Query_Type; V : APQ_Date; After : String := "");
 	-- Append a date to the query
 
 	procedure Append(Q : in out Root_Query_Type; V : APQ_Time; After : String := "");
 	-- Append a time...
-	
+
 	procedure Append(Q : in out Root_Query_Type; V : APQ_Timestamp; After : String := "");
 	-- Append a timestamp...
 	procedure Append(Q : in out Root_Query_Type; 
@@ -650,7 +672,7 @@ package APQ is
 
 	procedure Append(Q : in out Root_Query_Type; V : APQ_Bitstring; After : String := "");
 	-- Append a bitstring...
-	
+
 	procedure Append(Q : in out Root_Query_Type; V : Row_ID_Type; After : String := "");
 	-- Append a row_id_type...
 
@@ -873,9 +895,9 @@ package APQ is
 
 
 	-- Data retrieval :: misc ...
-	
 
-	
+
+
 	generic
 	type Ind_Type is new Boolean;
 	function Column_Is_Null(Q : Root_Query_Type'Class; CX : Column_Index_Type) return Ind_Type;
@@ -884,7 +906,7 @@ package APQ is
 
 
 	-- Data retrieval :: value operations ...
-
+	-- TODO: Remove all these operations and implement value operations instead returning the correct type.
 
 
 	generic
@@ -1064,7 +1086,7 @@ package APQ is
 	generic
 	type Val_Type is new Boolean;
 	function Boolean_String(V : Val_Type) return String;
-	
+
 	generic
 	type Val_Type is range <>;
 	function Integer_String(V : Val_Type) return String;
@@ -1104,7 +1126,8 @@ package APQ is
 
 
 	-- Conversion :: anything from string ...
-
+ 	--TODO: These functions may not need to be generic anymore. If so, make
+ 	--them return the APQ_types.
 
 	generic
 	type Val_Type is new Boolean;

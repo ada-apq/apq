@@ -40,9 +40,9 @@ with Ada.Characters.Handling;
 
 package body APQ is
 
-	
+
 	type Time_Unit is ( Hour, Minute, Second );
-	
+
 	----------------
 	-- EXCEPTIONS --
 	----------------
@@ -53,7 +53,7 @@ package body APQ is
 	begin
 		return A;
 	end To_Pattern_Array;
-	
+
 
 	function To_Pattern_Array(Zero, One: in String) return Pattern_Array is
 		-- same as the previous, but including both zero and one.
@@ -74,7 +74,7 @@ package body APQ is
 		return A;
 	end To_Pattern_Array;
 
-	
+
 	procedure Raise_APQ_Error_Exception( E: in Exception_Id;
 		Code: in APQ_Error; Where: in String; Zero: in String := "" ) is
 		-- Raise the Exception E with a comprehensive error message
@@ -141,6 +141,133 @@ package body APQ is
 
 
 
+	--           METHODS THAT SHOULD BE OVERRIDDEN BY THE DATABASE DRIVER           --
+
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Boolean is
+		function To_Boolean is new Convert_To_Boolean(Boolean);
+		Text : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		return To_Boolean(Text);
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ10,
+				Where	=> "Value (Returns Boolean)",
+				Zero	=> Column_Index_Type'Image(CX) );
+			return false; -- we return something so gnat won't complaint
+	end Value;
+
+	--TODO: Solve a possible problem with databases that can store values bigger or smaller than Integer.
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Integer is
+		S : String := Value(Root_Query_Type'Class(Query), CX);
+	begin
+		return Integer'Value(S);
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ11,
+				Where	=> "Value (Returns Integer)",
+				Zero	=> Column_Index_Type'Image(CX) );
+	end Value;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Float is
+		S : String := Value(Root_Query_Type'Class(Query), CX);
+	begin
+		return Float'Value(S);
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ13,
+				Where	=> "Value (Returns Float)",
+				Zero	=> Column_Index_Type'Image(CX) );
+	end Value;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Date is
+		function To_Date is new Convert_To_Date(APQ_Date);
+	begin
+		return To_Date(Value(Root_Query_Type'Class(Query),CX));
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ17,
+				Where	=> "Value (Returns APQ_Date)",
+				Zero	=> Column_Index_Type'Image(CX) );
+		when Invalid_Format =>
+			Raise_APQ_Error_Exception(
+				E	=> Invalid_Format'Identity,
+				Code	=> APQ18,
+				Where	=> "Value (Returns APQ_Date)",
+				Zero	=> Value( Root_Query_Type'Class(Query), CX ),
+				One	=> Column_Index_Type'Image(CX) );
+	end Value;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Time is
+		function To_Time is new Convert_To_Time(APQ_Time);
+		Text : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		return To_Time(Text);
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ19,
+				Where	=> "Value (Returns APQ_Time)",
+				Zero	=> Value(Root_Query_Type'Class(Query), CX),
+				One	=> Column_Index_Type'Image(CX) );
+	end Value;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Timestamp is
+		function To_Timestamp is new Convert_To_Timestamp(APQ_Timestamp);
+		Text : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		return To_Timestamp(Text);
+	exception
+		when Constraint_Error | Invalid_Format =>
+			Raise_APQ_Error_Exception(
+				E	=> Invalid_Format'Identity,
+				Code	=> APQ20,
+				Where	=> "Value (Returns APQ_Timestamp",
+				Zero	=> Value(Root_Query_Type'Class(Query), CX),
+				One	=> Column_Index_Type'Image(CX) );
+	end Value;
+
+	procedure Value(Query : Root_Query_Type; CX : Column_Index_Type; TS : out APQ_Timestamp; TZ : out APQ_Timezone) is
+		use Ada.Strings, Ada.Strings.Fixed;
+		function To_Timestamp is new Convert_To_Timestamp(APQ_Timestamp);
+		S : String := Trim(Value(Root_Query_Type'Class(Query),CX),Both);
+	begin
+		TS := To_Timestamp(S);
+		for X in reverse S'Range loop
+			if S(X) = '-' or else S(X) = '+' then
+				if S(X..S'Last)'Length <= 3 then
+					begin
+						TZ := APQ_Timezone'Value(S(X..S'Last));
+						return;
+					exception
+						when others =>
+							Raise_APQ_Error_Exception(
+								E	=> Invalid_Format'Identity,
+								Code	=> APQ21,
+								Where	=> "Timezone_Value",
+								Zero	=> Column_Index_Type'Image(CX) );
+					end;
+				else
+					Raise_APQ_Error_Exception(
+						E	=> Invalid_Format'Identity,
+						Code	=> APQ22,
+						Where	=> "Timezone_Value",
+						Zero	=> Column_Index_Type'Image(CX) );
+				end if;
+			end if;
+		end loop;
+	end Value;
+
+
 	----------------------------------------------------------------------------------
 	--			 IMPLEMENTED METHODS FOR BOTH				--
 	-- 	. Root_Connection_Type and						--
@@ -160,7 +287,6 @@ package body APQ is
 		return Q;
 	end New_Query;
 
-   	
 
 	--------------------------
 	-- ROOT_CONNECTION_TYPE --
@@ -197,20 +323,20 @@ package body APQ is
 	end Set_Instance;
 
 
-	
+
 	function Get_Host_Name(C : Root_Connection_Type) return String is
 		-- Get the host name for the Database server.
 	begin
 		return To_String(C.Host_Address);
 	end Get_Host_Name;
-	
+
 	procedure Set_Host_Name(C : in out Root_Connection_Type; Host_Name : String) is
 		-- Set the host name for the Database server.
 	begin
 		Replace_String(C.Host_Address,"");
 		Replace_String(C.Host_Name,Set_Host_Name.Host_Name);
 	end Set_Host_Name;
- 
+
 
 
 	function Get_Host_Address( C: in Root_Connection_Type ) return String is
@@ -225,9 +351,9 @@ package body APQ is
 		Replace_String(C.Host_Name,"");
 		Replace_String(C.Host_Address, Set_Host_Address.Host_Address);
 	end Set_Host_Address;
-  
 
-	
+
+
 	function Get_Port(C : Root_Connection_Type) return Integer is
 		-- Get the TCP port number.
 	begin
@@ -235,7 +361,7 @@ package body APQ is
 			when IP_Port =>
 				return C.Port_Number;
 			when UNIX_Port =>
-				Raise_APQ_Error_Exception( 
+				Raise_APQ_Error_Exception(
 					E => Invalid_Format'Identity,
 					Code => APQ01,
 					Where => "Port" );
@@ -249,7 +375,7 @@ package body APQ is
 		C.Port_Format := IP_Port;
 		C.Port_Number := Set_Port.Port_Number;
 	end Set_Port;
-   
+
 
 
 	function Get_Port(C : Root_Connection_Type) return String is
@@ -257,7 +383,7 @@ package body APQ is
 	begin
 		case C.Port_Format is
 			when IP_Port =>
-				Raise_APQ_Error_Exception( 
+				Raise_APQ_Error_Exception(
 					E => Invalid_Format'Identity,
 					Code => APQ02,
 					Where => "Port" );
@@ -276,15 +402,15 @@ package body APQ is
 	end Set_Port;
 
 
-	
+
 	function Get_DB_Name(C : Root_Connection_Type) return String is
-		-- Get the Database name used in this connection. 
+		-- Get the Database name used in this connection.
 	begin
 		return To_String(C.DB_Name);
 	end Get_DB_Name;
 
 	procedure Set_DB_Name(C : in out Root_Connection_Type; DB_Name : String) is
-		-- Set the Database name used in this connection. 
+		-- Set the Database name used in this connection.
 	begin
 		Replace_String(C.DB_Name,Set_DB_Name.DB_Name);
 	end Set_DB_Name;
@@ -309,21 +435,21 @@ package body APQ is
 	begin
 		return To_String( C.User_Password );
 	end Get_Password;
-	
+
 	procedure Set_Password( C: in out Root_Connection_Type; Password: in String ) is
 		-- Get the Password for this connection.
 	begin
 		Replace_String( C.User_Password, Password );
 	end Set_Password;
 
-	
+
 	procedure Set_User_Password(C : in out Root_Connection_Type; User_Name, User_Password : String) is
 		-- Set both the username and the password for this connection.
 	begin
 		Set_User( C, Set_User_Password.User_Name );
 		Set_Password( C, Set_User_Password.User_Password );
 	end Set_User_Password;
-   
+
 
 
 	function In_Abort_State(C : Root_Connection_Type) return Boolean is
@@ -342,13 +468,13 @@ package body APQ is
 	begin
 		return C.Rollback_Finalize;
 	end Get_Rollback_On_Finalize;
-	
+
 	procedure Set_Rollback_On_Finalize(C : in out Root_Connection_Type; Rollback : Boolean) is
 		-- Set if the work will be rollbacked when finalizing
 	begin
 		C.Rollback_Finalize := Rollback;
 	end Set_Rollback_On_Finalize;
-	
+
 
 
 
@@ -372,7 +498,7 @@ package body APQ is
 	begin
 		Q.SQL_Case := Set_Case.SQL_Case;
 	end Set_Case;
-	
+
 
 
 	function Get_Fetch_Mode(Q : Root_Query_Type) return Fetch_Mode_Type is
@@ -380,7 +506,7 @@ package body APQ is
 	begin
 		return Q.Mode;
 	end Get_Fetch_Mode;
-	
+
 	procedure Set_Fetch_Mode(Q : in out Root_Query_Type; Mode : Fetch_Mode_Type) is
 		-- Set the fetch mode used by this query.
 	begin
@@ -394,7 +520,7 @@ package body APQ is
 	begin
 		Query.Raise_Exceptions := Raise_On;
 	end Raise_Exceptions;
-	
+
 	procedure Report_Errors(Query : in out Root_Query_Type; Report_On : Boolean := True) is
 		-- report sql erros when Execute_Checked is called?
 	begin
@@ -413,20 +539,20 @@ package body APQ is
 		Total_Length : Natural := 0;
 		Append_NL    : Boolean := False;
 	begin
-		
+
 		for X in 1..Query.Count loop
 			Total_Length := Total_Length + Query.Collection(X).all'Length;
 		end loop;
-		
+
 		if Total_Length <= 0 then
 			return "";        -- No query started
 		end if;
-		
+
 		Append_NL := Query.Collection(Query.Count).all(Query.Collection(Query.Count).all'Last) /= LF;
 		if Append_NL then
 			Total_Length := Total_Length + 1;
 		end if;
-		
+
 		declare
 			Return_String :   String(1..Total_Length);
 			RX :              Positive := Return_String'First;
@@ -461,7 +587,7 @@ package body APQ is
 		if Q.Count < 1 then
 			return False;
 		end if;
-		
+
 		declare
 			use Ada.Characters.Handling, Ada.Strings, Ada.Strings.Fixed;
 			-- Get start of query :
@@ -469,11 +595,11 @@ package body APQ is
 		begin
 			return Query_Start'Length >= 6 and then Query_Start(1..6) = "SELECT";
 		end;
-		
+
 	end Is_Select;
 
 
-	
+
 	function Cursor_Name(Query : Root_Query_Type) return String is
 		-- get the cursor name for the current result
 		-- this function is meant to be overwriten by the driver if it supports cursor
@@ -489,8 +615,8 @@ package body APQ is
 
 	-- SQL creation ...
 
-	
-	
+
+
 	procedure Clear(Q : in out Root_Query_Type) is
 		-- Clear the query so one can start a new SQL expression.
 	begin
@@ -608,7 +734,7 @@ package body APQ is
 		Append(Root_Query_Type'Class(Q),"'",S);
 		Append(Root_Query_Type'Class(Q),"'",After);
 	end Append;
-	
+
 
 
 	procedure Append(Q : in out Root_Query_Type; V : APQ_Timestamp; After : String := "") is
@@ -619,7 +745,7 @@ package body APQ is
 		Append(Root_Query_Type'Class(Q),"'",D);
 		Append(Root_Query_Type'Class(Q),"'",After);
 	end Append;
-	
+
 	procedure Append(Q : in out Root_Query_Type; TS : APQ_Timestamp; TZ : APQ_Timezone; After : String := "") is
 		-- Append a timestamp at a timezone...
 		use Ada.Calendar, Ada.Strings, Ada.Strings.Fixed;
@@ -632,8 +758,8 @@ package body APQ is
 			Append(Root_Query_Type'Class(Q),After);
 		end if;
 	end Append;
-	
-	
+
+
 
 	procedure Append(Q : in out Root_Query_Type; V : Row_ID_Type; After : String := "") is
 		-- Append a row_id_type...
@@ -660,7 +786,7 @@ package body APQ is
 		-- This primitive should normally be overriden for a specific database.
 		-- PostgreSQL and MySQL will potentially have different quoting requirements.
 	begin
-		Append(Root_Query_Type'Class(Q),"'" & SQL & "'",After);    
+		Append(Root_Query_Type'Class(Q),"'" & SQL & "'",After);
 		Q.Caseless(Q.Count) := False;   -- Preserve case here
 	end Append_Quoted;
 
@@ -675,7 +801,7 @@ package body APQ is
 
 
 	-- Data retrieval:
-  
+
 
 	procedure Value(Query: Root_Query_Type; CX : Column_Index_Type; V : out String) is
 		-- Get the value of the CXth column as String.
@@ -701,8 +827,9 @@ package body APQ is
 	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Ada.Strings.Unbounded.Unbounded_String is
 		-- Get the value of the CXth column as Unbounded_String.
 		use Ada.Strings.Unbounded;
+		Str: String := Value(Root_Query_Type'Class(Query),CX);
 	begin
-		return To_Unbounded_String(Value(Root_Query_Type'Class(Query),CX));
+		return To_Unbounded_String(Str);
 	end Value;
 
 
@@ -753,7 +880,7 @@ package body APQ is
 
 	-- SQL creation :: append ...
 
-	
+
 	procedure Append_Boolean(Q : in out Root_Query_Type'Class; V : Val_Type; After : String := "") is
 		function To_String is new Boolean_String(Val_Type);
 	begin
@@ -761,16 +888,16 @@ package body APQ is
 	end Append_Boolean;
 
 
-	
+
 	procedure Append_Integer(Q : in out Root_Query_Type'Class; V : Val_Type; After : String := "") is
 		function To_String is new Integer_String(Val_Type);
 		S : String := To_String(V);
 	begin
 		Append(Root_Query_Type'Class(Q),S,After);
 	end Append_Integer;
-	
-	
-	
+
+
+
 	procedure Append_Modular(Q : in out Root_Query_Type'Class; V : Val_Type; After : String := "") is
 		function To_String is new Modular_String(Val_Type);
 		S : String := To_String(V);
@@ -778,16 +905,16 @@ package body APQ is
 		Append(Root_Query_Type'Class(Q),S,After);
 	end Append_Modular;
 
-	
-	
+
+
 	procedure Append_Float(Q : in out Root_Query_Type'Class; V : Val_Type; After : String := "") is
 		function To_String is new Float_String(Val_Type);
 	begin
 		Append(Root_Query_Type'Class(Q),To_String(V),After);
 	end Append_Float;
-		
 
-	
+
+
 	procedure Append_Fixed(Q : in out Root_Query_Type'Class; V : Val_Type; After : String := "") is
 		function To_String is new APQ.Fixed_String(Val_Type);
 	begin
@@ -811,16 +938,16 @@ package body APQ is
 		Append(Root_Query_Type'Class(Q),"'",To_String(V));
 		Append(Root_Query_Type'Class(Q),"'",After);
 	end Append_Date;
-	
+
 	procedure Append_Time(Q : in out Root_Query_Type'Class; V : Val_Type; After : String := "") is
 		function To_String is new Time_String(Val_Type);
 	begin
 		Append(Root_Query_Type'Class(Q),"'",To_String(V));
 		Append(Root_Query_Type'Class(Q),"'",After);
 	end Append_Time;
-	
-	
-	
+
+
+
 	procedure Append_Timestamp(Q : in out Root_Query_Type'Class; V : Val_Type; After : String := "") is
 		function To_String is new Timestamp_String(Val_Type);
 	begin
@@ -828,8 +955,8 @@ package body APQ is
 		Append(Root_Query_Type'Class(Q),"'",After);
 	end Append_Timestamp;
 
-	
-	
+
+
 	procedure Append_Timezone(Q : in out Root_Query_Type'Class; V : Date_Type; Z : Zone_Type; After : String := "") is
 		function To_String is new Timestamp_String(Date_Type);
 		function To_String is new Timezone_String(Zone_Type);
@@ -842,7 +969,7 @@ package body APQ is
 	end Append_Timezone;
 
 
-	
+
 	procedure Append_Bitstring(Q : in out Root_Query_Type'Class; V : Val_Type; After : String := "") is
 	begin
 		Append(Root_Query_Type'Class(Q),To_String(APQ_Bitstring(V)),After);
@@ -854,19 +981,19 @@ package body APQ is
 	begin
 		Append(Root_Query_Type'Class(Q),P.To_String(SQL),After);
 	end Append_Bounded;
-	
+
 
 
 	procedure Append_Bounded_Quoted(Q : in out Root_Query_Type'Class; Connection : Root_Connection_Type'Class; SQL : P.Bounded_String; After : String := "") is
 	begin
 		Append_Quoted(Root_Query_Type'Class(Q),Connection,P.To_String(SQL),After);
 	end Append_Bounded_Quoted;
-	
-	
-	
+
+
+
 	-- SQL creation :: encode...
 	-- encode is the same as append, but supporting null values.
-   
+
 
 
 	procedure Encode_Boolean(Q : in out Root_Query_Type'Class; V : Val_Type; Indicator : Ind_Type; After : String := "") is
@@ -880,7 +1007,7 @@ package body APQ is
 	end Encode_Boolean;
 
 
-	
+
 	procedure Encode_Integer(Q : in out Root_Query_Type'Class; V : Val_Type; Indicator : Ind_Type; After : String := "") is
 		procedure Append is new Append_Integer(Val_Type);
 	begin
@@ -891,8 +1018,8 @@ package body APQ is
 		end if;
 	end Encode_Integer;
 
-	
-	
+
+
 	procedure Encode_Modular(Q : in out Root_Query_Type'Class; V : Val_Type; Indicator : Ind_Type; After : String := "") is
 		procedure Append is new Append_Modular(Val_Type);
 	begin
@@ -902,9 +1029,9 @@ package body APQ is
 			Append(Root_Query_Type'Class(Q),V,After);
 		end if;
 	end Encode_Modular;
-	
-	
-	
+
+
+
 	procedure Encode_Float(Q : in out Root_Query_Type'Class; V : Val_Type; Indicator : Ind_Type; After : String := "") is
 		procedure Append is new Append_Float(Val_Type);
 	begin
@@ -915,8 +1042,8 @@ package body APQ is
 		end if;
 	end Encode_Float;
 
-	
-	
+
+
 	procedure Encode_Fixed(Q : in out Root_Query_Type'Class; V : Val_Type; Indicator : Ind_Type; After : String := "") is
 		procedure Append is new Append_Fixed(Val_Type);
 	begin
@@ -927,8 +1054,8 @@ package body APQ is
 		end if;
 	end Encode_Fixed;
 
-	
-	
+
+
 	procedure Encode_Decimal(Q : in out Root_Query_Type'Class; V : Val_Type; Indicator : Ind_Type; After : String := "") is
 		procedure Append is new Append_Decimal(Val_Type);
 	begin
@@ -938,9 +1065,9 @@ package body APQ is
 			Append(Root_Query_Type'Class(Q),V,After);
 		end if;
 	end Encode_Decimal;
-	
-	
-	
+
+
+
 	procedure Encode_Date(Q : in out Root_Query_Type'Class; V : Val_Type; Indicator : Ind_Type; After : String := "") is
 		procedure Append is new Append_Date(Val_Type);
 	begin
@@ -951,8 +1078,8 @@ package body APQ is
 		end if;
 	end Encode_Date;
 
-	
-	
+
+
 	procedure Encode_Time(Q : in out Root_Query_Type'Class; V : Val_Type; Indicator : Ind_Type; After : String := "") is
 		procedure Append is new Append_Time(Val_Type);
 	begin
@@ -962,9 +1089,9 @@ package body APQ is
 			Append(Root_Query_Type'Class(Q),V,After);
 		end if;
 	end Encode_Time;
-     
-	
-	
+
+
+
 	procedure Encode_Timestamp(Q : in out Root_Query_Type'Class; V : Val_Type; Indicator : Ind_Type; After : String := "") is
 		procedure App is new Append_Timestamp(Val_Type);
 	begin
@@ -974,10 +1101,10 @@ package body APQ is
 			App(Root_Query_Type'Class(Q),V,After);
 		end if;
 	end Encode_Timestamp;
-	
 
 
-	
+
+
 	procedure Encode_Timezone(Q : in out Root_Query_Type'Class; D : Date_Type; Z : Zone_Type; Indicator : Ind_Type; After : String := "") is
 		procedure Append is new Append_Timezone(Date_Type,Zone_Type);
 	begin
@@ -987,9 +1114,9 @@ package body APQ is
 			Append(Root_Query_Type'Class(Q),D,Z,After);
 		end if;
 	end Encode_Timezone;
-	
-	
-	
+
+
+
 	procedure Encode_Bitstring(Q : in out Root_Query_Type'Class; V : Val_Type; Indicator : Ind_Type; After : String := "") is
 		procedure App is new Append_Bitstring(Val_Type);
 	begin
@@ -999,9 +1126,9 @@ package body APQ is
 			App(Root_Query_Type'Class(Q),V,After);
 		end if;
 	end Encode_Bitstring;
-	
-	
-	
+
+
+
 	procedure Encode_String_Quoted(Q : in out Root_Query_Type'Class; Connection : Root_Connection_Type'Class; SQL : String; Indicator : Ind_Type; After : String := "") is
 	begin
 		if Indicator then
@@ -1035,7 +1162,7 @@ package body APQ is
 	end Encode_Unbounded;
 
 
-	
+
 	procedure Encode_Unbounded_Quoted(Q : in out Root_Query_Type'Class; Connection : Root_Connection_Type'Class; SQL : Ada.Strings.Unbounded.Unbounded_String; Indicator : Ind_Type; After : String := "") is
 		use Ada.Strings.Unbounded;
 	begin
@@ -1045,13 +1172,13 @@ package body APQ is
 			Append_Quoted(Root_Query_Type'Class(Q),Connection,To_String(SQL),After);
 		end if;
 	end Encode_Unbounded_Quoted;
-	
 
 
 
 
 
-	-- Data retrieval :: misc ... 
+
+	-- Data retrieval :: misc ...
 
 
 
@@ -1063,136 +1190,102 @@ package body APQ is
 
 
 
-   
+
 	-- Data retrieval :: value operations ...
 
 
 
 	function Boolean_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-		function To_Boolean is new Convert_To_Boolean(Val_Type);
-		Text : String := Value(Root_Query_Type'Class(Query),CX);
+--		function To_Boolean is new Convert_To_Boolean(Val_Type);
+--		Text : String := Value(Root_Query_Type'Class(Query),CX);
+		B: Boolean;
 	begin
-		case Engine_Of(Query) is
-			when Engine_PostgreSQL =>
-				return To_Boolean(Text);
-			when Engine_MySQL =>
-				declare
-					I : Integer;
-				begin
-					I := Integer'Value(Text);  -- May raise Constraint_Error 
-					return Val_Type(I /= 0);   -- Tinyint or Bit is TRUE when /= 0 for MySQL
-				end;
-			when Engine_Sybase =>
-				return To_Boolean(Text);
-			when Engine_Other =>
-				return To_Boolean(Text);
-		end case;
-	exception
-		when Constraint_Error =>
-			Raise_APQ_Error_Exception(
-				E	=> Constraint_Error'Identity,
-				Code	=> APQ10,
-				Where	=> "Boolean_Value",
-				Zero	=> Column_Index_Type'Image(CX) );
+		B := Value( Query, CX );
+		return Val_Type(B);
+--		case Engine_Of(Query) is
+--			when Engine_PostgreSQL =>
+--				return To_Boolean(Text);
+--			when Engine_MySQL =>
+--				declare
+--					I : Integer;
+--				begin
+--					I := Integer'Value(Text);  -- May raise Constraint_Error
+--					return Val_Type(I /= 0);   -- Tinyint or Bit is TRUE when /= 0 for MySQL
+--				end;
+--			when Engine_Sybase =>
+--				return To_Boolean(Text);
+--			when Engine_Other =>
+--				return To_Boolean(Text);
+--		end case;
 	end Boolean_Value;
 
-	
-	
+
+
 	function Integer_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-		S : String := Value(Root_Query_Type'Class(Query),CX);
+--		S : String := Value(Root_Query_Type'Class(Query),CX);
+		I : Integer;
 	begin
-		return Val_Type'Value(S);
-	exception
-		when Constraint_Error =>
-			Raise_APQ_Error_Exception(
-				E	=> Constraint_Error'Identity,
-				Code	=> APQ11,
-				Where	=> "Integer_Value",
-				Zero	=> Column_Index_Type'Image(CX) );
+--		return Val_Typel'Value(S);
+		I := Value(Query, CX);
+		return Val_Type(I);
 	end Integer_Value;
 
-	
-	
+
+
 	function Modular_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-		S : String := Value(Root_Query_Type'Class(Query),CX);
+		--This method may raise constraint error if the user is careless with his types.
+--		S : String := Value(Root_Query_Type'Class(Query),CX);
+		I : Integer;
 	begin
-		return Val_Type'Value(S);
-	exception
-		when Constraint_Error =>
-			Raise_APQ_Error_Exception(
-				E	=> Constraint_Error'Identity,
-				Code	=> APQ12,
-				Where	=> "Modular_Value",
-				Zero	=> Column_Index_Type'Image(CX) );
+--		return Val_Typel'Value(S);
+		I := Value(Query, CX);
+		return Val_Type(I);
 	end Modular_Value;
 
-	
-	
+
+
 	function Float_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-		S : String := Value(Root_Query_Type'Class(Query),CX);
+--		S : String := Value(Root_Query_Type'Class(Query),CX);
+		F : Float;
 	begin
-		return Val_Type'Value(S);
-	exception
-		when Constraint_Error =>
-			Raise_APQ_Error_Exception(
-				E	=> Constraint_Error'Identity,
-				Code	=> APQ13,
-				Where	=> "Float_Value",
-				Zero	=> Column_Index_Type'Image(CX) );
+--		return Val_Typel'Value(S);
+		F := Value(Query, CX);
+		return Val_Type(F);
 	end Float_Value;
 
 
-	
+
 	function Fixed_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-		S : String := Value(Root_Query_Type'Class(Query),CX);
+		--This method may raise constraint error if the user is careless with his types.
+--		S : String := Value(Root_Query_Type'Class(Query),CX);
+		F : Float;
 	begin
-		return Val_Type'Value(S);
-	exception
-		when Constraint_Error =>
-			Raise_APQ_Error_Exception(
-				E	=> Constraint_Error'Identity,
-				Code	=> APQ14,
-				Where	=> "Fixed_Value",
-				Zero	=> Column_Index_Type'Image(CX) );
-			return 0.0; -- so GNAT won't complaint
+--		return Val_Typel'Value(S);
+		F := Value(Query, CX);
+		return Val_Type(F);
 	end Fixed_Value;
 
-	
-	
+
+
 	function Decimal_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-		S : String := Value(Root_Query_Type'Class(Query),CX);
+		--This method may raise constraint error if the user is careless with his types.
+--		S : String := Value(Root_Query_Type'Class(Query),CX);
+		F : Float;
 	begin
-		return Val_Type'Value(S);
-	exception
-		when Constraint_Error =>
-			Raise_APQ_Error_Exception(
-				E	=> Constraint_Error'Identity,
-				Code	=> APQ16,
-				Where	=> "Decimal_Value",
-				Zero	=> Column_Index_Type'Image(CX) );
-			return 0.0; -- so GNAT won't complaint
+--		return Val_Typel'Value(S);
+		F := Value(Query, CX);
+		return Val_Type(F);
 	end Decimal_Value;
-	
-	
-	
+
+
+
 	function Date_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-		function To_Date is new Convert_To_Date(Val_Type);
+--		function To_Date is new Convert_To_Date(Val_Type);
+		date : APQ_Date;
 	begin
-		return To_Date(Value(Root_Query_Type'Class(Query),CX));
-	exception
-		when Constraint_Error =>
-			Raise_APQ_Error_Exception(
-				E	=> Constraint_Error'Identity,
-				Code	=> APQ17,
-				Where	=> "Date_Value",
-				Zero	=> Column_Index_Type'Image(CX) );
-		when Invalid_Format =>
-			Raise_APQ_Error_Exception(
-				E	=> Invalid_Format'Identity,
-				Code	=> APQ18,
-				Where	=> "Date_Value",
-				Zero	=> Value( Root_Query_Type'Class(Query), CX ),
-				One	=> Column_Index_Type'Image(CX) );
+--		return To_Date(Value(Root_Query_Type'Class(Query),CX)
+		date := Value(Query, CX);
+		return Val_Type(date);
 	end Date_Value;
 
 
@@ -1208,6 +1301,7 @@ package body APQ is
 	--    "YYMMDDHHMMSS"          S'Length = 12
 	--
 	function MySQL_YYYYMMDDHHMMSS(S : String) return String is
+		--TODO: Send this method over to the mysql client.
 		T : String(1..S'Length) := S;
 	begin
 		case T'Length is
@@ -1251,6 +1345,7 @@ package body APQ is
 	--    "HHMMSS"    S'Length = 6
 	--
 	function MySQL_HHMMSS(S : String) return String is
+		--TODO: Send this method over to the mysql client.
 		T : String(1..S'Length) := S;
 	begin
 		case T'Length is
@@ -1266,93 +1361,92 @@ package body APQ is
 
 
 	function Time_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-		function To_Time is new Convert_To_Time(Val_Type);
-		Text : String := Value(Root_Query_Type'Class(Query),CX);
+--		function To_Time is new Convert_To_Time(Val_Type);
+--		Text : String := Value(Root_Query_Type'Class(Query),CX);
+		Time : APQ_Time;
 	begin
-		case Engine_Of(Query) is
-			when Engine_PostgreSQL =>
-				return To_Time(Text);
-			when Engine_Sybase =>
-				return To_Time(Text);
-			when Engine_MySQL =>
-				return To_Time(MySQL_HHMMSS(Text));
-			when Engine_Other =>
-				return To_Time(Text);
-		end case;
-	exception
-		when Constraint_Error =>
-			Raise_APQ_Error_Exception(
-				E	=> Constraint_Error'Identity,
-				Code	=> APQ19,
-				Where	=> "Time_Value",
-				Zero	=> Text,
-				One	=> Column_Index_Type'Image(CX) );
+--		case Engine_Of(Query) is
+--			when Engine_PostgreSQL =>
+--				return To_Time(Text);
+--			when Engine_Sybase =>
+--				return To_Time(Text);
+--			when Engine_MySQL =>
+--				return To_Time(MySQL_HHMMSS(Text));
+--			when Engine_Other =>
+--				return To_Time(Text);
+--		end case;
+		Time := Value(Query, CX);
+		return Val_Type(Time);
 	end Time_Value;
 
 
-	
+
 	function Timestamp_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
-		function To_Timestamp is new Convert_To_Timestamp(Val_Type);
-		Text : String := Value(Root_Query_Type'Class(Query),CX);
+--		function To_Timestamp is new Convert_To_Timestamp(Val_Type);
+--		Text : String := Value(Root_Query_Type'Class(Query),CX);
+		Timestamp : APQ_Timestamp;
 	begin
-		case Engine_Of(Query) is
-			when Engine_PostgreSQL =>
-				return To_Timestamp(Text);
-			when Engine_Sybase =>
-				return To_Timestamp(Text);
-			when Engine_MySQL =>
-				return To_Timestamp(MySQL_YYYYMMDDHHMMSS(Text));
-			when Engine_Other =>
-				return To_Timestamp(Text);
-		end case;
+--		case Engine_Of(Query) is
+--			when Engine_PostgreSQL =>
+--				return To_Timestamp(Text);
+--			when Engine_Sybase =>
+--				return To_Timestamp(Text);
+--			when Engine_MySQL =>
+--				return To_Timestamp(MySQL_YYYYMMDDHHMMSS(Text));
+--			when Engine_Other =>
+--				return To_Timestamp(Text);
+--		end case;
+		Timestamp := Value(Query, CX);
+		return Val_Type(Timestamp);
+
 	exception
 		when Constraint_Error | Invalid_Format =>
 			Raise_APQ_Error_Exception(
 				E	=> Invalid_Format'Identity,
 				Code	=> APQ20,
 				Where	=> "Timestamp_Value",
-				Zero	=> Text,
+				Zero	=> Value(Root_Query_Type'Class(Query), CX),
 				One	=> Column_Index_Type'Image(CX) );
 	end Timestamp_Value;
-	
+
 	procedure Timezone_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type; TS : out Date_Type; TZ : out Zone_Type) is
-		use Ada.Strings, Ada.Strings.Fixed;
-		function To_Timestamp is new Convert_To_Timestamp(Date_Type);
-		S : String := Trim(Value(Root_Query_Type'Class(Query),CX),Both);
+--		use Ada.Strings, Ada.Strings.Fixed;
+--		function To_Timestamp is new Convert_To_Timestamp(APQ_Timestamp);
+--		S : String := Trim(Value(Root_Query_Type'Class(Query),CX),Both);
+		Timestamp : APQ_Timestamp;
+		Timezone  : APQ_Timezone;
 	begin
-		TS := To_Timestamp(S);
-		for X in reverse S'Range loop
-			if S(X) = '-' or else S(X) = '+' then
-				if S(X..S'Last)'Length <= 3 then
-					begin
-						TZ := Zone_Type'Value(S(X..S'Last));
-						return;
-					exception
-						when others =>
-							Raise_APQ_Error_Exception(
-								E	=> Invalid_Format'Identity,
-								Code	=> APQ21,
-								Where	=> "Timezone_Value",
-								Zero	=> Column_Index_Type'Image(CX) );
-					end;
-				else
-					Raise_APQ_Error_Exception(
-						E	=> Invalid_Format'Identity,
-						Code	=> APQ22,
-						Where	=> "Timezone_Value",
-						Zero	=> Column_Index_Type'Image(CX) );
-				end if;
-			end if;
-		end loop;
-		Raise_APQ_Error_Exception(
-			E	=> Invalid_Format'Identity,
-			Code	=> APQ23,
-			Where	=> "Timezone_Value",
-			Zero	=> Column_Index_Type'Image(CX) );
+--		TS := To_Timestamp(S);
+--		for X in reverse S'Range loop
+--			if S(X) = '-' or else S(X) = '+' then
+--				if S(X..S'Last)'Length <= 3 then
+--					begin
+--						TZ := APQ_Timezone'Value(S(X..S'Last));
+--						return;
+--					exception
+--						when others =>
+--							Raise_APQ_Error_Exception(
+--								E	=> Invalid_Format'Identity,
+--								Code	=> APQ21,
+--								Where	=> "Timezone_Value",
+--								Zero	=> Column_Index_Type'Image(CX) );
+--					end;
+--				else
+--					Raise_APQ_Error_Exception(
+--						E	=> Invalid_Format'Identity,
+--						Code	=> APQ22,
+--						Where	=> "Timezone_Value",
+--						Zero	=> Column_Index_Type'Image(CX) );
+--				end if;
+--			end if;
+--		end loop;
+		Value(Query, CX, Timestamp, Timezone);
+		TS := Date_Type(Timestamp);
+		TZ := Zone_Type(Timezone);
 	end Timezone_Value;
 
-	
-	
+
+
 	function Bounded_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return P.Bounded_String is
 		use Ada.Strings.Bounded;
 	begin
@@ -1379,7 +1473,7 @@ package body APQ is
 	end Boolean_Fetch;
 
 
-	
+
 	procedure Integer_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
 		function Value is new Integer_Value(Val_Type);
 	begin
@@ -1390,9 +1484,9 @@ package body APQ is
 			V := Val_Type'First;
 		end if;
 	end Integer_Fetch;
-	
-	
-	
+
+
+
 	procedure Modular_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
 		function Value is new Modular_Value(Val_Type);
 	begin
@@ -1403,9 +1497,9 @@ package body APQ is
 			V := Val_Type'First;
 		end if;
 	end Modular_Fetch;
-	
-	
-	
+
+
+
 	procedure Float_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
 		function Value is new Float_Value(Val_Type);
 	begin
@@ -1416,9 +1510,9 @@ package body APQ is
 			V := Val_Type'First;
 		end if;
 	end Float_Fetch;
-	
 
-	
+
+
 	procedure Fixed_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
 		function Value is new Fixed_Value(Val_Type);
 	begin
@@ -1429,8 +1523,8 @@ package body APQ is
 			V := Val_Type'First;
 		end if;
 	end Fixed_Fetch;
-	
-	
+
+
 
 	procedure Decimal_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
 		function Value is new Decimal_Value(Val_Type);
@@ -1442,9 +1536,9 @@ package body APQ is
 			V := Val_Type'First;
 		end if;
 	end Decimal_Fetch;
-	
-	
-	
+
+
+
 	procedure Date_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
 		function Value is new Date_Value(Val_Type);
 	begin
@@ -1454,8 +1548,8 @@ package body APQ is
 		end if;
 	end Date_Fetch;
 
-	
-	
+
+
 	procedure Time_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
 		function Value is new Time_Value(Val_Type);
 	begin
@@ -1466,9 +1560,9 @@ package body APQ is
 			V := Val_Type'First;
 		end if;
 	end Time_Fetch;
-	
-	
-	
+
+
+
 	procedure Timestamp_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type) is
 		function Value is new Timestamp_Value(Val_Type);
 	begin
@@ -1477,9 +1571,9 @@ package body APQ is
 			V := Value(Root_Query_Type'Class(Query),CX);
 		end if;
 	end Timestamp_Fetch;
-	
-	
-	
+
+
+
 	procedure Timezone_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Date_Type; Z : out Zone_Type; Indicator : out Ind_Type) is
 		procedure Value is new Timezone_Value(Date_Type,Zone_Type);
 	begin
@@ -1512,9 +1606,9 @@ package body APQ is
 			end;
 		end if;
 	end Bitstring_Fetch;
-	
 
-	
+
+
 	procedure Bounded_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out P.Bounded_String; Indicator : out Ind) is
 		use Ada.Strings, P;
 	begin
@@ -1538,21 +1632,23 @@ package body APQ is
 		end if;
 	end Bounded_Fetch;
 
-	
-	
+
+
 	procedure Unbounded_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Ada.Strings.Unbounded.Unbounded_String; Indicator : out Ind_Type) is
 		use Ada.Strings.Unbounded;
+
+		Str: String := Value(Root_Query_Type'Class(Query),CX);
 	begin
 		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
 		if not Indicator then
-			V := To_Unbounded_String(Value(Root_Query_Type'Class(Query),CX));
+			V := To_Unbounded_String(Str);
 		else
 			V := Null_Unbounded_String;
 		end if;
 	end Unbounded_Fetch;
-	
 
-	
+
+
 	procedure Char_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out String; Indicator : out Ind_Type) is
 	begin
 		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
@@ -1608,8 +1704,8 @@ package body APQ is
 
 	-- Conversion :: anything to string (APQ primitives) ...
 
-	
-	
+
+
 	function To_String(V : APQ_Boolean) return String is
 	begin
 		if V then
@@ -1618,9 +1714,9 @@ package body APQ is
 			return "FALSE";
 		end if;
 	end To_String;
-	
-	
-	
+
+
+
 	function To_String(V : APQ_Date) return String is
 		use Ada.Calendar;
 		package INTIO2 is new Ada.Text_IO.Integer_IO(Integer);
@@ -1634,9 +1730,9 @@ package body APQ is
 		INTIO2.Put(To => YYYY_MM_DD(9..10), Item => DD, Base => 10);
 		return Blanks_To_Zero(YYYY_MM_DD);
 	end To_String;
-	
-	
-	
+
+
+
 	function To_String(V : APQ_Time) return String is
 		use Ada.Calendar;
 		package INTIO3 is new Ada.Text_IO.Integer_IO(Integer);
@@ -1653,9 +1749,9 @@ package body APQ is
 		INTIO3.Put(To => HH_MM_SS(7..8), Item => SS, Base => 10);
 		return Blanks_To_Zero(HH_MM_SS);
 	end To_String;
-	
-	
-	
+
+
+
 	function To_String(V : APQ_Timestamp) return String is
 		function Time_of_Day is new Generic_Time_of_Day(APQ_Timestamp,APQ_Time);
 		DS : String := To_String(APQ_Date(V));
@@ -1663,9 +1759,9 @@ package body APQ is
 	begin
 		return DS & " " & ST;
 	end To_String;
-	
-	
-	
+
+
+
 	function To_String(V : APQ_Timezone) return String is
 		package ZONEIO is new Ada.Text_IO.Integer_IO(APQ_Timezone);
 		ZS : String(1..3);
@@ -1677,18 +1773,18 @@ package body APQ is
 		end if;
 		return ZS;
 	end To_String;
-	
-	
-	
+
+
+
 	function To_String(V : APQ_Timestamp; TZ : APQ_Timezone) return String is
 		ST : String := To_String(V);
 		ZS : String := To_String(TZ);
 	begin
 		return ST & ZS;
 	end To_String;
-	
-	
-	
+
+
+
 	function To_String(V : APQ_Bitstring) return String is
 		S : String(V'Range);
 	begin
@@ -1707,14 +1803,14 @@ package body APQ is
 	-- Conversion :: anything to string (generic for derived types) ...
 
 
-	
+
 	function Boolean_String(V : Val_Type) return String is
 	begin
 		return To_String(APQ_Boolean(V));
 	end Boolean_String;
-	
-	
-	
+
+
+
 	function Modular_String(V : Val_Type) return String is
 		use Ada.Strings.Fixed, Ada.Strings;
 		package MODIO is new Ada.Text_IO.Modular_IO(Val_Type);
@@ -1723,9 +1819,9 @@ package body APQ is
 		MODIO.Put(To => S, Item => V, Base => 10);
 		return Trim(S,Both);
 	end Modular_String;
-	
-	
-	
+
+
+
 	function Integer_String(V : Val_Type) return String is
 		use Ada.Strings.Fixed, Ada.Strings;
 		package INTIO1 is new Ada.Text_IO.Integer_IO(Val_Type);
@@ -1734,9 +1830,9 @@ package body APQ is
 		INTIO1.Put(To => S, Item => V, Base => 10);
 		return Trim(S,Both);
 	end Integer_String;
-	
-	
-	
+
+
+
 	function Float_String(V : Val_Type) return String is
 		use Ada.Strings.Fixed, Ada.Strings;
 		package FLTIO is new Ada.Text_IO.Float_IO(Val_Type);
@@ -1745,9 +1841,9 @@ package body APQ is
 		FLTIO.Put(To => S, Item => V, Exp => 3);
 		return Trim(S,Both);
 	end Float_String;
-	
-	
-	
+
+
+
 	function Fixed_String(V : Val_Type) return String is
 		use Ada.Strings.Fixed, Ada.Strings;
 		package FXTIO is new Ada.Text_IO.Fixed_IO(Val_Type);
@@ -1756,9 +1852,9 @@ package body APQ is
 		FXTIO.Put(To => S, Item => V, Exp => 3);
 		return Trim(S,Both);
 	end Fixed_String;
-	
-	
-	
+
+
+
 	function Decimal_String(V : Val_Type) return String is
 		use Ada.Strings.Fixed, Ada.Strings;
 		package DECIO is new Ada.Text_IO.Decimal_IO(Val_Type);
@@ -1766,36 +1862,36 @@ package body APQ is
 	begin
 		DECIO.Put(To => S, Item => V);
 		return Trim(S,Both);
-	end Decimal_String;   
+	end Decimal_String;
 
 
-	
+
 	function Date_String(V : Val_Type) return String is
 	begin
 		return To_String(APQ_Date(V));
 	end Date_String;
-	
-	
-	
+
+
+
 	function Time_String(V : Val_Type) return String is
 	begin
 		return To_String(APQ_Time(V));
 	end Time_String;
 
 
-	
+
 	function Timestamp_String(V : Val_Type) return String is
 	begin
 		return To_String(APQ_Timestamp(V));
 	end Timestamp_String;
-	
-	
-	
+
+
+
 	function Timezone_String(V : Val_Type) return String is
 	begin
 		return To_String(APQ_Timezone(V));
 	end Timezone_String;
-	
+
 
 
 	-- Conversion :: anything from string ...
@@ -1819,26 +1915,29 @@ package body APQ is
 				return False;
 			end if;
 		end if;
-		
+
 		Raise_APQ_Error_Exception(
 			E	=> Invalid_Format'Identity,
 			Code	=> APQ07,
 			Where	=> "Convert_To_Boolean",
 			Zero	=> S );
+		--This is here to avoid useless warnings.
+		return False;
 	end Convert_To_Boolean;
 
 
 
 	function Convert_To_Date(S : String) return Val_Type is
 		-- S must be YYYY-MM-DD format
+		--TODO: Solve the warning about possible no return value.
 		use Ada.Strings, Ada.Strings.Fixed, Ada.Calendar;
 		T : String := Trim(S,Both);
 		Hyphen_X1 :    Positive := T'Last + 1;
 		Hyphen_X2 :    Positive := T'Last + 1;
 		Both_Found :   Boolean := False;
 	begin
-		
-		
+
+
 		for X in T'Range loop
 			if T(X) = '-' or T(X) = '/' then
 				Hyphen_X1 := X;
@@ -1853,7 +1952,7 @@ package body APQ is
 				exit;
 			end if;
 		end loop;
-		
+
 		if not Both_Found then
 			Raise_APQ_Error_Exception(
 				E	=> Invalid_Format'Identity,
@@ -1861,7 +1960,7 @@ package body APQ is
 				Where	=> "Convert_To_Date",
 				Zero	=> S );
 		end if;
-		
+
 
 		begin
 			declare
@@ -1886,6 +1985,7 @@ package body APQ is
 
 	function Convert_To_Time(S : String) return Val_Type is
 		-- S must be HH:MM:SS[.FFF] format
+		--TODO: Solve the warning about possible no return value.
 		use Ada.Strings, Ada.Strings.Fixed, Ada.Calendar;
 		T : String := Trim(S,Both);
 		Last :         Positive := T'Last;
@@ -1894,14 +1994,14 @@ package body APQ is
 		Colon_1F :     Boolean := False;
 		Colon_2F :     Boolean := False;
 	begin
-		
+
 		for X in reverse T'Range loop
 			if T(X) = '.' then
 				Last := X-1;    -- Ignore fractional part
 				exit;
 			end if;
 		end loop;
-		
+
 		-- 00:00:00.000
 
 		for X in T'Range loop
@@ -1919,7 +2019,7 @@ package body APQ is
 				exit;
 			end if;
 		end loop;
-		
+
 		if not Colon_1F then
 			Raise_APQ_Error_Exception(
 				E	=> Invalid_Format'Identity,
@@ -1927,11 +2027,11 @@ package body APQ is
 				Where	=> "Convert_To_Time",
 				Zero	=> S );
 		end if;
-		
+
 		if not Colon_2F then
 			Colon_X2 := Last + 1;
 		end if;
-		
+
 		begin
 			declare
 				Hour :   Natural        := Natural'Value(T(1..Colon_X1-1));
@@ -1941,7 +2041,7 @@ package body APQ is
 				if Colon_2F then
 					Second := Natural'Value(T(Colon_X2+1..Last));
 				end if;
-				
+
 				return Val_Type( Hour * 60 * 60 + Minute * 60 + Second );
 			end;
 		exception
@@ -1962,7 +2062,7 @@ package body APQ is
 		BX :  Positive := T'Last + 1;
 		BF :  Boolean := False;
 	begin
-		
+
 		for X in T'Range loop
 			if T(X) = ' ' then
 				BF := True;
@@ -1970,7 +2070,7 @@ package body APQ is
 				exit;
 			end if;
 		end loop;
-		
+
 		if not BF then
 			return To_Date(T);
 		else
@@ -1984,7 +2084,7 @@ package body APQ is
 						end if;
 					end if;
 				end loop;
-				
+
 				declare
 					function To_Date is new Convert_To_Date(APQ_Date);
 					function To_Time is new Convert_To_Time(APQ_Time);
@@ -1998,14 +2098,13 @@ package body APQ is
 				end;
 			end;
 		end if;
-		
+
 	end Convert_To_Timestamp;
 
 
 
 
 	function Convert_Date_and_Time(DT : Date_Type; TM : Time_Type) return Result_Type is
-		
 		function Internal_Date_and_Time(DT : Ada.Calendar.Time; TM : Ada.Calendar.Day_Duration) return Ada.Calendar.Time is
 			use Ada.Calendar;
 			Year :      Year_Number;
@@ -2017,8 +2116,8 @@ package body APQ is
 			Second := Day_Duration(TM);
 			return Time_Of(Year,Month,Day,Second);
 		end Internal_Date_and_Time;
-		
-		
+
+
 		use Ada.Calendar;
 	begin
 		-- Internal_Date_and_Time() function necessary to avoid 3.13p compiler bug
@@ -2043,7 +2142,7 @@ package body APQ is
 		return Oid_Type(Row);
 	end Generic_Command_Oid;
 
-	
+
 	procedure Extract_Timezone(S : String; DT : out Date_Type; TZ : out Zone_Type) is
 		use Ada.Strings, Ada.Strings.Fixed;
 		function To_Timestamp is new Convert_To_Timestamp(Date_Type);
@@ -2051,7 +2150,7 @@ package body APQ is
 		Have_TZ :      Boolean := False;
 		End_X :        Positive := T'Last + 1;
 	begin
-		
+
 		for X in reverse T'Range loop
 			if T(X) = '-' or T(X) = '+' then
 				Have_TZ := True;
@@ -2061,14 +2160,14 @@ package body APQ is
 				exit;
 			end if;
 		end loop;
-		
+
 		DT := To_Timestamp(T(1..End_X-1));
 		if Have_TZ then
 			TZ := Zone_Type'Value(T(End_X+1..T'Last));
 		else
 			TZ := 0;
 		end if;
-		
+
 	end Extract_Timezone;
 
 
@@ -2082,7 +2181,7 @@ package body APQ is
 	-- They have been split out to avoid a GNAT 3.13p compiler bug.
 
 	-- internal functions ...
-	
+
 	function Time_Component(TM : Ada.Calendar.Day_Duration; Unit : Time_Unit) return Natural is
 	begin
 		case Unit is
@@ -2099,8 +2198,8 @@ package body APQ is
 		end case;
 	end Time_Component;
 
-   
-	
+
+
 	function Internal_Time_of_Day(DT : Ada.Calendar.Time) return Ada.Calendar.Day_Duration is
 		use Ada.Calendar;
 		Year :      Year_Number;
@@ -2111,7 +2210,7 @@ package body APQ is
 		Split(DT,Year,Month,Day,Seconds);
 		return Seconds;
 	end Internal_Time_of_Day;
-	
+
 
 
 	-- implementation of the package spec ...
@@ -2122,23 +2221,23 @@ package body APQ is
 	begin
 		return Time_Type(Internal_Time_of_Day(Ada.Calendar.Time(V)));
 	end Generic_Time_of_Day;
-	
+
 
 
 	function Generic_Hour(TM : Time_Type) return Hour_Number is
 	begin
 		return Hour_Number(Time_Component(Ada.Calendar.Day_Duration(TM),Hour));
 	end Generic_Hour;
-	
 
-	
+
+
 	function Generic_Minute(TM : Time_Type) return Minute_Number is
 	begin
 		return Minute_Number(Time_Component(Ada.Calendar.Day_Duration(TM),Minute));
 	end Generic_Minute;
 
 
-	
+
 	function Generic_Second(TM : Time_Type) return Second_Number is
 	begin
 		return Second_Number(Time_Component(Ada.Calendar.Day_Duration(TM),Second));
@@ -2147,9 +2246,9 @@ package body APQ is
 
 
  -- private
-	
-	
-	
+
+
+
 	function To_Case(S : String; C : SQL_Case_Type) return String is
 		-- convert the string to the selected case
 		use Ada.Characters.Handling;
@@ -2163,7 +2262,7 @@ package body APQ is
 				return To_Upper(S);
 		end case;
 	end To_Case;
-	
+
 
 
 	procedure Clear_Abort_State(C : in out Root_Connection_Type) is
@@ -2224,7 +2323,7 @@ package body APQ is
 			return "";
 		end if;
 	end To_String;
-	
+
 
 
 	function To_Ada_String(P : Interfaces.C.Strings.chars_ptr) return String is
@@ -2249,7 +2348,7 @@ package body APQ is
 		return R;
 	end Blanks_To_Zero;
 
-	
+
 
 	procedure C_String(S : String_Ptr; CP : out Interfaces.C.Strings.char_array_access; Addr : out System.Address) is
 		use Interfaces.C;
@@ -2262,9 +2361,9 @@ package body APQ is
 			Addr := System.Null_Address;
 		end if;
 	end C_String;
-	
-	
-	
+
+
+
 	procedure C_String(S : String; CP : out Interfaces.C.Strings.char_array_access; Addr : out System.Address) is
 		use Interfaces.C;
 	begin
@@ -2273,7 +2372,7 @@ package body APQ is
 	end C_String;
 
 
-	
+
 	function Strip_NL(S : String) return String is
 		use Ada.Characters.Latin_1;
 		NX : Natural := S'Last;
@@ -2308,8 +2407,8 @@ package body APQ is
 		return To_Ada(Value(C_String));
 	end Value_Of;
 
-	
-	
+
+
 	function Is_Null(C_String : Interfaces.C.Strings.chars_ptr) return Boolean is
 		use Interfaces.C.Strings;
 	begin
