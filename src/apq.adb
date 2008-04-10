@@ -84,7 +84,7 @@ package body APQ is
 		Raise_APQ_Error_Exception( E, Code, Where, A );
 	end Raise_APQ_Error_Exception;
 
-	procedure Raise_APQ_Error_Exception( E: in Exception_Id; 
+	procedure Raise_APQ_Error_Exception( E: in Exception_Id;
 		Code: in APQ_Error; Where: in String; Zero, One: in String ) is
 		-- Raise the Exception E with a comprehensive error message
 		Pragma Inline(Raise_APQ_Error_Exception);
@@ -93,12 +93,12 @@ package body APQ is
 		Raise_APQ_Error_Exception( E, Code, Where, A );
 	end Raise_APQ_Error_Exception;
 
-	procedure Raise_APQ_Error_Exception( E: in Exception_Id; 
+	procedure Raise_APQ_Error_Exception( E: in Exception_Id;
 		Code: in APQ_Error; Where: in String;
 		Zero, One, Two: in String ) is
 		-- Raise the Exception E with a comprehensive error message
 		Pragma Inline(Raise_APQ_Error_Exception);
-		
+
 		A: Pattern_Array := To_Pattern_Array( Zero, One, Two );
 	begin
 		Raise_APQ_Error_Exception( E, Code, Where, A );
@@ -115,7 +115,7 @@ package body APQ is
 		use Aw_Lib.String_Util;		-- Str_Replace
 
 		function Process_Message return String is
-			Desc: Unbounded_String := 
+			Desc: Unbounded_String :=
 				Unbounded_String(APQ_Error_Descriptions(Code));
 
 			function Get_Pattern( i: in Integer ) return Unbounded_String is
@@ -140,132 +140,6 @@ package body APQ is
 	end Raise_APQ_Error_Exception;
 
 
-
-	--           METHODS THAT SHOULD BE OVERRIDDEN BY THE DATABASE DRIVER           --
-
-
-	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Boolean is
-		function To_Boolean is new Convert_To_Boolean(Boolean);
-		Text : String := Value(Root_Query_Type'Class(Query),CX);
-	begin
-		return To_Boolean(Text);
-	exception
-		when Constraint_Error =>
-			Raise_APQ_Error_Exception(
-				E	=> Constraint_Error'Identity,
-				Code	=> APQ10,
-				Where	=> "Value (Returns Boolean)",
-				Zero	=> Column_Index_Type'Image(CX) );
-			return false; -- we return something so gnat won't complaint
-	end Value;
-
-	--TODO: Solve a possible problem with databases that can store values bigger or smaller than Integer.
-	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Integer is
-		S : String := Value(Root_Query_Type'Class(Query), CX);
-	begin
-		return Integer'Value(S);
-	exception
-		when Constraint_Error =>
-			Raise_APQ_Error_Exception(
-				E	=> Constraint_Error'Identity,
-				Code	=> APQ11,
-				Where	=> "Value (Returns Integer)",
-				Zero	=> Column_Index_Type'Image(CX) );
-	end Value;
-
-	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Float is
-		S : String := Value(Root_Query_Type'Class(Query), CX);
-	begin
-		return Float'Value(S);
-	exception
-		when Constraint_Error =>
-			Raise_APQ_Error_Exception(
-				E	=> Constraint_Error'Identity,
-				Code	=> APQ13,
-				Where	=> "Value (Returns Float)",
-				Zero	=> Column_Index_Type'Image(CX) );
-	end Value;
-
-	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Date is
-		function To_Date is new Convert_To_Date(APQ_Date);
-	begin
-		return To_Date(Value(Root_Query_Type'Class(Query),CX));
-	exception
-		when Constraint_Error =>
-			Raise_APQ_Error_Exception(
-				E	=> Constraint_Error'Identity,
-				Code	=> APQ17,
-				Where	=> "Value (Returns APQ_Date)",
-				Zero	=> Column_Index_Type'Image(CX) );
-		when Invalid_Format =>
-			Raise_APQ_Error_Exception(
-				E	=> Invalid_Format'Identity,
-				Code	=> APQ18,
-				Where	=> "Value (Returns APQ_Date)",
-				Zero	=> Value( Root_Query_Type'Class(Query), CX ),
-				One	=> Column_Index_Type'Image(CX) );
-	end Value;
-
-	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Time is
-		function To_Time is new Convert_To_Time(APQ_Time);
-		Text : String := Value(Root_Query_Type'Class(Query),CX);
-	begin
-		return To_Time(Text);
-	exception
-		when Constraint_Error =>
-			Raise_APQ_Error_Exception(
-				E	=> Constraint_Error'Identity,
-				Code	=> APQ19,
-				Where	=> "Value (Returns APQ_Time)",
-				Zero	=> Value(Root_Query_Type'Class(Query), CX),
-				One	=> Column_Index_Type'Image(CX) );
-	end Value;
-
-	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Timestamp is
-		function To_Timestamp is new Convert_To_Timestamp(APQ_Timestamp);
-		Text : String := Value(Root_Query_Type'Class(Query),CX);
-	begin
-		return To_Timestamp(Text);
-	exception
-		when Constraint_Error | Invalid_Format =>
-			Raise_APQ_Error_Exception(
-				E	=> Invalid_Format'Identity,
-				Code	=> APQ20,
-				Where	=> "Value (Returns APQ_Timestamp",
-				Zero	=> Value(Root_Query_Type'Class(Query), CX),
-				One	=> Column_Index_Type'Image(CX) );
-	end Value;
-
-	procedure Value(Query : Root_Query_Type; CX : Column_Index_Type; TS : out APQ_Timestamp; TZ : out APQ_Timezone) is
-		use Ada.Strings, Ada.Strings.Fixed;
-		function To_Timestamp is new Convert_To_Timestamp(APQ_Timestamp);
-		S : String := Trim(Value(Root_Query_Type'Class(Query),CX),Both);
-	begin
-		TS := To_Timestamp(S);
-		for X in reverse S'Range loop
-			if S(X) = '-' or else S(X) = '+' then
-				if S(X..S'Last)'Length <= 3 then
-					begin
-						TZ := APQ_Timezone'Value(S(X..S'Last));
-						return;
-					exception
-						when others =>
-							Raise_APQ_Error_Exception(
-								E	=> Invalid_Format'Identity,
-								Code	=> APQ21,
-								Where	=> "Timezone_Value",
-								Zero	=> Column_Index_Type'Image(CX) );
-					end;
-				else
-					Raise_APQ_Error_Exception(
-						E	=> Invalid_Format'Identity,
-						Code	=> APQ22,
-						Where	=> "Timezone_Value",
-						Zero	=> Column_Index_Type'Image(CX) );
-				end if;
-			end if;
-		end loop;
-	end Value;
 
 
 	----------------------------------------------------------------------------------
@@ -663,7 +537,7 @@ package body APQ is
 		Append(Root_Query_Type'Class(Q),SQL,After);
 	end Prepare;
 
-	
+
 	procedure Append(Q : in out Root_Query_Type; SQL : String; After : String := "") is
 		-- Append a string to the query
 		use Ada.Characters.Latin_1;
@@ -863,6 +737,134 @@ package body APQ is
 	end Value;
 
 
+
+
+
+	--           METHODS THAT SHOULD BE OVERRIDDEN BY THE DATABASE DRIVER           --
+
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Boolean is
+		function To_Boolean is new Convert_To_Boolean(Boolean);
+		Text : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		return To_Boolean(Text);
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ10,
+				Where	=> "Value (Returns Boolean)",
+				Zero	=> Column_Index_Type'Image(CX) );
+			return false; -- we return something so gnat won't complaint
+	end Value;
+
+	--TODO: Solve a possible problem with databases that can store values bigger or smaller than Integer.
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Integer is
+		S : String := Value(Root_Query_Type'Class(Query), CX);
+	begin
+		return Integer'Value(S);
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ11,
+				Where	=> "Value (Returns Integer)",
+				Zero	=> Column_Index_Type'Image(CX) );
+	end Value;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Float is
+		S : String := Value(Root_Query_Type'Class(Query), CX);
+	begin
+		return Float'Value(S);
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ13,
+				Where	=> "Value (Returns Float)",
+				Zero	=> Column_Index_Type'Image(CX) );
+	end Value;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Date is
+		function To_Date is new Convert_To_Date(APQ_Date);
+	begin
+		return To_Date(Value(Root_Query_Type'Class(Query),CX));
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ17,
+				Where	=> "Value (Returns APQ_Date)",
+				Zero	=> Column_Index_Type'Image(CX) );
+		when Invalid_Format =>
+			Raise_APQ_Error_Exception(
+				E	=> Invalid_Format'Identity,
+				Code	=> APQ18,
+				Where	=> "Value (Returns APQ_Date)",
+				Zero	=> Value( Root_Query_Type'Class(Query), CX ),
+				One	=> Column_Index_Type'Image(CX) );
+	end Value;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Time is
+		function To_Time is new Convert_To_Time(APQ_Time);
+		Text : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		return To_Time(Text);
+	exception
+		when Constraint_Error =>
+			Raise_APQ_Error_Exception(
+				E	=> Constraint_Error'Identity,
+				Code	=> APQ19,
+				Where	=> "Value (Returns APQ_Time)",
+				Zero	=> Value(Root_Query_Type'Class(Query), CX),
+				One	=> Column_Index_Type'Image(CX) );
+	end Value;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Timestamp is
+		function To_Timestamp is new Convert_To_Timestamp(APQ_Timestamp);
+		Text : String := Value(Root_Query_Type'Class(Query),CX);
+	begin
+		return To_Timestamp(Text);
+	exception
+		when Constraint_Error | Invalid_Format =>
+			Raise_APQ_Error_Exception(
+				E	=> Invalid_Format'Identity,
+				Code	=> APQ20,
+				Where	=> "Value (Returns APQ_Timestamp",
+				Zero	=> Value(Root_Query_Type'Class(Query), CX),
+				One	=> Column_Index_Type'Image(CX) );
+	end Value;
+
+	procedure Value(Query : Root_Query_Type; CX : Column_Index_Type; TS : out APQ_Timestamp; TZ : out APQ_Timezone) is
+		use Ada.Strings, Ada.Strings.Fixed;
+		function To_Timestamp is new Convert_To_Timestamp(APQ_Timestamp);
+		S : String := Trim(Value(Root_Query_Type'Class(Query),CX),Both);
+	begin
+		TS := To_Timestamp(S);
+		for X in reverse S'Range loop
+			if S(X) = '-' or else S(X) = '+' then
+				if S(X..S'Last)'Length <= 3 then
+					begin
+						TZ := APQ_Timezone'Value(S(X..S'Last));
+						return;
+					exception
+						when others =>
+							Raise_APQ_Error_Exception(
+								E	=> Invalid_Format'Identity,
+								Code	=> APQ21,
+								Where	=> "Timezone_Value",
+								Zero	=> Column_Index_Type'Image(CX) );
+					end;
+				else
+					Raise_APQ_Error_Exception(
+						E	=> Invalid_Format'Identity,
+						Code	=> APQ22,
+						Where	=> "Timezone_Value",
+						Zero	=> Column_Index_Type'Image(CX) );
+				end if;
+			end if;
+		end loop;
+	end Value;
 
 
 

@@ -180,7 +180,7 @@ package APQ is
 
 	function To_Pattern_Array(Zero: in String) return Pattern_Array;
 	-- return a Pattern array that maps from 0 to Zero.
-	
+
 	function To_Pattern_Array(Zero, One: in String) return Pattern_Array;
 	-- same as the previous, but including both zero and one.
 	function To_Pattern_Array(Zero, One, Two: in String) return Pattern_Array;
@@ -195,7 +195,7 @@ package APQ is
 	procedure Raise_APQ_Error_Exception( E: in Exception_Id;
 		Code: in APQ_Error; Where: in String; Zero, One, Two: in String );
 	-- Raise the Exception E with a comprehensive error message
-	procedure Raise_APQ_Error_Exception( E: in Exception_Id; 
+	procedure Raise_APQ_Error_Exception( E: in Exception_Id;
 		Code: in APQ_Error; Where: in String; Patterns: in Pattern_Array );
 	-- Raise the Exception E with a comprehensive error message
 
@@ -346,7 +346,7 @@ package APQ is
 	-- To be used when the No_Connection exception is raised by the Connect predicate
 
 
-	procedure Open_DB_Trace(C : in out Root_Connection_Type; 
+	procedure Open_DB_Trace(C : in out Root_Connection_Type;
 		Filename : String; Mode : Trace_Mode_Type := Trace_APQ) is abstract;
 	-- Initialize the tracing
 
@@ -359,7 +359,7 @@ package APQ is
 	procedure Execute(Query : in out Root_Query_Type;
 		Connection : in out Root_Connection_Type'Class) is abstract;
 	-- Execute the query using the specified connection
-	
+
 	procedure Execute_Checked(Query : in out Root_Query_Type;
 		Connection : in out Root_Connection_Type'Class; Msg : String := "") is abstract;
 	-- Execute the query using the specified connection, reporting
@@ -377,7 +377,7 @@ package APQ is
 	--  Use these procedures in favour of using the custom SQL syntax for better portability:
 	procedure Begin_Work(Query : in out Root_Query_Type;
 		Connection : in out Root_Connection_Type'Class) is abstract;
-	procedure Commit_Work(Query : in out Root_Query_Type; 
+	procedure Commit_Work(Query : in out Root_Query_Type;
 		Connection : in out Root_Connection_Type'Class) is abstract;
 	procedure Rollback_Work(Query : in out Root_Query_Type;
 		Connection : in out Root_Connection_Type'Class) is abstract;
@@ -459,28 +459,6 @@ package APQ is
 	-- NOTE: DO NOT USE THIS FUNCTION AS IT'S MEANT TO BE USED INTERNALLY ONLY!
 	-- NOTE: USE New_Query INSTEAD
 
-
-
-	--           METHODS THAT SHOULD BE OVERRIDDEN BY THE DATABASE DRIVER           --
-
-	--TODO: change the types to APQ_Something.
-	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Boolean;
-
-	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Integer;
-
-	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Float;
-
-	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Date;
-
-	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Time;
-
-	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Timestamp;
-
-	procedure Value(Query : Root_Query_Type; CX : Column_Index_Type; TS : out APQ_Timestamp; TZ : out APQ_Timezone);
-
---	generic
---	with package P is new Ada.Strings.Bounded.Generic_Bounded_Length(<>);
---	function Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return P.Bounded_String;
 
 
 
@@ -648,7 +626,7 @@ package APQ is
 
 	procedure Append(Q : in out Root_Query_Type; SQL : String; After : String := "");
 	-- Append a string to the query
-	procedure Append(Q : in out Root_Query_Type; 
+	procedure Append(Q : in out Root_Query_Type;
 		SQL : Ada.Strings.Unbounded.Unbounded_String; After : String := "");
 	-- Append an Unbounded_String to the query
 	procedure Append_Line(Q : in out Root_Query_Type; SQL : String := "");
@@ -666,7 +644,7 @@ package APQ is
 
 	procedure Append(Q : in out Root_Query_Type; V : APQ_Timestamp; After : String := "");
 	-- Append a timestamp...
-	procedure Append(Q : in out Root_Query_Type; 
+	procedure Append(Q : in out Root_Query_Type;
 		TS : APQ_Timestamp; TZ : APQ_Timezone; After : String := "");
 	-- Append a timestamp at a timezone...
 
@@ -682,9 +660,9 @@ package APQ is
 	-- The case of this String isn't changed.
 	-- This primitive should normally be overriden for a specific database.
 	-- PostgreSQL and MySQL will potentially have different quoting requirements.
-	
+
 	procedure Append_Quoted(Q : in out Root_Query_Type;
-		Connection : Root_Connection_Type'Class; 
+		Connection : Root_Connection_Type'Class;
 		SQL : Ada.Strings.Unbounded.Unbounded_String; After : String := "");
 	-- Append a quoted Unbouned_String.
 	-- The case of this String isn't changed.
@@ -709,6 +687,25 @@ package APQ is
 	-- Get the value of the CXth column as Row_Id_Type.
 	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Bitstring;
 	-- Get the value of the CXth column as Bitstring.
+
+
+	--           METHODS THAT SHOULD BE OVERRIDDEN BY THE DATABASE DRIVER           --
+
+	--TODO: change the types to APQ_Something.
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Boolean;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Integer;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Float;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Date;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Time;
+
+	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Timestamp;
+
+	procedure Value(Query : Root_Query_Type; CX : Column_Index_Type; TS : out APQ_Timestamp; TZ : out APQ_Timezone);
+
 
 
 
@@ -742,17 +739,17 @@ package APQ is
 
 	generic
 	type Val_Type is digits <>;
-	procedure Append_Float(Q : in out Root_Query_Type'Class; 
+	procedure Append_Float(Q : in out Root_Query_Type'Class;
 		V : Val_Type; After : String := "");
 
 	generic
 	type Val_Type is delta <>;
-	procedure Append_Fixed(Q : in out Root_Query_Type'Class; 
+	procedure Append_Fixed(Q : in out Root_Query_Type'Class;
 		V : Val_Type; After : String := "");
 
 	generic
 	type Val_Type is delta <> digits <>;
-	procedure Append_Decimal(Q : in out Root_Query_Type'Class; 
+	procedure Append_Decimal(Q : in out Root_Query_Type'Class;
 		V : Val_Type; After : String := "");
 
 	generic
@@ -773,7 +770,7 @@ package APQ is
 	generic
 	type Date_Type is new Ada.Calendar.Time;
 	type Zone_Type is new APQ_Timezone;
-	procedure Append_Timezone(Q : in out Root_Query_Type'Class; 
+	procedure Append_Timezone(Q : in out Root_Query_Type'Class;
 		V : Date_Type; Z : Zone_Type; After : String := "");
 
 	generic
@@ -788,8 +785,8 @@ package APQ is
 
 	generic
 	with package P is new Ada.Strings.Bounded.Generic_Bounded_Length(<>);
-	procedure Append_Bounded_Quoted(Q : in out Root_Query_Type'Class; 
-		Connection : Root_Connection_Type'Class; 
+	procedure Append_Bounded_Quoted(Q : in out Root_Query_Type'Class;
+		Connection : Root_Connection_Type'Class;
 		SQL : P.Bounded_String; After : String := "");
 
 
@@ -836,7 +833,7 @@ package APQ is
 	generic
 	type Val_Type is new APQ_Date;
 	type Ind_Type is new Boolean;
-	procedure Encode_Date(Q : in out Root_Query_Type'Class; 
+	procedure Encode_Date(Q : in out Root_Query_Type'Class;
 		V : Val_Type; Indicator : Ind_Type; After : String := "");
 
 	generic
@@ -861,12 +858,12 @@ package APQ is
 	generic
 	type Val_Type is new APQ_Bitstring;
 	type Ind_Type is new Boolean;
-	procedure Encode_Bitstring(Q : in out Root_Query_Type'Class; 
+	procedure Encode_Bitstring(Q : in out Root_Query_Type'Class;
 		V: Val_Type; Indicator : Ind_Type; After : String := "");
 
 	generic
 	type Ind_Type is new Boolean;
-	procedure Encode_String_Quoted(Q : in out Root_Query_Type'Class; 
+	procedure Encode_String_Quoted(Q : in out Root_Query_Type'Class;
 		Connection : Root_Connection_Type'Class;
 		SQL : String; Indicator : Ind_Type; After : String := "");
 
@@ -874,19 +871,19 @@ package APQ is
 	type Ind_Type is new Boolean;
 	with package P is new Ada.Strings.Bounded.Generic_Bounded_Length(<>);
 	procedure Encode_Bounded_Quoted(Q : in out Root_Query_Type'Class;
-		Connection : Root_Connection_Type'Class; 
+		Connection : Root_Connection_Type'Class;
 		SQL : P.Bounded_String; Indicator : Ind_Type; After : String := "");
 
 	generic
 	type Ind_Type is new Boolean;
 	procedure Encode_Unbounded(Q : in out Root_Query_Type'Class;
-		Connection : Root_Connection_Type'Class; 
+		Connection : Root_Connection_Type'Class;
 		SQL : Ada.Strings.Unbounded.Unbounded_String;
 		Indicator : Ind_Type; After : String := "");
 
 	generic
 	type Ind_Type is new Boolean;
-	procedure Encode_Unbounded_Quoted(Q : in out Root_Query_Type'Class; 
+	procedure Encode_Unbounded_Quoted(Q : in out Root_Query_Type'Class;
 		Connection : Root_Connection_Type'Class;
 		SQL : Ada.Strings.Unbounded.Unbounded_String;
 		Indicator : Ind_Type; After : String := "");
@@ -911,7 +908,7 @@ package APQ is
 
 	generic
 	type Val_Type is new Boolean;
-	function Boolean_Value(Query : Root_Query_Type'Class; 
+	function Boolean_Value(Query : Root_Query_Type'Class;
 		CX : Column_Index_Type) return Val_Type;
 
 	generic
@@ -926,7 +923,7 @@ package APQ is
 
 	generic
 	type Val_Type is digits <>;
-	function Float_Value(Query : Root_Query_Type'Class; 
+	function Float_Value(Query : Root_Query_Type'Class;
 		CX : Column_Index_Type) return Val_Type;
 
 	generic
@@ -946,7 +943,7 @@ package APQ is
 
 	generic
 	type Val_Type is new APQ_Time;
-	function Time_Value(Query : Root_Query_Type'Class; 
+	function Time_Value(Query : Root_Query_Type'Class;
 		CX : Column_Index_Type) return Val_Type;
 
 	generic
@@ -957,12 +954,12 @@ package APQ is
 	generic
 	type Date_Type is new Ada.Calendar.Time;
 	type Zone_Type is new APQ_Timezone;
-	procedure Timezone_Value(Query : Root_Query_Type'Class; 
+	procedure Timezone_Value(Query : Root_Query_Type'Class;
 		CX : Column_Index_Type; TS : out Date_Type; TZ : out Zone_Type);
 
 	generic
 	with package P is new Ada.Strings.Bounded.Generic_Bounded_Length(<>);
-	function Bounded_Value(Query : Root_Query_Type'Class; 
+	function Bounded_Value(Query : Root_Query_Type'Class;
 		CX : Column_Index_Type) return P.Bounded_String;
 
 
@@ -974,19 +971,19 @@ package APQ is
 	generic
 	type Val_Type is new Boolean;
 	type Ind_Type is new Boolean;
-	procedure Boolean_Fetch(Query : Root_Query_Type'Class; 
+	procedure Boolean_Fetch(Query : Root_Query_Type'Class;
 		CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type);
 
 	generic
 	type Val_Type is range <>;
 	type Ind_Type is new Boolean;
-	procedure Integer_Fetch(Query : Root_Query_Type'Class; 
+	procedure Integer_Fetch(Query : Root_Query_Type'Class;
 		CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type);
 
 	generic
 	type Val_Type is mod <>;
 	type Ind_Type is new Boolean;
-	procedure Modular_Fetch(Query : Root_Query_Type'Class; 
+	procedure Modular_Fetch(Query : Root_Query_Type'Class;
 		CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type);
 
 	generic
@@ -998,7 +995,7 @@ package APQ is
 	generic
 	type Val_Type is delta <>;
 	type Ind_Type is new Boolean;
-	procedure Fixed_Fetch(Query : Root_Query_Type'Class; 
+	procedure Fixed_Fetch(Query : Root_Query_Type'Class;
 		CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type);
 
 	generic
@@ -1016,7 +1013,7 @@ package APQ is
 	generic
 	type Val_Type is new Ada.Calendar.Day_Duration;
 	type Ind_Type is new Boolean;
-	procedure Time_Fetch(Query : Root_Query_Type'Class; 
+	procedure Time_Fetch(Query : Root_Query_Type'Class;
 		CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type);
 
 	generic
@@ -1035,8 +1032,8 @@ package APQ is
 
 	generic
 	type Ind_Type is new Boolean;
-	procedure Bitstring_Fetch(Query : Root_Query_Type'Class; 
-		CX : Column_Index_Type; V : out APQ_Bitstring; Last : out Natural; 
+	procedure Bitstring_Fetch(Query : Root_Query_Type'Class;
+		CX : Column_Index_Type; V : out APQ_Bitstring; Last : out Natural;
 		Indicator : out Ind_Type);
 
 	generic
@@ -1047,8 +1044,8 @@ package APQ is
 
 	generic
 	type Ind_Type is new Boolean;
-	procedure Unbounded_Fetch(Query : Root_Query_Type'Class; 
-		CX : Column_Index_Type; V : out Ada.Strings.Unbounded.Unbounded_String; 
+	procedure Unbounded_Fetch(Query : Root_Query_Type'Class;
+		CX : Column_Index_Type; V : out Ada.Strings.Unbounded.Unbounded_String;
 		Indicator : out Ind_Type);
 
 	generic
@@ -1058,8 +1055,8 @@ package APQ is
 
 	generic
 	type Ind_Type is new Boolean;
-	procedure Varchar_Fetch(Query : Root_Query_Type'Class; 
-		CX : Column_Index_Type; V : out String; Last : out Natural; 
+	procedure Varchar_Fetch(Query : Root_Query_Type'Class;
+		CX : Column_Index_Type; V : out String; Last : out Natural;
 		Indicator : out Ind_Type);
 
 
@@ -1274,15 +1271,15 @@ private
 	function To_String(S : String_Ptr) return String;
 	function To_Ada_String(P : Interfaces.C.Strings.chars_ptr) return String;
 	function Blanks_To_Zero(S : String) return String;
-	
+
 	procedure C_String(S : String_Ptr;
-		CP : out Interfaces.C.Strings.char_array_access; 
-		Addr : out System.Address);
-	
-	procedure C_String(S : String; 
 		CP : out Interfaces.C.Strings.char_array_access;
 		Addr : out System.Address);
-	
+
+	procedure C_String(S : String;
+		CP : out Interfaces.C.Strings.char_array_access;
+		Addr : out System.Address);
+
 	function Strip_NL(S : String) return String;
 
 	procedure Replace_String(SP : in out String_Ptr; S : String);
