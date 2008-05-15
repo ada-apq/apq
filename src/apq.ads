@@ -285,6 +285,8 @@ package APQ is
 		 Engine_PostgreSQL,		-- PostgreSQL database engine is being used
 		 Engine_MySQL,			-- MySQL database engine is being used
 		 Engine_Sybase,			-- Sybase ASE 12.5x +
+		 Engine_CT_Lib,			-- The native, low-level programming interface for
+		 				-- the Sybase SQL Server database
 		 Engine_Other			-- Other engine, not supported by the APQ team
 		 );
 
