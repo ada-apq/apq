@@ -287,6 +287,7 @@ package APQ is
 		 Engine_Sybase,			-- Sybase ASE 12.5x +
 		 Engine_CT_Lib,			-- The native, low-level programming interface for
 		 				-- the Sybase SQL Server database
+		 Engine_ODBC,                   -- ODBC engine (not ready)
 		 Engine_Other			-- Other engine, not supported by the APQ team
 		 );
 
