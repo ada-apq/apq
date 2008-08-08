@@ -2185,19 +2185,31 @@ package body APQ is
 	-- internal functions ...
 
 	function Time_Component(TM : Ada.Calendar.Day_Duration; Unit : Time_Unit) return Natural is
-	begin
-		case Unit is
-			when Hour =>
-				return Natural(TM) / 3600;
-			when Minute =>
-				declare
-					M3600 : Natural := Natural(TM) mod 3600;
-				begin
-					return M3600 / 60;
-				end;
-			when Second =>
-				return Natural(TM) mod 60;
-		end case;
+
+		S   : Ada.Calendar.Day_Duration := TM;
+		Hr  : Natural range 0 .. 23;
+		Min : Natural range 0 .. 59;
+	begin -- Time_Component 
+		if TM >= Ada.Calendar.Day_Duration'Last then -- 00:00:00.0 of the next day. 
+			return 0;
+		end if;
+		
+		Hr := Integer'Max (Integer (S / 3600 - 0.5), 0);
+		
+		if Unit = Hour then
+			return Hr;
+		end if;
+		
+		S := S - Duration (Hr) * 3600;
+		Min := Integer'Max (Integer (S / 60 - 0.5), 0);
+		
+		if Unit = Minute then
+			return Min;
+		end if;
+		
+		S := S - Duration (Min) * 60;
+		
+		return Integer'Max (Integer (S - 0.5), 0);
 	end Time_Component;
 
 
