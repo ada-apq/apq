@@ -1851,7 +1851,7 @@ package body APQ is
 		package FXTIO is new Ada.Text_IO.Fixed_IO(Val_Type);
 		S : String(1..50);
 	begin
-		FXTIO.Put(To => S, Item => V, Exp => 3);
+		FXTIO.Put(To => S, Item => V);
 		return Trim(S,Both);
 	end Fixed_String;
 
