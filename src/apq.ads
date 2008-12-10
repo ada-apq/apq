@@ -1136,7 +1136,10 @@ package APQ is
 	generic
 	type Val_Type is new Ada.Calendar.Time;
 	function Convert_To_Date(S : String) return Val_Type;
-	-- S must be YYYY-MM-DD format
+	-- S must be ISO date format (YYYY-MM-DD - / is valid too) or in YYYYMMDD.
+	-- Hour, minutes, ..., are ignored.
+	--
+	-- There is no check but for constraint error made.
 
 	generic
 	type Val_Type is new Ada.Calendar.Day_Duration;

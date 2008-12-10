@@ -1930,57 +1930,48 @@ package body APQ is
 
 
 	function Convert_To_Date(S : String) return Val_Type is
-		-- S must be YYYY-MM-DD format
+		-- S must be ISO date format (YYYY-MM-DD - / is valid too) or in YYYYMMDD.
+		-- Hour, minutes, ..., are ignored.
+		--
+		-- There is no check but for constraint error made.
+		--
 		--TODO: Solve the warning about possible no return value.
 		use Ada.Strings, Ada.Strings.Fixed, Ada.Calendar;
 		T : String := Trim(S,Both);
-		Hyphen_X1 :    Positive := T'Last + 1;
-		Hyphen_X2 :    Positive := T'Last + 1;
-		Both_Found :   Boolean := False;
+
+
+		Has_Separator	: Boolean	:= T( 5 ) = '-' OR T( 5 ) = '/';
+
+		First		: Integer	:= T'First;
+		Month_First	: Integer;
+		Day_First	: Integer;
+		use Ada.Text_IO;
 	begin
 
 
-		for X in T'Range loop
-			if T(X) = '-' or T(X) = '/' then
-				Hyphen_X1 := X;
-				if X < T'Last then
-					for Y in X+1..T'Last loop
-						if T(Y) = '-' or T(Y) = '/' then
-							Hyphen_X2 := Y;
-							Both_Found := True;
-						end if;
-					end loop;
-				end if;
-				exit;
-			end if;
-		end loop;
-
-		if not Both_Found then
-			Raise_APQ_Error_Exception(
-				E	=> Invalid_Format'Identity,
-				Code	=> APQ03,
-				Where	=> "Convert_To_Date",
-				Zero	=> S );
+		if Has_Separator then
+			Month_First	:= First + 5;	-- first + year'len + separator 
+			Day_First	:= Month_First + 3;	-- first + year'len + separator + month'len + separator + 1st day char
+		else
+			Month_First	:= First + 4;
+			Day_First	:= Month_First + 2;
 		end if;
 
-
+		declare
+			Year	: Year_Number	:= Year_Number'Value( T( First .. First + 3 ) );
+			Month	: Month_Number	:= Month_Number'Value( T( Month_First .. Month_First + 1 ) );
+			Day	: Day_Number	:= Day_Number'Value( T( Day_First .. Day_First + 1 ) );
+			R	: Ada.Calendar.Time := Ada.Calendar.Time_Of(Year,Month,Day);
 		begin
-			declare
-				Year :   Year_Number    := Year_Number'Value(T(1..Hyphen_X1-1));
-				Month :  Month_Number   := Month_Number'Value(T(Hyphen_X1+1..Hyphen_X2-1));
-				Day :    Day_Number     := Day_Number'Value(T(Hyphen_X2+1..T'Last));
-				R :      Ada.Calendar.Time := Ada.Calendar.Time_Of(Year,Month,Day);
-			begin
-				return Val_Type(R);
-			end;
-		exception
-			when others =>
-					Raise_APQ_Error_Exception(
-						E	=> Invalid_Format'Identity,
-						Code	=> APQ04,
-						Where	=> "Convert_To_Date",
-						Zero	=> S );
+			return Val_Type( R );
 		end;
+	exception
+		when others =>
+			Raise_APQ_Error_Exception(
+				E	=> Invalid_Format'Identity,
+				Code	=> APQ04,
+				Where	=> "Convert_To_Date",
+				Zero	=> S );
 	end Convert_To_Date;
 
 
