@@ -325,8 +325,10 @@ package APQ is
 	-- Return a identifier for the connection used.
 
 
-	procedure Connect(C : in out Root_Connection_Type) is abstract;
+	procedure Connect(C : in out Root_Connection_Type; Check_Connection : Boolean := True) is abstract;
 	-- Connect to the Database C.
+	-- if Check_Connection = False, then assume it's not connected.
+	-- Usefull when Is_Connected has been called before.
 
 	procedure Connect(C : in out Root_Connection_Type; Same_As : Root_Connection_Type'Class) is abstract;
 	-- Clone the connection Same_As to C
