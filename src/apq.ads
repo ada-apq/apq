@@ -1265,6 +1265,8 @@ private
 	procedure Adjust(Q : in out Root_Query_Type);
 	function Is_Insert(Q : Root_Query_Type) return Boolean;
 	-- True if query is an INSERT statement
+	function Is_Update(Q : Root_Query_Type) return Boolean;
+	-- True if query is an UPDATE statement
 
 	procedure Free is new Ada.Unchecked_Deallocation(String,String_Ptr);
 	procedure Free is new Ada.Unchecked_Deallocation(

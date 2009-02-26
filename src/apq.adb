@@ -32,7 +32,8 @@
 
 
 
-with Aw_Lib.String_Util;
+with APQ_Helper;
+
 
 with Ada.Characters.Latin_1;
 with Ada.Strings.Fixed;
@@ -112,13 +113,14 @@ package body APQ is
 
 		use Ada.Strings;		-- for selecting the sides to Trim
 		use Ada.Strings.Fixed;		-- Trim
-		use Aw_Lib.String_Util;		-- Str_Replace
+		use APQ_Helper;			-- Str_Replace
 
 		function Process_Message return String is
 			Desc: Unbounded_String :=
 				Unbounded_String(APQ_Error_Descriptions(Code));
 
 			function Get_Pattern( i: in Integer ) return Unbounded_String is
+				-- TODO: change the following line to a decent (and a LOT faster) implementation:
 				P: String := "%" & Trim( Integer'Image( i ), Ada.Strings.Both ) & "%";
 			begin
 				return To_Unbounded_String( P );
@@ -2308,6 +2310,27 @@ package body APQ is
 			return SQL(X..X+5) = "INSERT";
 		end;
 	end Is_Insert;
+
+	function Is_Update(Q : Root_Query_Type) return Boolean is
+	begin
+		if Q.Count < 1 or else Q.Collection = null then
+			return False;
+		end if;
+		declare
+			use Ada.Characters.Handling;
+			SQL : String := To_Upper(Q.Collection(Q.Collection'First).all);
+			X :   Positive := SQL'First;
+		begin
+			while X <= SQL'Last loop
+				exit when SQL(X) /= ' ';
+				X := X + 1;
+			end loop;
+			if X + 5 > SQL'Last then
+				return False;
+			end if;
+			return SQL(X..X+5) = "UPDATE";
+		end;
+	end Is_Update;
 
 
 
