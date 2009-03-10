@@ -599,6 +599,7 @@ package APQ is
 
 	procedure Raise_Exceptions(Query : in out Root_Query_Type; Raise_On : Boolean := True);
 	-- when Execute_Checked is called, should raise the exception back to the caller?
+	pragma No_Return (Raise_APQ_Error_Exception);
 
 	procedure Report_Errors(Query : in out Root_Query_Type; Report_On : Boolean := True);
 	-- report sql erros when Execute_Checked is called?
