@@ -1,22 +1,23 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                          Ada Works :: Library                            --
+--                          APQ DATABASE BINDINGS                           --
 --                                                                          --
---                                Ada Works                                 --
+--                                  A P Q                                   --
 --                                                                          --
---                                 B o d y                                  --
+--                                 S p e c                                  --
 --                                                                          --
---         Copyright (C) 2007-2008, Ydea Desenv. de Softwares Ltda          --
+--         Copyright (C) 2002-2007, Warren W. Gay VE3WWG                    --
+--         Copyright (C) 2007-2009, Ada Works Project                       --
 --                                                                          --
 --                                                                          --
--- Aw_Lib is free library;  you can redistribute it  and/or modify it under --
+-- APQ is free software;  you can  redistribute it  and/or modify it under  --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
 -- ware  Foundation;  either version 2,  or (at your option) any later ver- --
--- sion. Aw_Lib is distributed in the hope that it will be useful, but WITH---
+-- sion.  APQ is distributed in the hope that it will be useful, but WITH-  --
 -- OUT ANY WARRANTY;  without even the  implied warranty of MERCHANTABILITY --
 -- or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License --
 -- for  more details.  You should have  received  a copy of the GNU General --
--- Public License  distributed with Aw_Lib; see file COPYING. If not, write --
+-- Public License  distributed with APQ;  see file COPYING.  If not, write  --
 -- to  the Free Software Foundation,  59 Temple Place - Suite 330,  Boston, --
 -- MA 02111-1307, USA.                                                      --
 --                                                                          --
