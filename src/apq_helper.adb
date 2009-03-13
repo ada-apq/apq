@@ -38,8 +38,6 @@
 
 with Ada.Strings.Unbounded;	use Ada.Strings.Unbounded;
 
-with Ada.Containers;		use Ada.Containers;
-
 with Ada.Text_IO;
 with Ada.Characters.Handling;	use Ada.Characters.Handling;
 
