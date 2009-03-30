@@ -26,7 +26,7 @@ project APQ is
 	for Library_Name use "apq";
 	case target is
 		when "Windows_NT" =>
-			for Library_Kind use "static";
+			for Library_Kind use "dynamic";
 		
 		when "GNU/Linux" =>
 			for Library_Kind use "dynamic";
