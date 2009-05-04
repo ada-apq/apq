@@ -1068,7 +1068,6 @@ package APQ is
 
 	-- Conversion :: anything to string (APQ primitives) ...
 
-
 	function To_String(V : APQ_Boolean) return String;
 
 	function To_String(V : APQ_Date) return String;
@@ -1085,10 +1084,6 @@ package APQ is
 
 
 	-- Conversion :: anything to string (generic for derived types) ...
-
-	generic
-	type Val_Type is new Boolean;
-	function Boolean_String(V : Val_Type) return String;
 
 	generic
 	type Val_Type is range <>;

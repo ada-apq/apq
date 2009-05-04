@@ -11,10 +11,14 @@ ve3wwg@cogeco.ca
 APQ REVISION HISTORY:
 =====================
 
-APQ 2.3
+
+
+
+APQ 3.0
   - Project maintainer is Marcelo C. de Freitas now.
   - Modular design, which allows compilation of independent parts.
   - Code clean up.
+  - APQ_Boolean is now always treated as INTEGER ( 0 = FALSE, 1 = TRUE )
 
 
 APQ 2.2

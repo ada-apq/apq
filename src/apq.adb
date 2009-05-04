@@ -745,10 +745,13 @@ package body APQ is
 
 
 	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return Boolean is
-		function To_Boolean is new Convert_To_Boolean(Boolean);
-		Text : String := Value(Root_Query_Type'Class(Query),CX);
+		V : Integer := Value(Root_Query_Type'Class(Query),CX);
 	begin
-		return To_Boolean(Text);
+		if V = 0 then
+			return FALSE;
+		else
+			return TRUE;
+		end if;
 	exception
 		when Constraint_Error =>
 			Raise_APQ_Error_Exception(
@@ -885,9 +888,8 @@ package body APQ is
 
 
 	procedure Append_Boolean(Q : in out Root_Query_Type'Class; V : Val_Type; After : String := "") is
-		function To_String is new Boolean_String(Val_Type);
 	begin
-		Append(Root_Query_Type'Class(Q),To_String(V),After);
+		Append( Q, APQ_Boolean( V ), After );
 	end Append_Boolean;
 
 
@@ -1712,9 +1714,9 @@ package body APQ is
 	function To_String(V : APQ_Boolean) return String is
 	begin
 		if V then
-			return "TRUE";
+			return "1";
 		else
-			return "FALSE";
+			return "0";
 		end if;
 	end To_String;
 
@@ -1804,13 +1806,6 @@ package body APQ is
 
 
 	-- Conversion :: anything to string (generic for derived types) ...
-
-
-
-	function Boolean_String(V : Val_Type) return String is
-	begin
-		return To_String(APQ_Boolean(V));
-	end Boolean_String;
 
 
 
