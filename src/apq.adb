@@ -202,7 +202,7 @@ package body APQ is
 	function Get_Host_Name(C : Root_Connection_Type) return String is
 		-- Get the host name for the Database server.
 	begin
-		return To_String(C.Host_Address);
+		return To_String(C.Host_Name);
 	end Get_Host_Name;
 
 	procedure Set_Host_Name(C : in out Root_Connection_Type; Host_Name : String) is
