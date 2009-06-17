@@ -577,6 +577,12 @@ package APQ is
 
 
 
+	procedure Set_Auto_Reconnect( C : in out Root_Connection_Type; Auto_Reconnect : in Boolean := True );
+	-- set if it should reconnect automatically when the connection is droped.
+	
+	function Get_Auto_Reconnect( C : in Root_Connection_Type ) return Boolean;
+	-- return true if the connection should be automatically restablished when droped
+
 
 	---------------------
 	-- ROOT_QUERY_TYPE --
@@ -1215,41 +1221,40 @@ private
 	type Port_Format_Type is ( IP_Port, UNIX_Port );
 
 
-	type Root_Connection_Type is abstract new Ada.Finalization.Limited_Controlled with
-		record
-			Instance :        String_Ptr;                      -- Engine instance name
-			Host_Name :       String_Ptr;                      -- Host name string or..
-			Host_Address :    String_Ptr;                      -- Host IP address
-			Port_Format :     Port_Format_Type := UNIX_Port;   -- I/O type
-			Port_Number :     Port_Integer := 0;               -- Port number of the database server
-			Port_Name :       String_Ptr;                      -- UNIX pathname for UNIX socket
-			DB_Name :         String_Ptr;                      -- Database name
-			User_Name :       String_Ptr;                      -- The user name
-			User_Password :   String_Ptr;                      -- User password (if required)
-			Abort_State :     Boolean := False;                -- Transaction abort state
-			Rollback_Finalize : Boolean := True;               -- Rollback transaction on Finalization
-			Trace_Filename :  String_Ptr;                      -- Filename for tracing
-			Trace_On :        Boolean := False;                -- True if tracing is enabled
-			Trace_Mode :      Trace_Mode_Type := Trace_None;   -- Current Trace mode
-			Trace_File :      CStr.FILEs := CStr.Null_Stream;  -- C Stream (FILE *)
-			Trace_Ada :       Ada.Text_IO.File_Type;           -- Ada version of Trace_File
-			SQL_Case :        SQL_Case_Type := Upper_Case;     -- How to map SQL "case"
-		end record;
+	type Root_Connection_Type is abstract new Ada.Finalization.Limited_Controlled with record
+		Instance		: String_Ptr;                      -- Engine instance name
+		Host_Name		: String_Ptr;                      -- Host name string or..
+		Host_Address		: String_Ptr;                      -- Host IP address
+		Port_Format		: Port_Format_Type := UNIX_Port;   -- I/O type
+		Port_Number		: Port_Integer := 0;               -- Port number of the database server
+		Port_Name		: String_Ptr;                      -- UNIX pathname for UNIX socket
+		DB_Name			: String_Ptr;                      -- Database name
+		User_Name		: String_Ptr;                      -- The user name
+		User_Password		: String_Ptr;                      -- User password (if required)
+		Abort_State		: Boolean := False;                -- Transaction abort state
+		Rollback_Finalize	: Boolean := True;                 -- Rollback transaction on Finalization
+		Trace_Filename		: String_Ptr;                      -- Filename for tracing
+		Trace_On		: Boolean := False;                -- True if tracing is enabled
+		Trace_Mode		: Trace_Mode_Type := Trace_None;   -- Current Trace mode
+		Trace_File		: CStr.FILEs := CStr.Null_Stream;  -- C Stream (FILE *)
+		Trace_Ada		: Ada.Text_IO.File_Type;           -- Ada version of Trace_File
+		SQL_Case		: SQL_Case_Type := Upper_Case;     -- How to map SQL "case"
+		Auto_Reconnect		: Boolean := False;                -- TODO: reconnect when the connection drops
+	end record;
 
 
-	type Root_Query_Type is abstract new Ada.Finalization.Controlled with
-		record
-			Count :           Natural := 0;              -- # of elements in the Collection
-			Alloc :           Natural := 0;              -- # of allocated elements in the Collection
-			Collection :      String_Ptr_Array_Access;   -- Array of strings
-			Caseless :        Boolean_Array_Access;      -- True where case is to be preserved
-			Raise_Exceptions: Boolean := True;           -- Raise exception in Execute_Checked()
-			Report_Errors:    Boolean := True;           -- Report SQL error in Execute_Checked()
-			Mode :            Fetch_Mode_Type := Random_Fetch;             -- Random Fetches
-			Rewound :         Boolean := True;                             -- At first tuple
-			Tuple_Index :     Tuple_Index_Type := Tuple_Index_Type'First;  -- Current tuple index
-			SQL_Case :        SQL_Case_Type := Upper_Case;                 -- How to map SQL "case"
-		end record;
+	type Root_Query_Type is abstract new Ada.Finalization.Controlled with record
+		Count		: Natural := 0;					-- # of elements in the Collection
+		Alloc		: Natural := 0;					-- # of allocated elements in the Collection
+		Collection	: String_Ptr_Array_Access;			-- Array of strings
+		Caseless	: Boolean_Array_Access;				-- True where case is to be preserved
+		Raise_Exceptions: Boolean := True;				-- Raise exception in Execute_Checked()
+		Report_Errors	: Boolean := True;				-- Report SQL error in Execute_Checked()
+		Mode		: Fetch_Mode_Type := Random_Fetch;		-- Random Fetches
+		Rewound		: Boolean := True;				-- At first tuple
+		Tuple_Index	: Tuple_Index_Type := Tuple_Index_Type'First;	-- Current tuple index
+		SQL_Case	: SQL_Case_Type := Upper_Case;			-- How to map SQL "case"
+	end record;
 
 
 	function To_Case(S : String; C : SQL_Case_Type) return String;

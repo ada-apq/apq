@@ -351,7 +351,18 @@ package body APQ is
 	end Set_Rollback_On_Finalize;
 
 
+	procedure Set_Auto_Reconnect( C : in out Root_Connection_Type; Auto_Reconnect : in Boolean := True ) is
+		-- set if it should reconnect automatically when the connection is droped.
+	begin
+		C.Auto_Reconnect := Auto_Reconnect;
+	end Set_Auto_Reconnect;
 
+
+	function Get_Auto_Reconnect( C : in Root_Connection_Type ) return Boolean is
+		-- return true if the connection should be automatically restablished when droped
+	begin
+		return C.Auto_Reconnect;
+	end Get_Auto_Reconnect;
 
 	---------------------
 	-- ROOT_QUERY_TYPE --
