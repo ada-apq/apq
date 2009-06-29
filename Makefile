@@ -1,6 +1,6 @@
-# Makefile for the AW_Lib
+# Makefile for the APQ
 #
-# @author Marcelo Coraça de Freitas <marcelo.batera@gmail.com> 
+# @author Marcelo Coraça de Freitas <marcelo@kow.com.br> 
 
 
 projectFile="apq.gpr"

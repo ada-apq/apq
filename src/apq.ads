@@ -303,7 +303,10 @@ package APQ is
 	----------------------------------------------------------------------------------
 
 	type Root_Connection_Type is abstract new Ada.Finalization.Limited_Controlled with private;
+	type Connection_Ptr is access all Root_Connection_Type'Class;
+
 	type Root_Query_Type is abstract new Ada.Finalization.Controlled with private;
+	type Query_Ptr is access all Root_Query_Type'Class;
 
 
 
