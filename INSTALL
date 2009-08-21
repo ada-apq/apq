@@ -2,7 +2,7 @@
 Installation instructions:
 
 
-make
+make PREFIX=/where/to/install
 make install PREFIX=/where/to/install
 
 
