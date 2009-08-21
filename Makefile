@@ -19,11 +19,12 @@ projectFile="apq.gpr"
 all: libs 
 
 libs:
+	gnatprep "-Dversion=\"$(VERSION)\"" ${projectFile}{.in,}
 	gnatmake -P ${projectFile}
 
 clean: gprclean
 	@gnatclean -P ${projectFile}
-	@rm -f gpr/apq.def gpr/apq.gpr
+	@rm -f apq.gpr
 	@echo "All clean"
 
 docs:

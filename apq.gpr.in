@@ -9,7 +9,7 @@
 
 project APQ is
 
-	version := "3.0";
+	version := $version;
 	
 	
 	type Supported_OS is ("Windows_NT", "GNU/Linux");
