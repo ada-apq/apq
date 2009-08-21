@@ -1,18 +1,25 @@
 $Id: README,v 1.19 2004/10/07 03:35:27 wwg Exp $
 
 
-
-                The APQ Ada95 Binding to PostgreSQL & MySQL
-                         Warren W. Gay VE3WWG
-			mailto:ve3wwg@cogeco.ca
-                     http://home.cogeco.ca/~ve3wwg
-                           APQ Version 2.2
-
-The software you have in this directory, when compiled and installed, is
-the APQ Ada95 binding to the PostgreSQL, MySQL and Sybase database servers.
-For C/C++ types, this "binding" represents an interface between the
-Ada95 language, and the C language libraries provided by those database
-products.
+===========================================================================
+=                             APQ Version 3.0                             =
+===========================================================================
+=                      The APQ Ada95 Database Library                     = 
+=                                                                         =
+=  This package has the commmon part for all the APQ drivers available.   =
+=  In order to connect to a database, you'll have to download and install =
+= one of the database bindings being:                                     =
+=        * MySQL :: apq-mysql package                                     =
+=        * PostgreSQL :: apq-postgresql package                           =
+=        * Ms. SQL Server/Sybase :: apq-ct_lib package                    =
+=        * Sybase (more specialized) :: apq-sybase                        =
+=                                                                         =
+= Authors:                                                                =
+=   Warren W. Gay VE3WWG <ve3wwg@cogeco.ca>                               =
+=                http://home.cogeco.ca/~ve3wwg                            =
+=   Marcelo C. de Freitas <marcelo@kow.com.br>                            =
+===========================================================================
+                 
 
 Why use APQ over other products?
 
@@ -48,17 +55,18 @@ APQ Features:
     - Trace_Full  (both Trace_DB and Trace_APQ)
   - Trace_APQ output can be fed as SQL text for testing
 
-  - Dual-license :
-    - ACL (Ada Community License)
-    - GPL2 (GNU Public License)
+  - Non restritive license :
+    - MGPL (GNAT Modified GNU Public License)
 
   - Extensive manual, with examples for nearly every function.
+    - notice while the manual hasn't been update for a while, it's
+    still a great source of information.
   - Manual includes a chapter on generic database programming.
 
   - Experimental support of the Decimal_Type package (using
     decimal routines used internally by the PostgreSQL database
     engine).
-  - Under active development
+  - Under active development and use
 
 Design Goals:
 -------------
@@ -74,7 +82,7 @@ The main design goals for the APQ binding development were:
   - No C language interfaces or types
   - good documentation
 
-It is the author's belief that these goals have been suitably met,
+It is the authors' belief that these goals have been suitably met,
 although the package is still undergoing active research. Excluding blob
 support, there are only 2 tagged object types that the programmer must
 become familiar with. These objects include Finalization and  nicely
@@ -103,48 +111,48 @@ databases. This is particularly useful now that Sybase has
 generously made their ASE-12.5x Express edition of their
 server available to developers for free.
 
+Version 3.0 provides full compatibility with the FreeTDS library, 
+thus providing Microsoft SQL Server support in adition to the
+already existing Sybase support.
 
 Trial Programs:
 ---------------
 
-Before you commit to a package like this, you want to see it
-work. No problem for UNIX users. Just try the example program in
-the ./eg2 directory. This example program is a simple
-illustration of how to load your /etc/passwd and /etc/group
-files into database tables. The example program does just this,
-and then performs some rudimentary checks on them.
+In the 3.0 the old trial programs has been removed from the distribution.
 
-Just cd to the directory and type make. Follow the
-instructions from there.
+However, there are some examples in the "samples" folder for testing
+some of the features (but not all of them).
 
-The ./eg directory is PostgreSQL only. The ./eg2 directory is
-the same example, but will operate for PostgreSQL or MySQL
-(depending upon your database support installed).
+If you'd like to help, providing such tests would be agreat place to
+start.
 
-The ./sybase directory has more extensive test programs
-available for those that are using APQ with Sybase (or have
-Sybase available).
 
 Platforms:
 ----------
 
-This binding has been tested under Linux and Win2k.
-using the installed debian GNAT 3.14p compiler. The two
-databases used in testing were:
+These are the platforms where we've been sucessful in compilling and using APQ so far:
 
+OS:
+	Linux Kernel 2.6
+	Windows 2k, 2k3, XP and Vista
+Compiler:
+	GNAT 3.14p
+	GNAT GCC 4.2 and 4.3
+
+Database Servers:
 	PostgreSQL 7.3.5
-	MySQL 4.0.14
+	MySQL 4.0.14 and 5.0.76
 	Sybase ASE 12.52
+	Microsoft SQL Server 2005
 
 While not yet tested on all platforms, this package will likely
 port well for must UNIX platforms, including:
 
- - FreeBSD		(2.0 untested)
+ - FreeBSD		(untested)
  - NetBSD 		(untested)
  - OpenBSD		(untested)
- - Linux		(tested)
- - HP-UX 10.2 or higher (to be tested)
- - Sun Solaris 		(possibly)
+ - HP-UX 10.2 or higher (untested)
+ - Sun Solaris 		(untested)
 
 
 Win32 Builds:
@@ -158,23 +166,18 @@ from sources.
 Feedback:
 ---------
 
-Please feedback suggestions and bugs to ve3wwg@cogeco.ca .
+Please feedback suggestion and bugs to the project homepage:
+	http://framework.kow.com.br
 
-	When reporting bugs, please indicate :
+When reporing bugs please provide also:
+	. Database server with version
+	. OS with version
+	. Ada compiler with version
 
-	  - PostgreSQL server version (if used)
-	  - MySQL server version (if used)
-	  - Sybase server version (if used)
-	  - O/S and kernel release
-	  - Ada compiler vendor and version
-            (do gnatls -v)
 
 Thank-you for downloading and using APQ.
 
-Warren W. Gay.
 
-
-See file HISTORY for revision history, or see the
-History chapter of the manual.
+See file HISTORY for revision history
 
 - End -

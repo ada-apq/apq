@@ -19,6 +19,9 @@ APQ 3.0
   - Modular design, which allows compilation of independent parts.
   - Code clean up.
   - APQ_Boolean is now always treated as INTEGER ( 0 = FALSE, 1 = TRUE )
+  - FreeTDS compatibility
+  - A more generic ct_lib support (works for SQL Server and should for Sybase too)
+  - Error messages has been organized.
 
 
 APQ 2.2
