@@ -46,4 +46,4 @@ install:
 	install -d $(GPR_PREFIX)
 	install src*/* -t $(INCLUDE_PREFIX)
 	install lib/* -t $(LIB_PREFIX)
-	install gpr/apq.gpr -t $(GPR_PREFIX)
+	install gpr/*.gpr -t $(GPR_PREFIX)
