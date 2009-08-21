@@ -7,8 +7,8 @@ VERSION=3.0
 ifndef ($(PREFIX))
 	PREFIX=/usr/local
 endif
-INCLUDE_PREFIX=$(PREFIX)/include
-LIB_PREFIX=$(PREFIX)/lib
+INCLUDE_PREFIX=$(PREFIX)/include/apq
+LIB_PREFIX=$(PREFIX)/lib/apq
 GPR_PREFIX=$(LIB_PREFIX)/gnat
 
 
