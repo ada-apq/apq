@@ -1,0 +1,13 @@
+
+Installation instructions:
+
+
+make
+make install PREFIX=/where/to/install
+
+
+it'll install:
+
+sources + include files at $(PREFIX)/include
+shared library at $(PREFIX)/lib
+gpr files at $(PREFIX)/lib/gnat
