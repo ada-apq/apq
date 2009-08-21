@@ -4,9 +4,13 @@
 
 VERSION=3.0
 
-ifeq ($(PREFIX), $(SOME_RANDOM_EMPTY_VAR_LALALELEL))
+ifndef ($(PREFIX))
 	PREFIX=/usr/local
 endif
+INCLUDE_PREFIX=$(PREFIX)/include
+LIB_PREFIX=$(PREFIX)/lib
+GPR_PREFIX=$(LIB_PREFIX)/gnat
+
 
 
 projectFile="apq.gpr"
@@ -37,5 +41,9 @@ docs:
 
 install:
 	@echo "Installing files"
-	install gpr/apq.gpr $(PREFIX)/lib/gnat
-	install lib/* $(PREFIX)/lib
+	install -d $(INCLUDE_PREFIX)
+	install -d $(LIB_PREFIX)
+	install -d $(GPR_PREFIX)
+	install src*/* -t $(INCLUDE_PREFIX)
+	install lib/* -t $(LIB_PREFIX)
+	install gpr/apq.gpr -t $(GPR_PREFIX)
