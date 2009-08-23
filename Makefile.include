@@ -1,9 +1,30 @@
 
+VERSION=$(shell cat version)
+
+ifndef ($(PREFIX))
+	PREFIX=/usr/local
+endif
+
+ifndef ($(INCLUDE_PATH))
+	INCLUDE_PATH=$(PREFIX)/include/apq
+endif
+
+ifndef ($(LIB_PATH))
+	LIB_PATH=$(PREFIX)/lib
+endif
+
+ifndef ($(GPR_PATH))
+	GPR_PATH=$(LIB_PATH)/gnat 
+endif
+
+
+
 
 all: libs 
 
 libs:
-	for project_file in $(PROJECT_FILES); do\
+	@for project_file in $(PROJECT_FILES); do\
+		echo "Making $$project_file"; \
 		gnatprep "-Dversion=\"$(VERSION)\"" $$project_file{.in,}; \
 		gnatmake -P $$project_file; \
 	done
