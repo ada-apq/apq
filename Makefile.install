@@ -1,0 +1,50 @@
+
+
+all: libs 
+
+libs:
+	for project_file in $(PROJECT_FILES); do\
+		gnatprep "-Dversion=\"$(VERSION)\"" $$project_file{.in,}; \
+		gnatmake -P $$project_file; \
+	done
+
+clean: gprclean
+	@for project_file in $(PROJECT_FILES); do\
+		gnatclean -P $(project_file); \
+		rm -f $(project_file); \
+	done
+	@echo "All clean"
+
+docs:
+	@-sh ./gendoc.sh || echo There is no documentation available
+
+
+
+
+gprfile:
+	@echo "Preparing GPR file.."
+	@echo version:=\"$(VERSION)\" > gpr/gnatprep.def
+	@echo prefix:=\"$(PREFIX)\" >> gpr/gnatprep.def
+	@echo lib_path:=\"$(LIB_PATH)\" >> gpr/gnatprep.def
+	@echo include_path:=\"$(INCLUDE_PATH)\" >> gpr/gnatprep.def
+	for gpr_file in $(GPR_FILES);do \
+		gnatprep gpr/$$gpr_file.in gpr/$$gpr_file gpr/gnatprep.def;\
+	done
+
+gprclean:
+	@rm -f gpr/*gpr
+	@rm -f gpr/*.def
+
+
+install: gprfile
+	@echo "Installing files"
+	install -d $(INCLUDE_PATH)
+	install -d $(LIB_PATH)
+	install -d $(GPR_PATH)
+	install src*/* -t $(INCLUDE_PATH)
+	install lib/* -t $(LIB_PATH)
+	install gpr/*.gpr -t $(GPR_PATH)
+	make gprclean
+
+showversion:
+	@echo $(VERSION)

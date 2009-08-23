@@ -18,9 +18,9 @@ project APQ is
 	target: Supported_OS := external("OS", "GNU/Linux");
 	
 	
-	for Source_Dirs use ( $include_prefix );
+	for Source_Dirs use ( $include_path );
 	-- LIBRARY
-	for Library_Dir use $lib_prefix;
+	for Library_Dir use $lib_path;
 	for Library_Name use "apq";
 	case target is
 		when "Windows_NT" =>
