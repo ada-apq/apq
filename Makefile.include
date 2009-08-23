@@ -20,9 +20,11 @@ endif
 
 
 
-all: libs 
+all: libs
+	@make pos_libs
 
-libs:
+
+libs: pre_libs
 	@for project_file in $(PROJECT_FILES); do\
 		echo "Making $$project_file"; \
 		gnatprep "-Dversion=\"$(VERSION)\"" $$project_file{.in,}; \
@@ -31,7 +33,8 @@ libs:
 
 clean: gprclean
 	@for project_file in $(PROJECT_FILES); do\
-		gnatclean -P $(project_file); \
+		echo cleaning $$project_file ;\
+		gnatclean -P $$project_file; \
 		rm -f $(project_file); \
 	done
 	@echo "All clean"

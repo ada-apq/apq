@@ -7,3 +7,8 @@ GPR_FILES=apq.gpr
 
 
 include Makefile.include
+
+
+pre_libs:
+
+pos_libs:
