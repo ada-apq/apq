@@ -10,7 +10,7 @@
 project APQ is
 
 	version	:= $version;
-	prefix	:= $prefix;
+	
 	
 	
 	type Supported_OS is ("Windows_NT", "GNU/Linux");
@@ -18,9 +18,9 @@ project APQ is
 	target: Supported_OS := external("OS", "GNU/Linux");
 	
 	
-	for Source_Dirs use ( prefix & "/include/apq" );
+	for Source_Dirs use ( $include_prefix );
 	-- LIBRARY
-	for Library_Dir use prefix & "/lib/apq";
+	for Library_Dir use $lib_prefix;
 	for Library_Name use "apq";
 	case target is
 		when "Windows_NT" =>
