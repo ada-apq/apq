@@ -68,15 +68,23 @@ gprclean:
 	@rm -f gpr/*.def
 
 
-install: gprfile
-	@echo "Installing files"
-	install -d $(INCLUDE_PATH)
-	install -d $(LIB_PATH)
+install: includeinstall libinstall gprinstall 
+
+gprinstall: gprfile
+	@echo Installing GPR files..
 	install -d $(GPR_PATH)
-	install $(INCLUDE_FILES) -t $(INCLUDE_PATH)
-	install lib/* -t $(LIB_PATH)
 	install gpr/*.gpr -t $(GPR_PATH)
 	make gprclean
+
+includeinstall:
+	@echo Installing include and source files...
+	install -d $(INCLUDE_PATH)
+	install $(INCLUDE_FILES) -t $(INCLUDE_PATH)
+
+libinstall:
+	@echo Installing library files...
+	install -d $(LIB_PATH)
+	install lib/* -t $(LIB_PATH)
 
 showversion:
 	@echo $(VERSION)
