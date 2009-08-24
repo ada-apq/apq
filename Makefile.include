@@ -31,7 +31,7 @@ libs: pre_libs
 		gnatmake -P $$project_file; \
 	done
 
-clean: gprclean
+clean: gprclean extra_clean
 	@for project_file in $(PROJECT_FILES); do\
 		echo cleaning $$project_file ;\
 		gnatclean -P $$project_file; \

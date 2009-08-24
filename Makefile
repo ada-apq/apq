@@ -12,3 +12,5 @@ include Makefile.include
 pre_libs:
 
 pos_libs:
+
+extra_clean:
