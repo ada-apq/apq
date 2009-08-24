@@ -37,6 +37,7 @@ clean: gprclean
 		gnatclean -P $$project_file; \
 		rm -f $(project_file); \
 	done
+	@rm -f $(PROJECT_FILES)
 	@echo "All clean"
 
 docs:
