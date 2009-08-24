@@ -6,7 +6,7 @@ ifndef ($(PREFIX))
 endif
 
 ifndef ($(INCLUDE_PATH))
-	INCLUDE_PATH=$(PREFIX)/include/apq
+	INCLUDE_PATH=$(PREFIX)/include/$(shell basename $(PWD))
 endif
 
 ifndef ($(LIB_PATH))
@@ -16,7 +16,6 @@ endif
 ifndef ($(GPR_PATH))
 	GPR_PATH=$(LIB_PATH)/gnat 
 endif
-
 
 
 
@@ -66,7 +65,7 @@ install: gprfile
 	install -d $(INCLUDE_PATH)
 	install -d $(LIB_PATH)
 	install -d $(GPR_PATH)
-	install src*/* -t $(INCLUDE_PATH)
+	install $(INCLUDE_FILES) -t $(INCLUDE_PATH)
 	install lib/* -t $(LIB_PATH)
 	install gpr/*.gpr -t $(GPR_PATH)
 	make gprclean

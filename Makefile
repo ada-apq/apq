@@ -5,6 +5,8 @@
 PROJECT_FILES=apq.gpr
 GPR_FILES=apq.gpr
 
+INCLUDE_FILES=src/*
+
 
 include Makefile.include
 
