@@ -18,6 +18,14 @@ ifndef ($(GPR_PATH))
 endif
 
 
+ifndef ($(GPR_INCLUDE_PATH))
+	GPR_INCLUDE_PATH=$(INCLUDE_PATH)
+endif
+
+ifndef ($(GPR_LIB_PATH))
+	GPR_LIB_PATH=$(LIB_PATH)
+endif
+
 
 all: libs
 	@make pos_libs
@@ -49,8 +57,8 @@ gprfile:
 	@echo "Preparing GPR file.."
 	@echo version:=\"$(VERSION)\" > gpr/gnatprep.def
 	@echo prefix:=\"$(PREFIX)\" >> gpr/gnatprep.def
-	@echo lib_path:=\"$(LIB_PATH)\" >> gpr/gnatprep.def
-	@echo include_path:=\"$(INCLUDE_PATH)\" >> gpr/gnatprep.def
+	@echo lib_path:=\"$(GPR_LIB_PATH)\" >> gpr/gnatprep.def
+	@echo include_path:=\"$(GPR_INCLUDE_PATH)\" >> gpr/gnatprep.def
 	for gpr_file in $(GPR_FILES);do \
 		gnatprep gpr/$$gpr_file.in gpr/$$gpr_file gpr/gnatprep.def;\
 	done
