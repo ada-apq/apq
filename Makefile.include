@@ -48,7 +48,7 @@ clean: gprclean extra_clean
 	@echo "All clean"
 
 docs:
-	@-sh ./gendoc.sh || echo There is no documentation available
+	@for docdir in $(DOCS_DIRS); do make -C $$docdir;done
 
 
 

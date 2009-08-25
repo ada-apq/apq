@@ -7,6 +7,7 @@ GPR_FILES=apq.gpr
 
 INCLUDE_FILES=src/*
 
+DOCS_DIRS=manual
 
 include Makefile.include
 
