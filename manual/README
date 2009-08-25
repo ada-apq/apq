@@ -3,3 +3,15 @@ this manual is rather outdated but has some highly quality information.
 someone has got to update it ASAP!
 
 And put it online somwehere...
+
+
+
+Dependencies:
+	TexLive or compatible (teTeX should work also)
+	floatflt.sty package (which is included)
+		http://tug.ctan.org/tex-archive/macros/latex/contrib/floatflt/
+
+Simply type "make"
+
+
+"make clean" will delete undesired files.
