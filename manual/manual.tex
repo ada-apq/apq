@@ -43,8 +43,8 @@
 %==========%
 % HYPERREF %
 %==========%
-\usepackage[dvipdfm, bookmarks, colorlinks, breaklinks, pdftitle={Glare},
-    pdfauthor={Philipp Bunge}]{hyperref}
+\usepackage[dvipdfm, bookmarks, colorlinks, breaklinks, pdftitle={APQ User Manual},
+    pdfauthor={KOW Framework Project}]{hyperref}
 \hypersetup{
 	linkcolor=DarkSkyBlue,
 	citecolor= DarkSkyBlue,
@@ -150,8 +150,8 @@
 
 \lstnewenvironment{Code}{\lstset{language=Ada}}{}
 
-\lstnewenvironment{Example}{\lstset{language=Ada,label=Example}}{}
-
+\lstnewenvironment{Example}{\lstset{language=Ada,title=Example}}{}
+\lstnewenvironment{NumberedExample}{\lstset{language=Ada,label=Example}}{}
 
 
 
@@ -161,8 +161,8 @@
 %   {frame=single,fontsize=\small}
 %\DefineVerbatimEnvironment{Example}{Verbatim}%
 %   {frame=single,fontsize=\small,label={Example},labelposition=topline}
-\DefineVerbatimEnvironment{NumberedExample}{Verbatim}%
-   {frame=single,numbers=left,fontsize=\small,label={Example},labelposition=topline,commandchars=\\\{\}}
+%\DefineVerbatimEnvironment{NumberedExample}{Verbatim}%
+%   {frame=single,numbers=left,fontsize=\small,label={Example},labelposition=topline,commandchars=\\\{\}}
 
 
 %==============%
@@ -173,7 +173,10 @@
 \begin{document}
 
 \title{APQ Ada95 Database Binding}
-\author{Copyright (c) 2002-2004, Warren W. Gay VE3WWG}
+\author{%
+Copyright (c) 2002-2004, Warren W. Gay VE3WWG\\%
+Copyright (c) 2007-2009, KOW Framework Project
+}
 \date{\today}
 \maketitle
 
@@ -234,16 +237,18 @@ could be deployed within the enterprise and on a large scale.
 
 \begin{floatingtable}{
    \begin{tabular}{lccc}
-   Database       &  As of APQ Version &  SQL   &  Blob\\
+   Database       &  As of APQ Version &  SQL   &  Blob \\
    \hline
-   PostgreSQL     &  1.x               &  Yes   &  Yes\\
-   MySQL          &  2.x               &  Yes   &  No\\
-   Sybase 12.52   &  2.2               &  Yes   &  No\\
+   PostgreSQL     &  1.x               &  Yes   &  Yes  \\
+   MySQL          &  2.x               &  Yes   &  No   \\
+   Sybase 12.52   &  2.2               &  Yes   &  No   \\
+   SQL Server     &  3.0               &  Yes   &  No   \\
    \end{tabular}}
    \caption{Database Product Support}\label{t:DBSupport}
 \end{floatingtable}
 
-Thanks in part to the generosity of Sybase to developers, APQ 2.2
+
+Thanks in part to the generosity of Sybase to developers, APQ 3.0
 now supports the following list of database\index{list of database technologies} technologies:
 Table \ref{t:DBSupport} is further described as follows:
 
@@ -259,7 +264,11 @@ because MySQL's blob interface is not as complete as provided by PostgreSQL.
 Where PostgreSQL provides the facility for virtually limitless sized
 blobs, a MySQL blob must fit within a ``column'', very much like
 a text field. For this reason, the facility to perform stream oriented\index{stream oriented}
-I/O is lacking on a blob in APQ for MySQL.
+I/O is lacking on a blob in APQ for MySQL.\\
+
+Also, there han't been time or interest in developing Blob support in Sybase and SQL Server
+so far. This implementation should take quite a while to be done and for now the focus of 
+the project is in providing a stable solution for database connectivity.
 
 
 \subsection{The Future of Blob Support for MySQL}
@@ -274,6 +283,9 @@ If you are a developer, who hopes to write portable database\index{portable data
 then please be aware that the PostgreSQL\index{PostgreSQL} blob\index{blob} API is subject to future
 revision. Potentially, this could be fairly extensively revised, but
 every attempt will be made to leave a migration path open to the developer.
+
+
+APQ 3.0 inhertis
 
 
 \section{Generic Database Support}
@@ -10381,19 +10393,20 @@ products themselves that APQ binds to.
 
 \section*{APQ Binding License}
 
-The APQ Binding is covered under a dual-license arrangement. This
-should be reflected in the file name COPYING. The following two licenses
-are available:
+The APQ Binding used to be covered under a dual-license arrangement. This
+was reflected in the file name COPYING. The following two licenses
+were available:
 
 \begin{enumerate}
    \item The Ada Community License (ACL).
    \item The GNU Public License 2 (GPL2)
 \end{enumerate}
 
-One or the other license must be chosen to cover the APQ sources being
-used. For the ACL license details, see \url{http://www.adapower.com/booch/ACL/index.html},
-file ACL.txt or Appendix C. For details about the GPL license, see
-Appendix D or the file GPL.txt that was included with your software.
+This dual-license arrangement was to allow use of the package both with GPL programs
+and non GPL programs. This can be achieved by using a single license now, and thus APQ
+has changed it's license to GMGPL.
+
+Please sse Appendicx C and D for more information.
 
 
 \section*{Patents}
@@ -11199,6 +11212,25 @@ Second release August 4, 2002, but under the dual ACL and GPL2%
          string values. This helps the returned values to be consistent across
          all database vendor products (MySQL always trims the trailing blanks).
 \end{itemize}
+
+\section*{APQ 3.0}
+\begin{itemize}
+	\item New build system.
+	\item GPR file support
+	\item APQ was divided into sub projects:
+		\begin{itemize}
+			\item \textbf{apq} the core APQ classes
+			\item \textbf{apq-ct\_lib} ct\_lib backend support (MySQL Server and Sybase)
+			\item \textbf{apq-mysql} MySQL backend support
+			\item \textbf{apq-postgresql} PostgreSQL backend support
+			\item \textbf{apq-sybase} Sybase backend support
+		\end{itemize}
+	\item Microsoft SQL Server Support
+	\item Can be built with FreeTDS and Sybase's ct\_lib
+	\item New single license in favour of the old dual-license
+	\item some bug fixes
+\end{itemize}
+
 
 \printindex
 \end{document}
