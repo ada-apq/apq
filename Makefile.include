@@ -34,7 +34,7 @@ all: libs
 libs: pre_libs
 	@for project_file in $(PROJECT_FILES); do\
 		echo "Making $$project_file"; \
-		gnatprep "-Dversion=\"$(VERSION)\"" $$project_file{.in,}; \
+		gnatprep "-Dversion=\"$(VERSION)\"" $$project_file.in $$project_file; \
 		gnatmake -P $$project_file; \
 	done
 
