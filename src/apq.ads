@@ -778,7 +778,7 @@ package APQ is
 		V : Val_Type; After : String := "");
 
 	generic
-	type Val_Type is new APQ_Timestamp;
+	type Val_Type is new Ada.Calendar.Time;
 	procedure Append_Timestamp(Q : in out Root_Query_Type'Class;
 		V : Val_Type; After : String := "");
 
