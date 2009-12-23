@@ -12,7 +12,7 @@ project APQ is
 	version := $version;
 	
 	
-	type Supported_OS is ("Windows_NT", "GNU/Linux");
+	type Supported_OS is ("Windows_NT", "GNU/Linux", "Darwin" );
 	
 	target: Supported_OS := external("OS", "GNU/Linux");
 	
@@ -30,6 +30,8 @@ project APQ is
 		
 		when "GNU/Linux" =>
 			for Library_Kind use "dynamic";
+		when "Darwin" =>
+			for Library_Kind use "static";
 	end case;
 	for Library_Version use "libapq.so." & Version;
 	
