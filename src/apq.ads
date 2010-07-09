@@ -582,7 +582,7 @@ package APQ is
 
 	procedure Set_Auto_Reconnect( C : in out Root_Connection_Type; Auto_Reconnect : in Boolean := True );
 	-- set if it should reconnect automatically when the connection is droped.
-	
+
 	function Get_Auto_Reconnect( C : in Root_Connection_Type ) return Boolean;
 	-- return true if the connection should be automatically restablished when droped
 
@@ -1206,8 +1206,16 @@ package APQ is
 
 
 
-	procedure Finalize(Q : in out Root_Query_Type) is abstract;
-	-- TODO: colocar no seu devido lugar..
+   procedure Finalize(Q : in out Root_Query_Type) is abstract;
+   -- TODO: colocar no seu devido lugar..
+
+   -------------------
+   --- misc types ----
+   -------------------
+   type tiponat_type is (start , aend );
+   type tiponatar_type is array (tiponat_type) of natural;
+   type tpar_type is array (natural range <>) of tiponatar_type; -- for future use.
+
 private
 
 	package CStr renames Interfaces.C_Streams;
