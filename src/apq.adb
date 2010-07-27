@@ -205,12 +205,14 @@ package body APQ is
 		return To_String(C.Host_Name);
 	end Get_Host_Name;
 
-	procedure Set_Host_Name(C : in out Root_Connection_Type; Host_Name : String) is
-		-- Set the host name for the Database server.
-	begin
-		Replace_String(C.Host_Address,"");
-		Replace_String(C.Host_Name,Set_Host_Name.Host_Name);
-	end Set_Host_Name;
+   procedure Set_Host_Name(C : in out Root_Connection_Type; Host_Name : String) is
+      -- Set the host name for the Database server.
+   begin
+      Replace_String(C.Host_Address,"");
+      Replace_String(C.Host_Name,Set_Host_Name.Host_Name);
+      c.Port_Format := UNIX_Port;
+
+   end Set_Host_Name;
 
 
 
@@ -220,12 +222,14 @@ package body APQ is
 		return To_String( C.Host_Address );
 	end Get_Host_Address;
 
-	procedure Set_Host_Address(C : in out Root_Connection_Type; Host_Address : String) is
-		-- Set the host address for the database server.
-	begin
-		Replace_String(C.Host_Name,"");
-		Replace_String(C.Host_Address, Set_Host_Address.Host_Address);
-	end Set_Host_Address;
+   procedure Set_Host_Address(C : in out Root_Connection_Type; Host_Address : String) is
+      -- Set the host address for the database server.
+   begin
+      Replace_String(C.Host_Name,"");
+      Replace_String(C.Host_Address, Set_Host_Address.Host_Address);
+      c.Port_Format := IP_Port;
+
+   end Set_Host_Address;
 
 
 
@@ -1957,7 +1961,7 @@ package body APQ is
 
 
 		if Has_Separator then
-			Month_First	:= First + 5;	-- first + year'len + separator 
+			Month_First	:= First + 5;	-- first + year'len + separator
 			Day_First	:= Month_First + 3;	-- first + year'len + separator + month'len + separator + 1st day char
 		else
 			Month_First	:= First + 4;
@@ -2187,26 +2191,26 @@ package body APQ is
 		S   : Ada.Calendar.Day_Duration := TM;
 		Hr  : Natural range 0 .. 23;
 		Min : Natural range 0 .. 59;
-	begin -- Time_Component 
-		if TM >= Ada.Calendar.Day_Duration'Last then -- 00:00:00.0 of the next day. 
+	begin -- Time_Component
+		if TM >= Ada.Calendar.Day_Duration'Last then -- 00:00:00.0 of the next day.
 			return 0;
 		end if;
-		
+
 		Hr := Integer'Max (Integer (S / 3600 - 0.5), 0);
-		
+
 		if Unit = Hour then
 			return Hr;
 		end if;
-		
+
 		S := S - Duration (Hr) * 3600;
 		Min := Integer'Max (Integer (S / 60 - 0.5), 0);
-		
+
 		if Unit = Minute then
 			return Min;
 		end if;
-		
+
 		S := S - Duration (Min) * 60;
-		
+
 		return Integer'Max (Integer (S - 0.5), 0);
 	end Time_Component;
 
