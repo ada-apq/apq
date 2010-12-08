@@ -7,7 +7,7 @@
 --                                 S p e c                                  --
 --                                                                          --
 --         Copyright (C) 2002-2007, Warren W. Gay VE3WWG                    --
---         Copyright (C) 2007-2009, KOW Framework Project                   --
+--         Copyright (C) 2007-2011, KOW Framework Project                   --
 --                                                                          --
 --                                                                          --
 -- APQ is free software;  you can  redistribute it  and/or modify it under  --
