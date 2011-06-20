@@ -849,7 +849,7 @@ package body APQ is
 			Raise_APQ_Error_Exception(
 				E	=> Invalid_Format'Identity,
 				Code	=> APQ20,
-				Where	=> "Value (Returns APQ_Timestamp",
+				Where	=> "Value (Returns APQ_Timestamp)",
 				Zero	=> Value(Root_Query_Type'Class(Query), CX),
 				One	=> Column_Index_Type'Image(CX) );
 	end Value;
