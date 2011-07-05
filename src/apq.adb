@@ -2060,49 +2060,52 @@ package body APQ is
 
 	function Convert_To_Timestamp(S : String) return Val_Type is
 		-- S must be YYYY-MM-DD HH:MM:SS[.FFF] format
-		use Ada.Strings, Ada.Strings.Fixed;
-		function To_Date is new Convert_To_Date(Val_Type);
-		T :   String := Trim(S,Both);
-		BX :  Positive := T'Last + 1;
-		BF :  Boolean := False;
+		
+		use Ada.Calendar;
+
+		St : constant String := Ada.Strings.Fixed.Trim( S, Ada.Strings.Both );
+
+
+		Year	: Year_Number;
+		Month	: Month_Number;
+		Day	: Day_Number;
+		Seconds	: Day_Duration;
+
+		function Str( From, To : in Positive ) return Natural is
+			The_Str : Constant String :=  St( St'First + From - 1 .. St'First + To - 1 );
+		begin
+			return Natural'Value( The_Str );
+		end Str;
+
+		procedure Split_Date is
+		begin
+			Year	:= Year_Number(	 Str( 1,  4 ) );
+			Month	:= Month_Number( Str( 6,  7 ) );
+			Day	:= Day_NUmber(	 Str( 9, 10 ) );
+		end Split_Date;
+
+		procedure Split_Time is
+			Hour,Minute,Second : Natural;
+		begin
+			Hour	:= Str( 12, 13 );
+			Minute	:= Str( 15, 16 );
+			Second	:= Str( 18, 19 );
+
+			Seconds	:= Day_Duration( Hour * 3600 + Minute * 60 + Second );
+		end Split_Time;
+
+
+		The_Time : Time;
 	begin
-
-		for X in T'Range loop
-			if T(X) = ' ' then
-				BF := True;
-				BX := X;
-				exit;
-			end if;
-		end loop;
-
-		if not BF then
-			return To_Date(T);
-		else
-			declare
-				TZX :    Positive := T'Last + 1;       -- Location of the Time zone sign character
-			begin
-				for X in reverse T'Range loop
-					if T(X) = '-' or T(X) = '+' then
-						if T(X..T'Last)'Length <= 3 then
-							TZX := X;
-						end if;
-					end if;
-				end loop;
-
-				declare
-					function To_Date is new Convert_To_Date(APQ_Date);
-					function To_Time is new Convert_To_Time(APQ_Time);
-					function To_Val_Type is new Convert_Date_and_Time(APQ_Date,APQ_Time,Val_Type);
-					DT :  APQ_Date;
-					TM :  APQ_Time;
-				begin
-					DT := To_Date(T(1..BX-1));
-					TM := To_Time(T(BX+1..TZX-1));
-					return To_Val_Type(DT,TM);
-				end;
-			end;
-		end if;
-
+		Split_Date;
+		Split_Time;
+		The_Time := Ada.Calendar.Time_Of(
+						Year		=> Year,
+						Month		=> Month,
+						Day		=> Day,
+						Seconds		=> Seconds
+				);
+		return Val_Type( The_Time );
 	end Convert_To_Timestamp;
 
 
