@@ -117,9 +117,6 @@ package APQ is
 		APQ18,
 		APQ19,
 		APQ20,
-		APQ21,
-		APQ22,
-		APQ23,
 		APQ24,
 		APQ25,
 		APQ26,
@@ -162,9 +159,6 @@ package APQ is
 			APQ18 => To_Unbounded_String("Bad date value (%0%) for column #%1%"),
 			APQ19 => To_Unbounded_String("Bad time value (%0%) for column #%1%"),
 			APQ20 => To_Unbounded_String("Bad timestamp format (%0%) for column #%1%"),
-			APQ21 => To_Unbounded_String("Bad timezone value for column #%0%"),
-			APQ22 => To_Unbounded_String("Bad timezone value for column #%0%"),
-			APQ23 => To_Unbounded_String("Bad timezone value for column #%0%"),
 			APQ24 => To_Unbounded_String("Receiving string too small for column #%0%"),
 			APQ25 => To_Unbounded_String("Receiving string too small for column #%0%"),
 			APQ26 => To_Unbounded_String("Receiving bounded string too small for column #%0%"),
@@ -215,11 +209,8 @@ package APQ is
 	-- time types
 	subtype APQ_Date is Ada.Calendar.Time;          -- Date (time ignored)
 	subtype APQ_Time is Ada.Calendar.Day_Duration;  -- Time only (date ignored)
-	type APQ_Timestamp is new Ada.Calendar.Time;    -- Date and time
-	type APQ_Timezone is new Integer range -23..23; -- Timezone in +/- hours from UTC
+	type APQ_Timestamp is new Ada.Calendar.Time;    -- Date and time, stored in UTC
 
-	function To_Time_Offset( Timezone : in APQ_Timezone ) return Ada.Calendar.Time_Zones.Time_Offset;
-	function To_Timezone( Offset : in Ada.Calendar.Time_Zones.Time_Offset ) return APQ_Timezone;
 
 	type Hour_Number is range 0..23;
 	type Minute_Number is range 0..59;
@@ -660,8 +651,6 @@ package APQ is
 
 	procedure Append(Q : in out Root_Query_Type; V : APQ_Timestamp; After : String := "");
 	-- Append a timestamp...
-	procedure Append(Q : in out Root_Query_Type;
-		TS : APQ_Timestamp; TZ : APQ_Timezone; After : String := "");
 	-- Append a timestamp at a timezone...
 
 	procedure Append(Q : in out Root_Query_Type; V : APQ_Bitstring; After : String := "");
@@ -720,7 +709,6 @@ package APQ is
 
 	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Timestamp;
 
-	procedure Value(Query : Root_Query_Type; CX : Column_Index_Type; TS : out APQ_Timestamp; TZ : out APQ_Timezone);
 
 
 
@@ -782,12 +770,6 @@ package APQ is
 	type Val_Type is new Ada.Calendar.Time;
 	procedure Append_Timestamp(Q : in out Root_Query_Type'Class;
 		V : Val_Type; After : String := "");
-
-	generic
-	type Date_Type is new Ada.Calendar.Time;
-	type Zone_Type is new APQ_Timezone;
-	procedure Append_Timezone(Q : in out Root_Query_Type'Class;
-		V : Date_Type; Z : Zone_Type; After : String := "");
 
 	generic
 	type Val_Type is new APQ_Bitstring;
@@ -864,12 +846,6 @@ package APQ is
 	procedure Encode_Timestamp(Q : in out Root_Query_Type'Class;
 		V : Val_Type; Indicator : Ind_Type; After : String := "");
 
-	generic
-	type Date_Type is new APQ_Timestamp;
-	type Zone_Type is new APQ_Timezone;
-	type Ind_Type is new Boolean;
-	procedure Encode_Timezone(Q : in out Root_Query_Type'Class;
-		D : Date_Type; Z : Zone_Type; Indicator : Ind_Type; After : String := "");
 
 	generic
 	type Val_Type is new APQ_Bitstring;
@@ -968,12 +944,6 @@ package APQ is
 		CX : Column_Index_Type) return Val_Type;
 
 	generic
-	type Date_Type is new Ada.Calendar.Time;
-	type Zone_Type is new APQ_Timezone;
-	procedure Timezone_Value(Query : Root_Query_Type'Class;
-		CX : Column_Index_Type; TS : out Date_Type; TZ : out Zone_Type);
-
-	generic
 	with package P is new Ada.Strings.Bounded.Generic_Bounded_Length(<>);
 	function Bounded_Value(Query : Root_Query_Type'Class;
 		CX : Column_Index_Type) return P.Bounded_String;
@@ -1038,13 +1008,6 @@ package APQ is
 	procedure Timestamp_Fetch(Query : Root_Query_Type'Class;
 		CX : Column_Index_Type; V : out Val_Type; Indicator : out Ind_Type);
 
-	generic
-	type Date_Type is new Ada.Calendar.Time;
-	type Zone_Type is new APQ_Timezone;
-	type Ind_Type is new Boolean;
-	procedure Timezone_Fetch(Query : Root_Query_Type'Class;
-		CX : Column_Index_Type; V : out Date_Type;
-		Z : out Zone_Type; Indicator : out Ind_Type);
 
 	generic
 	type Ind_Type is new Boolean;
@@ -1086,10 +1049,6 @@ package APQ is
 
 	function To_String(V : APQ_Timestamp) return String;
 
-	function To_String(V : APQ_Timezone) return String;
-
-	function To_String(V : APQ_Timestamp; TZ : APQ_Timezone) return String;
-
 	function To_String(V : APQ_Bitstring) return String;
 
 
@@ -1127,11 +1086,6 @@ package APQ is
 	type Val_Type is new Ada.Calendar.Time;
 	function Timestamp_String(V : Val_Type) return String;
 
-	generic
-	type Val_Type is new APQ_Timezone;
-	function Timezone_String(V : Val_Type) return String;
-
-
 
 	-- Conversion :: anything from string ...
  	--TODO: These functions may not need to be generic anymore. If so, make
@@ -1155,16 +1109,11 @@ package APQ is
 	-- S must be HH:MM:SS[.FFF] format
 
 	generic
-	type Val_Type is new Ada.Calendar.Time;
-	function Convert_To_Timestamp(S : String; TZ : APQ_Timezone := 0) return Val_Type;
-	-- S must be YYYY-MM-DD HH:MM:SS[.FFF] format
-
-	generic
 	type Date_Type is new Ada.Calendar.Time;
 	type Time_Type is new Ada.Calendar.Day_Duration;
 	type Result_Type is new Ada.Calendar.Time;
 	function Convert_Date_and_Time(DT : Date_Type; TM : Time_Type) return Result_Type;
-	-- local timezone is assumed
+	-- convert using the DT's time zone
 
 
 	-- Misc ...
@@ -1178,14 +1127,9 @@ package APQ is
 	-- It isn't really required, since Command_Oid(Query) can be used instead,
 	-- and the return value converted to whatever Oid_Type is.
 
-	generic
-	type Date_Type is new Ada.Calendar.Time;
-	type Zone_Type is new APQ_Timezone;
-	procedure Extract_Timezone(S : String; DT : out Date_Type; TZ : out Zone_Type);
-
-	------------------------------
-	-- EXTENDED CALENDAR FUNCTIONS :
-	------------------------------
+	---------------------------------
+	-- EXTENDED CALENDAR FUNCTIONS --
+	---------------------------------
 
 	generic
 	type Date_Type is new Ada.Calendar.Time;

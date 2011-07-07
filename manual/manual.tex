@@ -19,13 +19,12 @@
 
 \lfoot{}
 \cfoot{\thepage}
-\rfoot{APQ 3.0}
+\rfoot{APQ \apqversion}
 
 
 \newcommand\Ref[1]{\textsection\ref{#1} (page~\pageref{#1})}
 
 \usepackage{fancyvrb}
-\usepackage{listings}
 
 \usepackage{makeidx}
 \makeindex
@@ -59,6 +58,7 @@
 %========================%
 \usepackage{xcolor}
 \usepackage{listings}
+\usepackage{caption}
 
 
 % COLORS (Tango)
@@ -99,11 +99,11 @@
 	keywordstyle=[3]{\bfseries},
 	keywordstyle=[4]{\color{DarkPlum}},
 	keywordstyle=[5]{\color{SkyBlue}},
-	commentstyle={\color{Aluminium4}\small},
+	commentstyle={\color{Aluminium4}\tiny},
 	stringstyle={\color{Chocolate}},
 	tabsize=4,
 	breaklines=true,
-	basicstyle={\ttfamily\small},
+	basicstyle={\ttfamily\tiny},
 	xleftmargin=21pt,
 	xrightmargin=11pt,
 	frame=single,
@@ -146,15 +146,19 @@
 
 
 
-\lstnewenvironment{SQL}{\lstset{language=SQL}}{}
+\lstnewenvironment{SQL}[1][]{\lstset{language=SQL,title=SQL,title=Example,#1}}{}
 
-\lstnewenvironment{Code}{\lstset{language=Ada}}{}
+\lstnewenvironment{Code}[1][]{\lstset{language=Ada,#1}}{}
 
-\lstnewenvironment{Example}{\lstset{language=Ada,title=Example}}{}
-\lstnewenvironment{NumberedExample}{\lstset{language=Ada,label=Example}}{}
+\lstnewenvironment{Example}[1][]{\lstset{language=Ada,title=Example,#1}}{}
+\lstnewenvironment{NumberedExample}[1][]{\lstset{language=Ada,title=Example,numbers=left,escapeinside={(*@}{@*)},#1}}{}
 
 \newcommand\apqversion{3.2}
 
+
+%\DeclareCaptionFont{white}{\color{white}}
+%\DeclareCaptionFormat{listing}{\colorbox[cmyk]{0.43, 0.35, 0.35,0.01}{\parbox{\textwidth}{\hspace{15pt}#1#2#3}}}
+%\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white, singlelinecheck=false, margin=0pt, font={bf,footnotesize}}
 
 %\DefineVerbatimEnvironment{SQL}{Verbatim}%
 %   {frame=single,fontsize=\small,label={SQL},labelposition=topline}
@@ -573,8 +577,6 @@ APQ\_Time         &  Ada.Calendar.Day\_Duration & Y & TIME\footnote{No timezone 
 \hline 
 APQ\_Timestamp    &  Ada.Calendar.Time & N   & TIMESTAMP\footnote{Converted into and loaded as UTC}\\
 \hline 
-APQ\_Timezone     &  Integer     &  N        &  range -23..23\\
-\hline 
 APQ\_Bitstring    &  -           &  N        &  BIT or BIT VARYING\\
 \hline 
 Decimal\_Type     &  -           &  -        &  PostgreSQL.Decimal\\
@@ -631,8 +633,6 @@ APQ\_Time            &  Ada.Calendar.Day\_Duration &  Y           &  TIME\\
 \hline 
 APQ\_Timestamp       &  Ada.Calendar.Time          &  N           &  TIMESTAMP\\
 \hline 
-APQ\_Timezone        &  range -23..23              &  N           &  \emph{Not in MySQL}\\
-\hline 
 APQ\_Bitstring       &  array(Positive) of APQ\_Boolean & N       &  \emph{Not in MySQL}\\
 \hline
 \caption{MySQL Data Types}\label{t:mytypes}
@@ -671,7 +671,6 @@ subtype Sybase_Bigint is APQ_Bigint
 \begin{itemize}
    \item APQ\_Bigserial\index{APQ\_Bigserial} is not supported.
    \item APQ\_Boolean\index{APQ\_Boolean}  maps to Sybase's data type \emph{BIT.}
-   \item APQ\_Timezone\index{APQ\_Timezone} is not supported by any Sybase data type.
    \item APQ\_Bitstring\index{APQ\_Bitstring} is not supported.
 \end{itemize}
 
@@ -705,8 +704,6 @@ APQ\_Date            &  Ada.Calendar.Time &  Y                 &  DATE\\
 APQ\_Time            &  Ada.Calendar.Day\_Duration & Y         &  TIME\\
 \hline 
 APQ\_Timestamp       &  Ada.Calendar.Time &  N                 &  \emph{DATETIME}\\
-\hline 
-APQ\_Timezone        &  range -23..23     &  N                 &  \emph{Not in Sybase}\\
 \hline 
 APQ\_Bitstring       &  array(Positive) of APQ\_Boolean & N    &  \emph{Not in Sybase}\\
 \hline
@@ -2647,12 +2644,12 @@ To make portable\index{portable} database programming easier, APQ provides a dis
 Query\_Type object factory primitive that can be used for this purpose.
 For example:
 
-\begin{NumberedExample}
+\begin{NumberedExample}[caption={Big test}]
 with APQ;
 use APQ;
 
 procedure My_Generic_App(C : Root_Connection_Type'Class) is
-   Q : Root_Query_Type'Class := New_Query(C);\label{Ex:New_Query_Assgn}
+   Q : Root_Query_Type'Class := New_Query(C);(*@\label{Ex:New_Query_Assgn}@*)
 begin
    Prepare(Q,"SELECT NAME,INCOME");
    Append_Line(Q,"FROM~SALARIES");
@@ -2692,8 +2689,8 @@ declare
    Q2 : Query_Type;
 begin
    ...
-   Q1 := Q0;   -- Q1 becomes initialized (Q0 ignored)\label{Ex:Q1}
-   Clear(Q2);  -- Initialize Q2\label{Ex:Q2}
+   Q1 := Q0;   -- Q1 becomes initialized (Q0 ignored)(*@\label{Ex:Q1}@*)
+   Clear(Q2);  -- Initialize Q2(*@\label{Ex:Q2}@*)
 \end{NumberedExample}
 
 In this example, both Q1~(line~\ref{Ex:Q1}) and Q2~(line~\ref{Ex:Q2})
@@ -3279,29 +3276,18 @@ WHERE SHIP_DATE = '2002-07-21'
 Notice that the Append call for APQ\_Date\index{APQ\_Date} automatically supplies the
 necessary quotes to the SQL query\index{SQL query} (if needed for the database being
 used). All of the data types supported are molded into a format that
-is acceptable in the native database SQL syntax\index{SQL syntax}. 
+is acceptable in the native database SQL syntax\index{SQL syntax}. \\
 
-There is one additional Append procedure call that has a special set
-of arguments in order to support dates\index{dates} with time zones\index{time zones}. The arguments
-for this procedure call are as follows:
 
-\begin{Code}
-procedure Append(
-   Q :     in out Query_Type;
-   TS :    in     APQ_Timestamp;
-   TZ :    in     APQ_Timezone;
-   After : in     String := ""
-);
-\end{Code}
-
-Apart from the different argument names TS and TZ, this
-procedure works in the same fashion as the former Append\index{Append} procedure
-call. The TZ argument simply supplies the additional time zone\index{time zone}
-information to be added to the timestamp\index{timestamp}.
+APQ used to include the APQ\_Timezone data type. When it was updated to Ada 2005
+this type was removed. Now APQ date and time types work as follows
 
 \begin{description}
-\item [Note:] Not all databases support the use of timezone values.
+	\item[APQ\_Date] date only, in local timezone
+	\item[APQ\_Hour] \emph{Day\_Duration} type has no timestamp information; thus it's assumed local timezone as well
+	\item[APQ\_Timestamp] it's converted to/from UTC when talking to the database; The \emph{Ada.Calendar.Formatting} package is used for the conversion tasks
 \end{description}
+
 
 \subsection{Generic Append SQL Procedures}
 
@@ -3446,62 +3432,6 @@ generic procedure as Append\index{Append} (line~\ref{Ex:Inst}), the application 
 free to neatly append a price value from Selling\_Price in
 line~\ref{Ex:InstUse}, as if it were natively supported.
 
-
-\subsection{Generic Append\_Timezone}
-
-The Append\_Timezone\index{Append\_Timezone} has an additional generic paramter. The instantiated\index{instantiated}
-procedure also has a slightly different set of calling arguments. The generic
-parameters are specified as follows:
-
-\begin{Code}
-generic
-   type Date_Type is new Ada.Claendar.Time;
-   type Zone_Type is new APQ_Timezone;
-procedure Append_Timezone(
-   Q :     in out Root_Query_Type'Class;
-   V :     in     Date_Type;
-   Z :     in     Zone_Type;
-   After : in     String := ""
-);
-\end{Code}
-
-The instantiated procedure has the following calling signature:
-
-\begin{Code}
-procedure Append(
-   Q :     in out Root_Query_Type'Class;
-   V :     in     Date_Type;
-   Z :     in     Zone_Type;
-   After : in     String := ""
-);
-\end{Code}
-
-The following shows an example of its use:
-
-\begin{NumberedExample}
-declare
-   type Ship_Date_Type is new APQ_Timestamp;
-   type Ship_Zone_Type is new APQ_Timezone;
-
-   procedure Append is new Append_Timezone(\label{Ex:InstTZ}
-      Ship_Date_Type,Ship_Zone_Type);
-
-   Q :         Query_Type;
-   Ship_Date : Ship_Date_Type;
-   Ship_Zone : Ship_Zone_Type;
-begin
-   ...
-   Prepare(Q,"SELECT COUNT(*)");
-   Append_Line(Q,"FROM ORDER");
-   Append(Q,"WHERE SHIP_DATE = ");
-   Append(Q,Ship_Date,Ship_Zone,New_Line);\label{Ex:UseInstTZ}
-   ...
-\end{NumberedExample}
-
-The example shows how the application's types Ship\_Date\_Type
-and Ship\_Zone\_Type are accomodated by the Append\index{Append} instantiation\index{instantiation}
-of the generic procedure (line~\ref{Ex:InstTZ}). The instantiated
-Append routine is applied in line~\ref{Ex:UseInstTZ}.
 
 
 \subsection{Generic Append of Bounded SQL Text}
@@ -3996,63 +3926,6 @@ null (no null indicator is involved). Encode routines are only necessary
 when a null indicator may need to be encoded into the result.
 
 
-\subsection{Encoding Timezone}
-
-Encoding\index{encoding} APQ\_Timezone\index{APQ\_Timezone} values requires a special generic procedure
-named Encode\-\_Timezone\index{Encode\_Timezone}. Its generic parameters are described by the
-following table:
-
-\begin{Code}
-generic
-   type Date_Type is new APQ_Timestamp;
-   type Zone_Type is new APQ_Timezone;
-   type Ind_Type is new Boolean;
-procedure Encode_Timezone(
-   Q :         in out Root_Query_Type'Class;
-   D :         in     Date_Type;
-   Z :         in     Zone_Type;
-   Indicator : in     Ind_Type;
-   After :     in     String := ""
-);
-\end{Code}
-
-The following example demonstrates the instantiation and use of the
-procedure:\label{Birthday Timezone Example}
-
-\begin{Example}
-declare
-   type Cust_No_Type is new Integer range 1000..100_000;
-   type Birthday_Type is new APQ_Timestamp;
-
-   procedure Append is new Append_Integer(Cust_No_Type);
-   procedure Encode is new
-      Encode_Integer(Cust_No_Type,Boolean);
-   procedure Encode is new
-      Encode_Timezone(Birthday_Type,APQ_Timezone,Boolean);
-
-   Q :            Query_Type;
-   Cust_No :      Cust_No_Type;  -- Customer # NOT NULL
-   Birthday :     Birthday_Type; -- Customer birthday
-   Birthday_TZ :  APQ_Timezone;  -- Timezone of the birthday
-   Birthday_Ind : Boolean;       -- True when Birthday is NULL
-begin
-   ...
-   Prepare(Q,"INSERT INTO BIRTHDAY (CUST_NO,BIRTHDAY)");
-   Append(Q, "VALUES (");
-   Append(Q,Cust_No,",");
-   Encode(Q,Birthday,Birthday_TZ,Birthday_Ind,")" & New_Line);
-   ...
-\end{Example}
-
-If the Birthday\_Ind indicator\index{indicator} is false (not null\index{null, not}),
-then the resulting query would look something like this:
-
-\begin{SQL}
-INSERT INTO BIRTHDAY (CUST_NO,BIRTHDAY)
-VALUES (12345,'1984-09-25 22:47:06+03')
-\end{SQL}
-The ``+03'' after the time represents the time zone \index{time zone}UTC+3
-hours.
 
 
 \section{Query Execution}
@@ -4126,9 +3999,10 @@ begin
    Encode(Q,Birthday,Birthday_TZ,Birthday_Ind,")" & New_Line);
    Execute(Q,C);
 \end{Example}
+\label{Examplelalala}
 
 The example shows the Execute primitive pairing the query object Q
-with the database connection object C.
+with the database connection object C \ref{Examplelalala}.
 
 \subsection{Error Message Reporting\label{Error Message Reporting}}
 
@@ -6563,84 +6437,7 @@ begin
    Clear(Q);
 \end{Example}
 
-\subsection{APQ\_Timezone Value Procedure}
 
-A TIMESTAMP\index{TIMESTAMP} value that carries with it a time zone\index{time zone}
-value, requires a special procedure since two values must be extracted
-for the same column:
-
-\begin{itemize}
-   \item The Ada.Calendar.Time%
-      \footnote{From which APQ\_Timestamp is derived.} value holding the TIMESTAMP value
-   \item The APQ\_Timezone\index{APQ\_Timezone} value holding the time zone
-      offset.
-\end{itemize}
-
-The generic procedure requires the following type arguments:
-
-\begin{Code}
-generic
-   type Date_Type is new Ada.Calendar.Time;
-   type Zone_Type is new APQ_Timezone;
-procedure Timezone_Value(
-   Query : in     Query_Type'Class;
-   CX :    in     Column_Index_Type;
-   TS :       out Date_Type;
-   TZ :       out Zone_Type
-);
-\end{Code}
-
-Table \ref{t:tzvx} lists the exceptions for Timezone\_Value.
-
-\begin{table}
-   \begin{center}
-      \begin{tabular}{ll}
-         Exception Name    &  Reason\\
-         \hline 
-         No\_Result        &  There was no execute performed\\
-         No\_Column        &  No column at index\\
-         Null\_Value       &  The column's value is null\\
-      \end{tabular}
-   \end{center}
-   \caption{Timezone\_Value Exceptions}\label{t:tzvx}
-\end{table}
-
-The following example shows how the procedure can be used:
-
-\begin{Example}
-declare
-   procedure Value is new Timezone_Value(APQ_Timestamp,APQ_Timezone);
-   C : Connection_Type;
-   Q : Query_Type;
-   Birth_Date : APQ_Timestamp;
-   Birth_Zone : APQ_Timezone;
-begin
-   Prepare(Q,"SELECT CUST_NO,CUST_NAME,BIRTH_DATE");
-   Append(Q,"FROM CUSTOMER");
-   Execute(Q,C);
-   loop
-      begin
-         Fetch(Q);
-      exception
-         when No_Tuple =>
-            exit;
-      end;
-      ...
-      Value(Q,3,Birth_Date,Birth_Zone); -- Column BIRTH_DATE
-      ...
-      end loop;
-   end loop;
-   Clear(Q);
-\end{Example}
-
-In this example code fragment, the Value procedure call expects the
-column's value to be column 3 (argument CX). This works as long as
-column BIRTH\_DATE can never be null. If a NULL value is encountered
-in this program, the exception Null\_Value\index{Null\_Value} will be raised and not
-caught by the code in this example.%
-\footnote{Either an exception handler must be added or a different way of extracting
-the value must be used. Fetch\_Timezone is recommended if NULL is
-possible.}
 
 \subsection{Bounded\_Value Function}
 
@@ -7119,71 +6916,6 @@ begin
    Clear(Q);
 \end{Example}
 
-\subsection{Timezone\_Fetch Procedure}
-
-The Timezone\_Fetch\index{Timezone\_Fetch} generic procedure is unique because it returns
-an additional parameter: the timezone\index{timezone}. The procedure's
-instantiation parameters are listed below:
-
-\begin{Code}
-generic
-   type Date_Type is new Ada.Calendar.Time;
-   type Zone_Type is new APQ_Timezone;
-   type Ind_Type is new Boolean;
-procedure Timezone_Fetch(
-   Query :     in     Root_Query_Type'Class;
-   CX :        in     Column_Index_Type;
-   V :            out Date_Type;
-   Z :            out Zone_Type;
-   Indicator :    out Ind_Type
-);
-\end{Code}
-
-\begin{table}
-   \begin{center}
-      \begin{tabular}{ll}
-         Exception Name       &  Reason\\
-         \hline 
-         No\_Result           &  There was no execute performed\\
-         No\_Column           &  No column at index\\
-      \end{tabular}
-   \end{center}
-   \caption{Timezone\_Fetch Exceptions}\label{t:tzfx}
-\end{table}
-
-Table \ref{t:tzfx} lists the possible exceptions for Timezone\_Fetch.
-The following example illustrates how to instantiate and call a Timezone\_Fetch
-procedure.
-
-\begin{Example}
-declare
-   type Bday_Type is new Integer;
-   type Bday_Zone_Type is new APQ_Timezone;
-   type Bday_Ind_Type is new Boolean;
-   procedure Value is new Timezone_Fetch
-      (Bday_Type,Bday_Zone_Type,Bday_Ind_Type);
-   C :              Connection_Type;
-   Q :              Query_Type;
-   Bday :           Bday_Type;
-   Bday_Zone :      Bday_Zone_Type;
-   Bday_Ind :       Bday_Ind_Type;
-begin
-   Prepare(Q,"SELECT CUST_NO,CUST_NAME,BIRTH_DATE");
-   Append(Q, "FROM CUSTOMER");
-   Execute(Q,C);
-   loop
-      begin
-         Fetch(Q);
-      exception
-         when No_Tuple =>
-            exit;
-      end;
-      ...
-      Value(Q,3,Bday,Bday_Zone,Bday_Ind);
-      ...
-   end loop;
-   Clear(Q);
-\end{Example}
 
 \section{Information Functions}
 
@@ -8244,19 +7976,6 @@ function To_String(
 
 \begin{Code}
 function To_String(
-   V :  APQ_Timestamp;
-   TZ : APQ_Timezone
-) return String;
-\end{Code}
-
-\begin{Code}
-function To_String(
-   V : APQ_Timezone
-) return String;
-\end{Code}
-
-\begin{Code}
-function To_String(
    V : APQ_Bitstring
 ) return String;
 \end{Code}
@@ -8349,14 +8068,6 @@ function Timestamp_String(
 ) return String;
 \end{Code}
 
-\begin{Code}
-generic
-   type Val_Type is new APQ_Timezone;
-function Timezone_String(
-   V : Val_Type
-) return String;
-\end{Code}
-
 The following example illustrates their use:
 
 \begin{Example}
@@ -8401,14 +8112,6 @@ generic
 function Convert_To_Time(
    S : String
 ) return Val_Type; -- HH:MM:SS format
-\end{Code}
-
-\begin{Code}
-generic
-   type Val_Type is new Ada.Calendar.Time;
-function Convert_To_Timestamp(
-   S : String  
-) return Val_Type;  -- YYYY-MM-DD HH:MM:SS
 \end{Code}
 
 \begin{table}
@@ -8481,51 +8184,6 @@ begin
    Some_Timestamp := To_Timestamp(Some_Date,Some_Time);
 \end{Example}
 
-\section{The Extract\_Timezone Generic Procedure}
-
-When a database table or result column provides a timestamp and timezone
-together, it is sometimes necessary to extract\index{extract} these
-components so that they can be manipulated separately. To permit the
-use of application defined types, a generic procedure is provided.
-The Extract\_Timezone\index{Extract\_Timezone} generic procedure is defined below,
-while Table~\ref{t:xtzx} documents the exceptions:
-
-\begin{Code}
-generic
-   type Date_Type is new Ada.Calendar.Time;
-   type Zone_Type is new APQ_Timezone;
-procedure Extract_Timezone(
-   S :  in     String;
-   DT :    out Date_Type;
-   TZ :    out Zone_Type
-);
-\end{Code}
-
-\begin{table}
-   \begin{center}
-      \begin{tabular}{ll}
-         Exception Name    &  Reason\\
-         \hline 
-         Invalid\_Format   &  The input value was not a proper value for the type\\
-      \end{tabular}
-   \end{center}
-   \caption{Extract\_Timezone Exceptions}\label{t:xtzx}
-\end{table}
-
-The following example shows how to apply this procedure:
-
-\begin{Example}
-declare
-   type My_Date_Type is new APQ_Timestamp;
-   type My_Zone_type is new APQ_Timezone;
-   procedure Extract is new 
-      Extract_Timezone(My_Date_Type,My_Zone_Type);
-   Ex_Date :      My_Date_Type;  -{
-   Ex_Zone :      My_Zone_Type;  -{
-begin
-   ...
-   Extract("1957-01-08 01:13:45+04",Ex_Date,Ex_Zone);
-\end{Example}
 
 \chapter{Calendar Functions}
 
@@ -8544,6 +8202,7 @@ generic
 function Generic_Hour(
    TM : Time_Type
 ) return Hour_Number;
+-- local time zone is assumed
 \end{Code}
 
 \begin{Code}
@@ -8577,6 +8236,10 @@ begin
    HH := Hour(Evt_Time);
    MM := Minute(Evt_Time);
 \end{Example}
+
+
+Notice these generic functions are designed torward the \emph{Day\_Duration} type and thus there is
+no conflict with the ones available at \emph{Ada.Calendar.Formatting} standard package.
 
 \chapter{Decimal Support}
 
@@ -9179,19 +8842,18 @@ that.
 \section{Data Types}
 
 When writing generic database code it is important to choose your
-datatypes\index{datatypes} very carefully. One example where this is important is when
-using a PostgreSQL\index{PostgreSQL} timezone\index{timezone} type (APQ\_Timezone\index{APQ\_Timezone}).
-While a timezone
-variable can be used in MySQL\index{MySQL} specific code, it should be emphasized
-that MySQL does not support timezone values within a TIMESTAMP\index{TIMESTAMP} database
-column type. Sybase\index{Sybase} does not support timezones at all.
+datatypes\index{datatypes} very carefully.\\
 
-A similar problem exists with PostgreSQL bit string types (APQ\_Bitstring\index{APQ\_Bitstring}).
+A problem exists with PostgreSQL bit string types (APQ\_Bitstring\index{APQ\_Bitstring}).
 MySQL and Sybase do not support them. So if you want to write portable
-code, stick to simple data types in your application. 
+code, stick to simple data types in your application. \\
 
 When you must make use of special database types, be prepared to specialize
-the code somewhat, depending upon the database being used.
+the code somewhat, depending upon the database being used.\\
+
+
+The APQ\_Timezone data type was removed in favour of a more portable way of dealing
+with timestamps now Ada 2005 supports time zone information.
 
 
 \subsection{Column Types}
@@ -9204,13 +8866,13 @@ same column type declarations. However, there are some important differences.
 For example, a SERIAL\index{SERIAL} column in PostgreSQL must be declared as an
 INTEGER\index{INTEGER} type when using MySQL. For most applications, this is not
 too much of an issue, because applications usually don't create and
-drop tables. However, this can be an issue with temporary tables.
+drop tables. However, this can be an issue with temporary tables.\\
 
-As noted in the prior section, MySQL also does not directly support
-some data types such as the time zone value within a DATETIME\index{DATETIME} type.
-If time zones must be supported, the writer may simply add a time
-zone column declared in SQL as a SMALLINT\index{SMALLINT} value, and work with the
-timezone separately.
+
+Also it's better to assure the table structure is expecting timestamp values
+set in UTC in order not to mess things around when updating or moving your
+server to another time zone.\\
+
 
 
 \section{Pulling it All Together}
@@ -11025,7 +10687,7 @@ Second release August 4, 2002, but under the dual ACL and GPL2%
          of APQ in the windows environment.
 \end{itemize}
 
-\section*{APQ \apqversion}
+\section*{APQ 2.2}
 
 \begin{itemize}
    \item PostgreSQL now defaults to Set\_Port(C,5432), which is an TCP/IP connection
@@ -11090,13 +10752,29 @@ Second release August 4, 2002, but under the dual ACL and GPL2%
 			\item \textbf{apq} the core APQ classes
 			\item \textbf{apq-ct\_lib} ct\_lib backend support (MySQL Server and Sybase)
 			\item \textbf{apq-mysql} MySQL backend support
+			\item \textbf{apq-odbc} ODBC support
 			\item \textbf{apq-postgresql} PostgreSQL backend support
-			\item \textbf{apq-sybase} Sybase backend support
 		\end{itemize}
-	\item Microsoft SQL Server Support
+	\item Microsoft SQL Server and ODBC Support
 	\item Can be built with FreeTDS and Sybase's ct\_lib
 	\item New single license in favour of the old dual-license
 	\item some bug fixes
+\end{itemize}
+
+\section*{APQ 3.1}
+
+\begin{itemize}
+	\item Some minor PostgreSQL bug fixes
+	\item Support to PostgreSQL SSL connections
+\end{itemize}
+
+\section*{APQ 3.2}
+
+\begin{itemize}
+	\item Moved on to gprbuild
+	\item Removed Pragma Linker\_Options from the code
+	\item APQ\_Timestamp in UTC
+	\item Support Ada2005's Ada.Calendar.Time\_Zones package
 \end{itemize}
 
 

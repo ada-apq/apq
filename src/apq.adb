@@ -872,39 +872,6 @@ package body APQ is
 				One	=> Column_Index_Type'Image(CX) );
 	end Value;
 
-	procedure Value(Query : Root_Query_Type; CX : Column_Index_Type; TS : out APQ_Timestamp; TZ : out APQ_Timezone) is
-		use Ada.Strings, Ada.Strings.Fixed;
-		function To_Timestamp is new Convert_To_Timestamp(APQ_Timestamp);
-		S : String := Trim(Value(Root_Query_Type'Class(Query),CX),Both);
-	begin
-		for X in reverse S'Range loop
-			if S(X) = '-' or else S(X) = '+' then
-				if S(X..S'Last)'Length <= 3 then
-					begin
-						TZ := APQ_Timezone'Value(S(X..S'Last));
-						return;
-					exception
-						when others =>
-							Raise_APQ_Error_Exception(
-								E	=> Invalid_Format'Identity,
-								Code	=> APQ21,
-								Where	=> "Timezone_Value",
-								Zero	=> Column_Index_Type'Image(CX) );
-					end;
-				else
-					Raise_APQ_Error_Exception(
-						E	=> Invalid_Format'Identity,
-						Code	=> APQ22,
-						Where	=> "Timezone_Value",
-						Zero	=> Column_Index_Type'Image(CX) );
-				end if;
-			end if;
-		end loop;
-
-		TS := To_Timestamp(S, TZ);
-	end Value;
-
-
 
 	----------------------------------------------------------------------------------
 	--				GENERIC METHODS FOR				--
@@ -994,18 +961,6 @@ package body APQ is
 		Append(Root_Query_Type'Class(Q),"'",After);
 	end Append_Timestamp;
 
-
-
-	procedure Append_Timezone(Q : in out Root_Query_Type'Class; V : Date_Type; Z : Zone_Type; After : String := "") is
-		function To_String is new Timestamp_String(Date_Type);
-		function To_String is new Timezone_String(Zone_Type);
-	begin
-		Append(Root_Query_Type'Class(Q),"'",To_String(V));
-		Append(Root_Query_Type'Class(Q),To_String(Z),"'");
-		if After'Length > 0 then
-			Append(Root_Query_Type'Class(Q),After);
-		end if;
-	end Append_Timezone;
 
 
 
@@ -1140,19 +1095,6 @@ package body APQ is
 			App(Root_Query_Type'Class(Q),V,After);
 		end if;
 	end Encode_Timestamp;
-
-
-
-
-	procedure Encode_Timezone(Q : in out Root_Query_Type'Class; D : Date_Type; Z : Zone_Type; Indicator : Ind_Type; After : String := "") is
-		procedure Append is new Append_Timezone(Date_Type,Zone_Type);
-	begin
-		if Indicator then
-			Append(Root_Query_Type'Class(Q),"NULL",After);
-		else
-			Append(Root_Query_Type'Class(Q),D,Z,After);
-		end if;
-	end Encode_Timezone;
 
 
 
@@ -1448,42 +1390,6 @@ package body APQ is
 				One	=> Column_Index_Type'Image(CX) );
 	end Timestamp_Value;
 
-	procedure Timezone_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type; TS : out Date_Type; TZ : out Zone_Type) is
---		use Ada.Strings, Ada.Strings.Fixed;
---		function To_Timestamp is new Convert_To_Timestamp(APQ_Timestamp);
---		S : String := Trim(Value(Root_Query_Type'Class(Query),CX),Both);
-		Timestamp : APQ_Timestamp;
-		Timezone  : APQ_Timezone;
-	begin
---		TS := To_Timestamp(S);
---		for X in reverse S'Range loop
---			if S(X) = '-' or else S(X) = '+' then
---				if S(X..S'Last)'Length <= 3 then
---					begin
---						TZ := APQ_Timezone'Value(S(X..S'Last));
---						return;
---					exception
---						when others =>
---							Raise_APQ_Error_Exception(
---								E	=> Invalid_Format'Identity,
---								Code	=> APQ21,
---								Where	=> "Timezone_Value",
---								Zero	=> Column_Index_Type'Image(CX) );
---					end;
---				else
---					Raise_APQ_Error_Exception(
---						E	=> Invalid_Format'Identity,
---						Code	=> APQ22,
---						Where	=> "Timezone_Value",
---						Zero	=> Column_Index_Type'Image(CX) );
---				end if;
---			end if;
---		end loop;
-		Value(Query, CX, Timestamp, Timezone);
-		TS := Date_Type(Timestamp);
-		TZ := Zone_Type(Timezone);
-	end Timezone_Value;
-
 
 
 	function Bounded_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return P.Bounded_String is
@@ -1610,19 +1516,6 @@ package body APQ is
 			V := Value(Root_Query_Type'Class(Query),CX);
 		end if;
 	end Timestamp_Fetch;
-
-
-
-	procedure Timezone_Fetch(Query : Root_Query_Type'Class; CX : Column_Index_Type; V : out Date_Type; Z : out Zone_Type; Indicator : out Ind_Type) is
-		procedure Value is new Timezone_Value(Date_Type,Zone_Type);
-	begin
-		Indicator := Ind_Type( Is_Null(Root_Query_Type'Class(Query),CX) );
-		if not Indicator then
-			Value(Root_Query_Type'Class(Query),CX,V,Z);   -- Get Timestamp and Timezone
-		else
-			Z := Zone_Type'First;
-		end if;
-	end Timezone_Fetch;
 
 
 
@@ -1801,29 +1694,6 @@ package body APQ is
 
 
 
-	function To_String(V : APQ_Timezone) return String is
-		package ZONEIO is new Ada.Text_IO.Integer_IO(APQ_Timezone);
-		ZS : String(1..3);
-	begin
-		ZONEIO.Put(To => ZS, Item => V, Base => 10);
-		if ZS(1) = ' ' then
-			ZS(1) := ZS(2);
-			ZS(2) := '0';
-		end if;
-		return ZS;
-	end To_String;
-
-
-
-	function To_String(V : APQ_Timestamp; TZ : APQ_Timezone) return String is
-		ST : String := To_String(V);
-		ZS : String := To_String(TZ);
-	begin
-		return ST & ZS;
-	end To_String;
-
-
-
 	function To_String(V : APQ_Bitstring) return String is
 		S : String(V'Range);
 	begin
@@ -1916,13 +1786,6 @@ package body APQ is
 	begin
 		return To_String(APQ_Timestamp(V));
 	end Timestamp_String;
-
-
-
-	function Timezone_String(V : Val_Type) return String is
-	begin
-		return To_String(APQ_Timezone(V));
-	end Timezone_String;
 
 
 
@@ -2076,59 +1939,6 @@ package body APQ is
 					Zero	=> S );
 		end;
 	end Convert_To_Time;
-
-	function Convert_To_Timestamp(S : String; TZ : APQ_Timezone := 0) return Val_Type is
-		-- S must be YYYY-MM-DD HH:MM:SS[.FFF] format
-		
-		use Ada.Calendar;
-
-		St : constant String := Ada.Strings.Fixed.Trim( S, Ada.Strings.Both );
-
-
-		Year	: Year_Number;
-		Month	: Month_Number;
-		Day	: Day_Number;
-		Seconds	: Day_Duration;
-
-		function Str( From, To : in Positive ) return Natural is
-			The_Str : Constant String :=  St( St'First + From - 1 .. St'First + To - 1 );
-		begin
-			return Natural'Value( The_Str );
-		end Str;
-
-		procedure Split_Date is
-		begin
-			Year	:= Year_Number(	 Str( 1,  4 ) );
-			Month	:= Month_Number( Str( 6,  7 ) );
-			Day	:= Day_NUmber(	 Str( 9, 10 ) );
-		end Split_Date;
-
-		procedure Split_Time is
-			Hour,Minute,Second : Natural;
-		begin
-			Hour	:= Str( 12, 13 );
-			Minute	:= Str( 15, 16 );
-			Second	:= Str( 18, 19 );
-
-			Seconds	:= Day_Duration( Hour * 3600 + Minute * 60 + Second );
-		end Split_Time;
-
-
-		The_Time : Time;
-	begin
-		Split_Date;
-		Split_Time;
-		The_Time := Ada.Calendar.Formatting.Time_Of(
-						Year		=> Year,
-						Month		=> Month,
-						Day		=> Day,
-						Seconds		=> Seconds,
-						Time_Zone	=> To_Time_Offset( TZ )
-				);
-		return Val_Type( The_Time );
-	end Convert_To_Timestamp;
-
-
 
 
 	function Convert_Date_and_Time(DT : Date_Type; TM : Time_Type) return Result_Type is
