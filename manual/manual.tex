@@ -8112,6 +8112,23 @@ function Convert_To_Time(
 ) return Val_Type; -- HH:MM:SS format
 \end{Code}
 
+
+\begin{Code}
+generic
+   type Val_Type is new Ada.Calendar.Time;
+function Convert_To_Timestamp(
+   S : String;
+   TZ: Ada.Calendar.Time_Zones.Time_Offset := 0
+) return Val_Type; -- HH:MM:SS format
+\end{Code}
+
+
+As for time and timestamp conversions, these are generic implementations that in fact uses
+the ones provided by the \emph{Ada.Calendar.Formatting} package. They are provided to enforce
+strong typing whenever desired and also for backwards compatibility.\\
+
+\textbf{Convert\_to\_Date} was removed to enforce the use of Timestamps.
+
 \begin{table}
    \begin{center}
       \begin{tabular}{ll}
@@ -8135,8 +8152,8 @@ declare
    Elvis :   Birth_Date_Type;
 begin
    ...
-   My_Bool := To_Boolean("F");
-   Elvis   := To_Timestamp("1957-01-08");
+   My_Bool := To_Boolean("T"); -- valid values are 1/t/true and 0/f/false
+   Elvis   := To_Timestamp("1957-01-08 00:00:00"); -- UTC
 \end{Example}
 
 \section{The Convert\_Date\_and\_Time Generic Function}

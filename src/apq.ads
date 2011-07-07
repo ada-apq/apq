@@ -651,7 +651,6 @@ package APQ is
 
 	procedure Append(Q : in out Root_Query_Type; V : APQ_Timestamp; After : String := "");
 	-- Append a timestamp...
-	-- Append a timestamp at a timezone...
 
 	procedure Append(Q : in out Root_Query_Type; V : APQ_Bitstring; After : String := "");
 	-- Append a bitstring...
@@ -1055,35 +1054,35 @@ package APQ is
 	-- Conversion :: anything to string (generic for derived types) ...
 
 	generic
-	type Val_Type is range <>;
+		type Val_Type is range <>;
 	function Integer_String(V : Val_Type) return String;
 
 	generic
-	type Val_Type is mod <>;
+		type Val_Type is mod <>;
 	function Modular_String(V : Val_Type) return String;
 
 	generic
-	type Val_Type is digits <>;
+		type Val_Type is digits <>;
 	function Float_String(V : Val_Type) return String;
 
 	generic
-	type Val_Type is delta <>;
+		type Val_Type is delta <>;
 	function Fixed_String(V : Val_Type) return String;
 
 	generic
-	type Val_Type is delta <> digits <>;
+		type Val_Type is delta <> digits <>;
 	function Decimal_String(V : Val_Type) return String;
 
 	generic
-	type Val_Type is new Ada.Calendar.Time;
+		type Val_Type is new Ada.Calendar.Time;
 	function Date_String(V : Val_Type) return String;
 
 	generic
-	type Val_Type is new Ada.Calendar.Day_Duration;
+		type Val_Type is new Ada.Calendar.Day_Duration;
 	function Time_String(V : Val_Type) return String;
 
 	generic
-	type Val_Type is new Ada.Calendar.Time;
+		type Val_Type is new Ada.Calendar.Time;
 	function Timestamp_String(V : Val_Type) return String;
 
 
@@ -1092,28 +1091,32 @@ package APQ is
  	--them return the APQ_types.
 
 	generic
-	type Val_Type is new Boolean;
+		type Val_Type is new Boolean;
 	function Convert_To_Boolean(S : String) return Val_Type;
 
-	generic
-	type Val_Type is new Ada.Calendar.Time;
-	function Convert_To_Date(S : String) return Val_Type;
-	-- S must be ISO date format (YYYY-MM-DD - / is valid too) or in YYYYMMDD.
-	-- Hour, minutes, ..., are ignored.
-	--
-	-- There is no check but for constraint error made.
 
 	generic
-	type Val_Type is new Ada.Calendar.Day_Duration;
+		type Val_Type is new Duration;
 	function Convert_To_Time(S : String) return Val_Type;
-	-- S must be HH:MM:SS[.FFF] format
+
 
 	generic
-	type Date_Type is new Ada.Calendar.Time;
-	type Time_Type is new Ada.Calendar.Day_Duration;
-	type Result_Type is new Ada.Calendar.Time;
-	function Convert_Date_and_Time(DT : Date_Type; TM : Time_Type) return Result_Type;
-	-- convert using the DT's time zone
+		type Val_Type is new Ada.Calendar.Time;
+	function Convert_to_Timestamp(
+				S	: in String;
+				TZ	: in Ada.Calendar.Time_Zones.Time_Offset
+			) return Val_Type;
+	
+
+	generic
+		type Date_Type is new Ada.Calendar.Time;
+		type Time_Type is new Ada.Calendar.Day_Duration;
+		type Result_Type is new Ada.Calendar.Time;
+	function Convert_Date_and_Time(
+					DT	: in Date_Type; 
+					TM	: in Time_Type
+				) return Result_Type;
+	-- return a new timestamp in DT's timezone at TM duration
 
 
 	-- Misc ...

@@ -141,24 +141,6 @@ package body APQ is
 		Raise_Exception( E, Message );
 	end Raise_APQ_Error_Exception;
 
-	--------------------
-	-- SQL DATA MODEL --
-	--------------------
-
-	function To_Time_Offset( Timezone : in APQ_Timezone ) return Ada.Calendar.Time_Zones.Time_Offset is
-		use Ada.Calendar.Time_Zones;
-	begin
-		return Time_Offset( Timezone ) * 60;
-	end To_Time_Offset;
-
-	function To_Timezone( Offset : in Ada.Calendar.Time_Zones.Time_Offset ) return APQ_Timezone is
-		use Ada.Calendar.Time_Zones;
-	begin
-		return  APQ_Timezone( Offset / 60 );
-	end To_Timezone;
-
-
-
 
 
 	----------------------------------------------------------------------------------
@@ -654,20 +636,6 @@ package body APQ is
 		Append(Root_Query_Type'Class(Q),"'",After);
 	end Append;
 
-	procedure Append(Q : in out Root_Query_Type; TS : APQ_Timestamp; TZ : APQ_Timezone; After : String := "") is
-		-- Append a timestamp at a timezone...
-		use Ada.Calendar, Ada.Strings, Ada.Strings.Fixed;
-		D : String := To_String(TS);
-		Z : String := APQ_Timezone'Image(TZ);
-	begin
-		Append(Root_Query_Type'Class(Q),"'",D);
-		Append(Root_Query_Type'Class(Q),Trim(Z,Left),"'");
-		if After'Length > 0 then
-			Append(Root_Query_Type'Class(Q),After);
-		end if;
-	end Append;
-
-
 
 	procedure Append(Q : in out Root_Query_Type; V : Row_ID_Type; After : String := "") is
 		-- Append a row_id_type...
@@ -823,9 +791,12 @@ package body APQ is
 	end Value;
 
 	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Date is
-		function To_Date is new Convert_To_Date(APQ_Date);
+		function To_Date is new Convert_To_Timestamp(APQ_Date);
 	begin
-		return To_Date(Value(Root_Query_Type'Class(Query),CX));
+		return To_Date(
+				S	=> Value( Root_Query_Type'Class( Query ), CX ) & " 03:03:03",
+				TZ	=> Ada.Calendar.Time_Zones.UTC_Time_Offset( Ada.Calendar.Clock )
+			);
 	exception
 		when Constraint_Error =>
 			Raise_APQ_Error_Exception(
@@ -858,10 +829,13 @@ package body APQ is
 	end Value;
 
 	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Timestamp is
-		function To_Timestamp is new Convert_To_Timestamp(APQ_Timestamp);
-		Text : String := Value(Root_Query_Type'Class(Query),CX);
+		function To_Timestamp is new Convert_To_Timestamp( APQ_Timestamp );
+		Text : String := Value( Root_Query_Type'Class( Query ), CX );
 	begin
-		return To_Timestamp(Text);
+		return To_Timestamp(
+					S	=> Text,
+					TZ	=> 0
+				);
 	exception
 		when Constraint_Error | Invalid_Format =>
 			Raise_APQ_Error_Exception(
@@ -1261,10 +1235,8 @@ package body APQ is
 
 
 	function Date_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
---		function To_Date is new Convert_To_Date(Val_Type);
 		date : APQ_Date;
 	begin
---		return To_Date(Value(Root_Query_Type'Class(Query),CX)
 		date := Value(Query, CX);
 		return Val_Type(date);
 	end Date_Value;
@@ -1342,20 +1314,8 @@ package body APQ is
 
 
 	function Time_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
---		function To_Time is new Convert_To_Time(Val_Type);
---		Text : String := Value(Root_Query_Type'Class(Query),CX);
 		Time : APQ_Time;
 	begin
---		case Engine_Of(Query) is
---			when Engine_PostgreSQL =>
---				return To_Time(Text);
---			when Engine_Sybase =>
---				return To_Time(Text);
---			when Engine_MySQL =>
---				return To_Time(MySQL_HHMMSS(Text));
---			when Engine_Other =>
---				return To_Time(Text);
---		end case;
 		Time := Value(Query, CX);
 		return Val_Type(Time);
 	end Time_Value;
@@ -1363,20 +1323,8 @@ package body APQ is
 
 
 	function Timestamp_Value(Query : Root_Query_Type'Class; CX : Column_Index_Type) return Val_Type is
---		function To_Timestamp is new Convert_To_Timestamp(Val_Type);
---		Text : String := Value(Root_Query_Type'Class(Query),CX);
 		Timestamp : APQ_Timestamp;
 	begin
---		case Engine_Of(Query) is
---			when Engine_PostgreSQL =>
---				return To_Timestamp(Text);
---			when Engine_Sybase =>
---				return To_Timestamp(Text);
---			when Engine_MySQL =>
---				return To_Timestamp(MySQL_YYYYMMDDHHMMSS(Text));
---			when Engine_Other =>
---				return To_Timestamp(Text);
---		end case;
 		Timestamp := Value(Query, CX);
 		return Val_Type(Timestamp);
 
@@ -1649,47 +1597,37 @@ package body APQ is
 
 
 
-	function To_String(V : APQ_Date) return String is
+	function To_String( V : APQ_Date ) return String is
 		use Ada.Calendar;
-		package INTIO2 is new Ada.Text_IO.Integer_IO(Integer);
-		YY :           Integer        := Integer(Year(V));
-		MM :           Integer        := Integer(Month(V));
-		DD :           Integer        := Integer(Day(V));
-		YYYY_MM_DD :   String(1..10)  := "YYYY-MM-DD";
+
+		Str : constant String := Ada.Calendar.Formatting.Image(
+							Date			=> V,
+							Include_time_Fraction	=> False,
+							Time_Zone		=> Ada.Calendar.Time_Zones.UTC_Time_Offset( V )
+						);
 	begin
-		INTIO2.Put(To => YYYY_MM_DD(1..4), Item => YY, Base => 10);
-		INTIO2.Put(To => YYYY_MM_DD(6..7), Item => MM, Base => 10);
-		INTIO2.Put(To => YYYY_MM_DD(9..10), Item => DD, Base => 10);
-		return Blanks_To_Zero(YYYY_MM_DD);
+		return Str( Str'First .. Ada.Strings.Fixed.Index( Str, " " ) );
 	end To_String;
 
 
 
-	function To_String(V : APQ_Time) return String is
-		use Ada.Calendar;
-		package INTIO3 is new Ada.Text_IO.Integer_IO(Integer);
-		function Hour is new Generic_Hour(APQ_Time);
-		function Minute is new Generic_Minute(APQ_Time);
-		function Second is new Generic_Second(APQ_Time);
-		HH :        Integer        := Integer(Hour(V));
-		MM :        Integer        := Integer(Minute(V));
-		SS :        Integer        := Integer(Second(V));
-		HH_MM_SS :  String(1..8)   := "HH:MM:SS";
+	function To_String( V : APQ_Time ) return String is
 	begin
-		INTIO3.Put(To => HH_MM_SS(1..2), Item => HH, Base => 10);
-		INTIO3.Put(To => HH_MM_SS(4..5), Item => MM, Base => 10);
-		INTIO3.Put(To => HH_MM_SS(7..8), Item => SS, Base => 10);
-		return Blanks_To_Zero(HH_MM_SS);
+		return Ada.Calendar.Formatting.Image(
+					Elapsed_Time		=> Duration( V ),
+					Include_Time_Fraction	=> True
+				);
 	end To_String;
 
 
 
-	function To_String(V : APQ_Timestamp) return String is
-		function Time_of_Day is new Generic_Time_of_Day(APQ_Timestamp,APQ_Time);
-		DS : String := To_String(APQ_Date(V));
-		ST : String := To_String(Time_of_Day(V));
+	function To_String( V : APQ_Timestamp ) return String is
 	begin
-		return DS & " " & ST;
+		return Ada.Calendar.Formatting.Image(
+						Date			=> Ada.Calendar.Time( V ),
+						Include_Time_Fraction	=> True,
+						Time_zone		=> 0
+					);
 	end To_String;
 
 
@@ -1797,11 +1735,6 @@ package body APQ is
 		use Ada.Characters.Handling, Ada.Strings, Ada.Strings.Fixed;
 		UC : String := To_Upper(Trim(S,Both));
 	begin
-		if UC = "FALSE" then
-			return False;
-		elsif UC = "TRUE" then
-			return True;
-		end if;
 
 		if UC'Length = 1 then
 			if UC = "T" then
@@ -1809,6 +1742,8 @@ package body APQ is
 			elsif UC = "F" then
 				return False;
 			end if;
+		else
+			return Val_Type'Value( S );
 		end if;
 
 		Raise_APQ_Error_Exception(
@@ -1822,145 +1757,80 @@ package body APQ is
 
 
 
-	function Convert_To_Date(S : String) return Val_Type is
-		-- S must be ISO date format (YYYY-MM-DD - / is valid too) or in YYYYMMDD.
-		-- Hour, minutes, ..., are ignored.
-		--
-		-- There is no check but for constraint error made.
-		--
-		--TODO: Solve the warning about possible no return value.
-		use Ada.Strings, Ada.Strings.Fixed, Ada.Calendar;
-		T : String := Trim(S,Both);
-
-
-		Has_Separator	: Boolean	:= T( 5 ) = '-' OR T( 5 ) = '/';
-
-		First		: Integer	:= T'First;
-		Month_First	: Integer;
-		Day_First	: Integer;
-		use Ada.Text_IO;
-	begin
-
-
-		if Has_Separator then
-			Month_First	:= First + 5;	-- first + year'len + separator
-			Day_First	:= Month_First + 3;	-- first + year'len + separator + month'len + separator + 1st day char
-		else
-			Month_First	:= First + 4;
-			Day_First	:= Month_First + 2;
-		end if;
-
-		declare
-			Year	: Year_Number	:= Year_Number'Value( T( First .. First + 3 ) );
-			Month	: Month_Number	:= Month_Number'Value( T( Month_First .. Month_First + 1 ) );
-			Day	: Day_Number	:= Day_Number'Value( T( Day_First .. Day_First + 1 ) );
-			R	: Ada.Calendar.Time := Ada.Calendar.Time_Of(Year,Month,Day);
-		begin
-			return Val_Type( R );
-		end;
-	exception
-		when others =>
-			Raise_APQ_Error_Exception(
-				E	=> Invalid_Format'Identity,
-				Code	=> APQ04,
-				Where	=> "Convert_To_Date",
-				Zero	=> S );
-	end Convert_To_Date;
-
 
 
 	function Convert_To_Time(S : String) return Val_Type is
 		-- S must be HH:MM:SS[.FFF] format
-		--TODO: Solve the warning about possible no return value.
-		use Ada.Strings, Ada.Strings.Fixed, Ada.Calendar;
-		T : String := Trim(S,Both);
-		Last :         Positive := T'Last;
-		Colon_X1 :     Positive;
-		Colon_X2 :     Positive;
-		Colon_1F :     Boolean := False;
-		Colon_2F :     Boolean := False;
 	begin
-
-		for X in reverse T'Range loop
-			if T(X) = '.' then
-				Last := X-1;    -- Ignore fractional part
-				exit;
-			end if;
-		end loop;
-
-		-- 00:00:00.000
-
-		for X in T'Range loop
-			if T(X) = ':' then
-				Colon_X1 := X;
-				Colon_1F := True;
-				if X < Last then
-					for Y in X+1..Last loop
-						if T(Y) = ':' then
-							Colon_X2 := Y;
-							Colon_2F := True;
-						end if;
-					end loop;
-				end if;
-				exit;
-			end if;
-		end loop;
-
-		if not Colon_1F then
-			Raise_APQ_Error_Exception(
-				E	=> Invalid_Format'Identity,
-				Code	=> APQ05,
-				Where	=> "Convert_To_Time",
-				Zero	=> S );
-		end if;
-
-		if not Colon_2F then
-			Colon_X2 := Last + 1;
-		end if;
-
-		begin
-			declare
-				Hour :   Natural        := Natural'Value(T(1..Colon_X1-1));
-				Minute : Natural        := Natural'Value(T(Colon_X1+1..Colon_X2-1));
-				Second : Natural        := 0;
-			begin
-				if Colon_2F then
-					Second := Natural'Value(T(Colon_X2+1..Last));
-				end if;
-
-				return Val_Type( Hour * 60 * 60 + Minute * 60 + Second );
-			end;
-		exception
-			when others =>
-				Raise_APQ_Error_Exception(
-					E	=> Invalid_Format'Identity,
-					Code	=> APQ06,
-					Where	=> "Convert_To_Time",
-					Zero	=> S );
-		end;
+		return Val_Type(
+				Ada.Calendar.Formatting.Value(
+						Elapsed_Time		=> S
+					)
+				);
 	end Convert_To_Time;
 
 
-	function Convert_Date_and_Time(DT : Date_Type; TM : Time_Type) return Result_Type is
-		function Internal_Date_and_Time(DT : Ada.Calendar.Time; TM : Ada.Calendar.Day_Duration) return Ada.Calendar.Time is
-			use Ada.Calendar;
-			Year :      Year_Number;
-			Month :     Month_Number;
-			Day :       Day_Number;
-			Second :    Day_Duration;
-		begin
-			Split(DT,Year,Month,Day,Second);
-			Second := Day_Duration(TM);
-			return Time_Of(Year,Month,Day,Second);
-		end Internal_Date_and_Time;
-
-
-		use Ada.Calendar;
+	function Convert_to_Timestamp(
+				S	: in String;
+				TZ	: in Ada.Calendar.Time_Zones.Time_Offset
+			) return Val_Type is
+		D : Ada.Calendar.Time;
 	begin
-		-- Internal_Date_and_Time() function necessary to avoid 3.13p compiler bug
-		return Result_Type( Internal_Date_and_Time(Time(DT),Day_Duration(TM)) );
-	end Convert_Date_and_Time;
+		D := Ada.Calendar.Formatting.Value(
+						Date			=> S,
+						Time_Zone		=> TZ
+					);
+		return Val_Type( D );
+	end Convert_To_Timestamp;
 
+	function Convert_Date_and_Time(
+					DT	: in Date_Type; 
+					TM	: in Time_Type
+				) return Result_Type is
+		-- return a new timestamp in DT's timezone at TM duration
+		use Ada.Calendar;
+		Year		: Year_Number;
+		Month		: Month_Number;
+		Day		: Day_Number;
+
+		Hour		: Formatting.Hour_Number;
+		Minute		: Formatting.Minute_Number;
+		Second		: Formatting.Second_Number;
+		Sub_Second	: Formatting.Second_Duration;
+	begin
+		Formatting.Split(
+				Date		=> Time( DT ),
+				Year		=> Year,
+				Month		=> Month,
+				Day		=> Day,
+				Hour		=> Hour,	-- placeholder
+				Minute		=> Minute,	-- placeholder
+				Second		=> Second,	-- placeholder
+				Sub_Second	=> Sub_Second,	-- placeholder
+				Time_Zone	=> Time_Zones.UTC_Time_Offset( Time( DT ) )
+			);
+
+		Formatting.Split(
+				Seconds		=> Day_Duration( TM ),
+				Hour		=> Hour,
+				Minute		=> Minute,
+				Second		=> Second,
+				Sub_Second	=> Sub_Second
+			);
+
+		return Result_Type(
+				Formatting.Time_Of(
+						Year		=> Year,
+						Month		=> Month,
+						Day		=> Day,
+						Hour		=> Hour,
+						Minute		=> Minute,
+						Second		=> Second,
+						Sub_Second	=> Sub_Second,
+						Time_Zone	=> Time_Zones.UTC_Time_Offset( Time( DT ) )
+					)
+				);
+	end Convert_Date_and_Time;
 
 
 
@@ -1980,20 +1850,9 @@ package body APQ is
 	end Generic_Command_Oid;
 
 
-	procedure Extract_Timezone(S : String; DT : out Date_Type; TZ : out Zone_Type) is
-		use Ada.Strings, Ada.Strings.Fixed;
-		function To_Timestamp is new Convert_To_Timestamp(Date_Type);
-
-		D : Date_Type := To_Timestamp( S );
-	begin
-		DT := D;
-		TZ := To_Timezone( Ada.Calendar.Time_Zones.UTC_Time_Offset( Ada.Calendar.Time( D ) ) );
-	end Extract_Timezone;
-
-
-	------------------------------
-	-- EXTENDED CALENDAR FUNCTIONS :
-	------------------------------
+	---------------------------------
+	-- EXTENDED CALENDAR FUNCTIONS --
+	---------------------------------
 
 
 	-- A special note on these functions:
