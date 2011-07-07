@@ -58,6 +58,7 @@
 
 
 with Ada.Calendar;
+with Ada.Calendar.Time_Zones;
 with Ada.Exceptions;	use Ada.Exceptions;
 with Ada.Text_IO;
 with Ada.Finalization;
@@ -216,6 +217,9 @@ package APQ is
 	subtype APQ_Time is Ada.Calendar.Day_Duration;  -- Time only (date ignored)
 	type APQ_Timestamp is new Ada.Calendar.Time;    -- Date and time
 	type APQ_Timezone is new Integer range -23..23; -- Timezone in +/- hours from UTC
+
+	function To_Time_Offset( Timezone : in APQ_Timezone ) return Ada.Calendar.Time_Zones.Time_Offset;
+	function To_Timezone( Offset : in Ada.Calendar.Time_Zones.Time_Offset ) return APQ_Timezone;
 
 	type Hour_Number is range 0..23;
 	type Minute_Number is range 0..59;
@@ -464,7 +468,8 @@ package APQ is
 	-- NOTE: USE New_Query INSTEAD
 
 
-
+	procedure Finalize(Q : in out Root_Query_Type) is abstract;
+	-- finalization routines should be extended by database vendo support implementor
 
 	----------------------------------------------------------------------------------
 	--			 IMPLEMENTED METHODS FOR BOTH				--
@@ -1151,7 +1156,7 @@ package APQ is
 
 	generic
 	type Val_Type is new Ada.Calendar.Time;
-	function Convert_To_Timestamp(S : String) return Val_Type;
+	function Convert_To_Timestamp(S : String; TZ : APQ_Timezone := 0) return Val_Type;
 	-- S must be YYYY-MM-DD HH:MM:SS[.FFF] format
 
 	generic
@@ -1159,6 +1164,7 @@ package APQ is
 	type Time_Type is new Ada.Calendar.Day_Duration;
 	type Result_Type is new Ada.Calendar.Time;
 	function Convert_Date_and_Time(DT : Date_Type; TM : Time_Type) return Result_Type;
+	-- local timezone is assumed
 
 
 	-- Misc ...
@@ -1202,8 +1208,6 @@ package APQ is
 
 
 
-   procedure Finalize(Q : in out Root_Query_Type) is abstract;
-   -- TODO: colocar no seu devido lugar..
 
    -------------------
    --- misc types ----

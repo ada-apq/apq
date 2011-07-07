@@ -34,6 +34,7 @@
 with APQ_Helper;
 
 
+with Ada.Calendar.Formatting;
 with Ada.Characters.Latin_1;
 with Ada.Strings.Fixed;
 with Ada.Characters.Handling;
@@ -139,6 +140,23 @@ package body APQ is
 	begin
 		Raise_Exception( E, Message );
 	end Raise_APQ_Error_Exception;
+
+	--------------------
+	-- SQL DATA MODEL --
+	--------------------
+
+	function To_Time_Offset( Timezone : in APQ_Timezone ) return Ada.Calendar.Time_Zones.Time_Offset is
+		use Ada.Calendar.Time_Zones;
+	begin
+		return Time_Offset( Timezone ) * 60;
+	end To_Time_Offset;
+
+	function To_Timezone( Offset : in Ada.Calendar.Time_Zones.Time_Offset ) return APQ_Timezone is
+		use Ada.Calendar.Time_Zones;
+	begin
+		return  APQ_Timezone( Offset / 60 );
+	end To_Timezone;
+
 
 
 
@@ -859,7 +877,6 @@ package body APQ is
 		function To_Timestamp is new Convert_To_Timestamp(APQ_Timestamp);
 		S : String := Trim(Value(Root_Query_Type'Class(Query),CX),Both);
 	begin
-		TS := To_Timestamp(S);
 		for X in reverse S'Range loop
 			if S(X) = '-' or else S(X) = '+' then
 				if S(X..S'Last)'Length <= 3 then
@@ -883,6 +900,8 @@ package body APQ is
 				end if;
 			end if;
 		end loop;
+
+		TS := To_Timestamp(S, TZ);
 	end Value;
 
 
@@ -2058,7 +2077,7 @@ package body APQ is
 		end;
 	end Convert_To_Time;
 
-	function Convert_To_Timestamp(S : String) return Val_Type is
+	function Convert_To_Timestamp(S : String; TZ : APQ_Timezone := 0) return Val_Type is
 		-- S must be YYYY-MM-DD HH:MM:SS[.FFF] format
 		
 		use Ada.Calendar;
@@ -2099,11 +2118,12 @@ package body APQ is
 	begin
 		Split_Date;
 		Split_Time;
-		The_Time := Ada.Calendar.Time_Of(
+		The_Time := Ada.Calendar.Formatting.Time_Of(
 						Year		=> Year,
 						Month		=> Month,
 						Day		=> Day,
-						Seconds		=> Seconds
+						Seconds		=> Seconds,
+						Time_Zone	=> To_Time_Offset( TZ )
 				);
 		return Val_Type( The_Time );
 	end Convert_To_Timestamp;
@@ -2153,28 +2173,11 @@ package body APQ is
 	procedure Extract_Timezone(S : String; DT : out Date_Type; TZ : out Zone_Type) is
 		use Ada.Strings, Ada.Strings.Fixed;
 		function To_Timestamp is new Convert_To_Timestamp(Date_Type);
-		T :            String := Trim(S,Both);
-		Have_TZ :      Boolean := False;
-		End_X :        Positive := T'Last + 1;
+
+		D : Date_Type := To_Timestamp( S );
 	begin
-
-		for X in reverse T'Range loop
-			if T(X) = '-' or T(X) = '+' then
-				Have_TZ := True;
-				End_X := X;
-				exit;
-			elsif T(X) = ':' or T(X) = ' ' then
-				exit;
-			end if;
-		end loop;
-
-		DT := To_Timestamp(T(1..End_X-1));
-		if Have_TZ then
-			TZ := Zone_Type'Value(T(End_X+1..T'Last));
-		else
-			TZ := 0;
-		end if;
-
+		DT := D;
+		TZ := To_Timezone( Ada.Calendar.Time_Zones.UTC_Time_Offset( Ada.Calendar.Time( D ) ) );
 	end Extract_Timezone;
 
 
