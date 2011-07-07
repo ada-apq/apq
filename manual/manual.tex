@@ -148,10 +148,12 @@
 
 \lstnewenvironment{SQL}[1][]{\lstset{language=SQL,title=SQL,title=Example,#1}}{}
 
-\lstnewenvironment{Code}[1][]{\lstset{language=Ada,#1}}{}
+\lstnewenvironment{Code}[1][]{\lstset{language=Ada,framerule=0pt,#1}}{}
 
-\lstnewenvironment{Example}[1][]{\lstset{language=Ada,title=Example,#1}}{}
-\lstnewenvironment{NumberedExample}[1][]{\lstset{language=Ada,title=Example,numbers=left,escapeinside={(*@}{@*)},#1}}{}
+\lstnewenvironment{Example}[1][]{\lstset{language=Ada,#1}}{}
+\lstnewenvironment{NumberedExample}[1][]{\lstset{language=Ada,numbers=left,escapeinside={(*@}{@*)},#1}}{}
+\lstnewenvironment{ShellNumberedExample}[1][]{\lstset{language=sh,numbers=left,escapeinside={(*@}{@*)},#1}}{}
+\renewcommand\lstlistingname{Example}
 
 \newcommand\apqversion{3.2}
 
@@ -2644,7 +2646,7 @@ To make portable\index{portable} database programming easier, APQ provides a dis
 Query\_Type object factory primitive that can be used for this purpose.
 For example:
 
-\begin{NumberedExample}[caption={Big test}]
+\begin{NumberedExample}
 with APQ;
 use APQ;
 
@@ -2710,7 +2712,7 @@ begin
    Execute(Q,C);
    ...
    declare
-      Q2 : Root_Query_Type'Class := Q;\label{Ex:Q_Clone}
+      Q2 : Root_Query_Type'Class := Q;(*@\label{Ex:Q_Clone}@*)
    begin
       ...
    end;
@@ -2859,7 +2861,7 @@ procedure Last_Price(
 ) is
    function Value is new Float_Value(APQ_Double);
 
-   Q : Root_Query_Type'Class := New_Query(C);\label{Ex:TheQ}
+   Q : Root_Query_Type'Class := New_Query(C);(*@\label{Ex:TheQ}@*)
 begin
 
    Begin_Work(Q,C);
@@ -2868,10 +2870,10 @@ begin
    Append_Line(Q,"FROM PRICE_HIST");
    Append(Q,     "WHERE SECURITY = ");
    Append_Quoted(Q,C,Security,Line_Feed);
-   Append_Line(Q,"ORDER BY SECURITY,PRICE_DATE DESC");\label{Ex:OrderBy}
+   Append_Line(Q,"ORDER BY SECURITY,PRICE_DATE DESC");(*@\label{Ex:OrderBy}@*)
 
    if Engine_Of(C) = Engine_MySQL then
-      Append_Line(Q,"LIMIT 1");\label{Ex:Limit1}
+      Append_Line(Q,"LIMIT 1");(*@\label{Ex:Limit1}@*)
    end if;
 
    Execute(Q,C);
@@ -3413,8 +3415,8 @@ The following code fragment illustrates how these are instantiated\index{instant
 
 \begin{NumberedExample}
 declare
-   type Price_Type is delta 0.01 digits 12;\label{Ex:TypeDef}
-   procedure Append is new Append_Decimal(Price_Type);\label{Ex:Inst}
+   type Price_Type is delta 0.01 digits 12;(*@\label{Ex:TypeDef}@*)
+   procedure Append is new Append_Decimal(Price_Type);(*@\label{Ex:Inst}@*)
 
    Q :             Query_Type;
    Selling_Price : Price_Type;
@@ -3422,7 +3424,7 @@ begin
    ...
    Prepare(Q,"UPDATE SUPPL_ORDER");
    Append(Q."SET SELLING_PRICE = ");
-   Append(Q,Selling_Price,New_Line);\label{Ex:InstUse}
+   Append(Q,Selling_Price,New_Line);(*@\label{Ex:InstUse}@*)
    Append_Line(Q,"WHERE ...");
 \end{NumberedExample}
 
@@ -3466,8 +3468,8 @@ declare
    package B20 
       is new Ada.Strings.Bounded.Generic_Bounded_Length(20);
 
-   procedure Append is new Append_Bounded(B80);\label{Ex:B80}
-   procedure Append is new Append_Bounded(B20);\label{Ex:B20}
+   procedure Append is new Append_Bounded(B80);(*@\label{Ex:B80}@*)
+   procedure Append is new Append_Bounded(B20);(*@\label{Ex:B20}@*)
 
    Q :         Query_Type;
    Item_Code : B20;
@@ -3477,8 +3479,8 @@ begin
    Prepare(Q,    "SELECT COUNT(*)");
    Append_Line(Q,"FROM ORDER");
    Append(Q,     "WHERE ITEM_CODE = ","'");
-   Append(Q,Item_Code,"' AND ITEM_NAME = '");\label{Ex:UseB20}
-   Append(Q,Item_Name,"'" & New_Line);\label{Ex:UseB80}
+   Append(Q,Item_Code,"' AND ITEM_NAME = '");(*@\label{Ex:UseB20}@*)
+   Append(Q,Item_Name,"'" & New_Line);(*@\label{Ex:UseB80}@*)
    ...
 \end{NumberedExample}
 
@@ -5843,7 +5845,7 @@ begin
             Col_Name : String := Column_Name(Q,CX);
          begin
             Put_Line("Column Name: " & Col_Name);
-            pragma assert(CX = Column_Index(Col_Name));\label{Ex:pragma}
+            pragma assert(CX = Column_Index(Col_Name));(*@\label{Ex:pragma}@*)
          end;
       end loop;
    end loop;
@@ -8925,23 +8927,23 @@ work with any database:
 \begin{NumberedExample}
 package body Prices is
    procedure Last_Price(
-      C :        in out Root_Connection_Type'Class;\label{Ex:RootConn}
+      C :        in out Root_Connection_Type'Class;(*@\label{Ex:RootConn}@*)
       Security : in     String;
       Price :       out APQ_Double
    ) is
       function Value is new Float_Value(APQ_Double);
   
-      Q : Root_Query_Type'Class := New_Query(C);\label{Ex:QFact}
+      Q : Root_Query_Type'Class := New_Query(C);(*@\label{Ex:QFact}@*)
    begin
   
       Prepare(Q,     "SELECT SECURITY,PRICE_DATE,PRICE");
       Append_Line(Q, "FROM PRICE_HIST");
       Append(Q,      "WHERE SECURITY = ");
       Append_Quoted(Q,C,Security,Line_Feed);
-      Append_Line(Q, "ORDER BY SECURITY,PRICE_DATE DESC");\label{Ex:OrBy}
+      Append_Line(Q, "ORDER BY SECURITY,PRICE_DATE DESC");(*@\label{Ex:OrBy}@*)
  
-      if Engine_Of(C) = Engine_MySQL then\label{Ex:EngOf}
-         Append_Line(Q,"LIMIT 1");\label{Ex:Limit1_Again}
+      if Engine_Of(C) = Engine_MySQL then(*@\label{Ex:EngOf}@*)
+         Append_Line(Q,"LIMIT 1");(*@\label{Ex:Limit1_Again}@*)
       end if;
  
       Execute(Q,C);
@@ -9876,18 +9878,18 @@ shows the following:\footnote{The output lines have had the RefCnt
 and Flags columns removed to allow the lines to fit the space
 available.}
 
-\begin{NumberedExample}
+\begin{ShellNumberedExample}
 $ netstat -na --unix
 Active UNIX domain sockets (servers and established)
 Proto  Type    State         I-Node Path
 unix   DGRAM                 2086   /dev/log
 unix   STREAM  LISTENING     2937   /var/run/mysqld/mysqld.sock
-unix   STREAM  LISTENING     2942   /tmp/.s.PGSQL.5432\label{Ex:5432}
+unix   STREAM  LISTENING     2942   /tmp/.s.PGSQL.5432(*@\label{Ex:5432}@*)
 unix   STREAM  CONNECTED     3363
 unix   STREAM  CONNECTED     3362
 unix   DGRAM                 3138
 ...
-\end{NumberedExample}
+\end{ShellNumberedExample}
 
 From this display, you can see that a database connection is available
 with UNIX\index{UNIX socket} socket /tmp/.s.PGSQL.5432 (line~\ref{Ex:5432}). For Set\_Port, you only need
