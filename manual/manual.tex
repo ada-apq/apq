@@ -173,10 +173,10 @@
 
 \begin{document}
 
-\title{APQ Ada95 Database Binding}
+\title{APQ Ada2005 Database Binding}
 \author{%
 Copyright (c) 2002-2004, Warren W. Gay VE3WWG\\%
-Copyright (c) 2007-2009, KOW Framework Project
+Copyright (c) 2007-2011, KOW Framework Project
 }
 \date{\today}
 \maketitle
@@ -190,14 +190,32 @@ Copyright (c) 2007-2009, KOW Framework Project
 
 \section{APQ Version \apqversion}
 
-This manual documents APQ Version \apqversion, which is released under a dual
-ACL\index{ACL} and GPL\index{GPL} (GNU Public License)\index{GNU Public
-License} arrangement. The dual license arrangement is designed to give
-both the \index{distributor} and user the necessary freedoms to enjoy
-the fair use and distribution of the sources \index{distribution of
-sources} contained in this project. See file COPYING\index{copying} for
-more details.
+This manual documents APQ Version \apqversion, which is released under the 
+GNAT Modified GPL\index{GPL} (GNU Public License)\index{GNU Public
+License} license. This license is designed to give both the \index{distributor}
+and user the necessary freedoms to enjoy the fair use and distribution of the
+sources \index{distribution of sources} contained in this project.
+See \Ref{license} for more details.
 
+
+\section{KOW Framework}
+
+APQ is now part of the KOW Framework\index{KOW Framework}\footnote{\url{http://framework.kow.com.br}}, which provides a
+range of libraries for developing web applications in Ada 2005.\\
+
+Other library of interest in the KOW Framework is APQ Provider\footnote{\url{http://framework.kow.com.br/projects/apqprovider}},
+which provides a task-safe database connection pool for server applications. A connection pool
+removes the connecting/disconnecting overhead and guaranties your code will
+be running with a valid connection.\\
+
+APQ Provider depends on
+
+\begin{description}
+	\item [KOW Lib] provides basic logging, file system utilities, locales and so on
+	\item [KOW Config] provides an easy way for dealing with configuration files
+\end{description}
+
+while APQ doesn't depend on any KOW Framework library at all.
 
 \section{Supported Databases}
 
@@ -350,9 +368,9 @@ that the application may query which database is being used.
 \section{The APQ Database Binding}
 
 This software represents a binding\index{binding to objects} to objects and procedures that
-enable the Ada95\index{Ada95}%
+enable the Ada2005\index{Ada2005}%
 \footnote{Hereafter, we'll just refer to the language as Ada, even though the
-version of the language implied is Ada95.%
+version of the language implied is Ada2005.%
 } programmer to manipulate or query a relational database.\index{relational database} This document
 describes the design principles and goals\index{goals of APQ} of this APQ binding. It
 also supplies reference documentation\index{reference documentation} to the programmer, enabling
@@ -553,7 +571,7 @@ APQ\_Date         &  Ada.Calendar.Time & Y   &  DATE\\
 \hline 
 APQ\_Time         &  Ada.Calendar.Day\_Duration & Y & TIME\footnote{No timezone information}\\
 \hline 
-APQ\_Timestamp    &  Ada.Calendar.Time & N   & TIMESTAMP\footnote{No timezone information}\\
+APQ\_Timestamp    &  Ada.Calendar.Time & N   & TIMESTAMP\footnote{Converted into and loaded as UTC}\\
 \hline 
 APQ\_Timezone     &  Integer     &  N        &  range -23..23\\
 \hline 
@@ -1170,7 +1188,7 @@ reduce database differences. Until the introduction of Sybase\index{Sybase} with
 APQ, there was little concern for the case of SQL query\index{SQL query code} code used. 
 
 This APQ manual has always used examples where SQL code is uppercased\index{uppercased SQL code},
-with Ada\index{Ada} code using normal Ada95\index{Ada95} conventions. This helps to make the
+with Ada\index{Ada} code using normal Ada2005\index{Ada2005} conventions. This helps to make the
 SQ\index{SQL}L code standout, and separate it from the other code. Sybase introduces
 a problem however, since the Sybase server is case sensitive\index{case sensitive} when
 referring to tables\index{tables} and column\index{column names} names. This feature cannot be disabled
@@ -3543,7 +3561,7 @@ use actually).
 The Append\index{Append} call used in line~\ref{Ex:UseB20} is the one that was
 instantiated on line~\ref{Ex:B20}. The other Append used on
 line~\ref{Ex:UseB80} was instantiated on line~\ref{Ex:B80}. These
-are matched according to the normal Ada95\index{Ada95} argument type matching
+are matched according to the normal Ada2005\index{Ada2005} argument type matching
 rules.
 
 \subsection{Generic Append\_Bounded\_Quoted Procedure}
@@ -7271,7 +7289,7 @@ a file\index{file}, with the exception that the contents are stored
 in the database and is accessed by number (OID\index{OID}). The APQ
 binding provides full PostgreSQL blob support for the Ada programmer.
 In addition, the Ada\index{Ada} stream\index{stream} concept is employed to
-provide reliable and Ada95\index{Ada95} convenient access to the blob.
+provide reliable and Ada2005\index{Ada2005} convenient access to the blob.
 
 
 \subsubsection{Endian Note:}
@@ -9072,7 +9090,7 @@ we will use the term ``Generic Database Programming'' to describe
 portable\index{portable} database code.
 
 This chapter is about programming for databases generically. Given
-that APQ is built using object oriented techniques (tagged\index{tagged} Ada95\index{Ada95} records),
+that APQ is built using object oriented techniques (tagged\index{tagged} Ada2005\index{Ada2005} records),
 it should be possible to leverage this in a way to write application
 procedures once, and enjoy the flexibility of choosing or changing
 the database technology used later. \Ref{Generic APQ.Result}
@@ -9962,7 +9980,7 @@ object is permitted to have its Finalize\index{finalize} primitive called. If th
 process under UNIX for example, is terminated with a signal (by the
 kill(1)\index{kill(1) command} command), the objects within your application may not experience
 a Finalize call, because normal Ada shutdown procedures were not invoked.%
-\footnote{There are Ada95 ways to deal with UNIX signals, which permit an orderly
+\footnote{There are Ada2005 ways to deal with UNIX signals, which permit an orderly
 Ada shutdown of your application. However, a kill -9 prevents any
 action at all from being performed by the application!%
 } If this is the reason for your problem, then you have two courses
@@ -10403,6 +10421,7 @@ may cause or contribute to.
 
 
 \chapter{APQ License}
+\label{license}
 
 
 \section*{Scope of the APQ Binding License}
@@ -10426,7 +10445,7 @@ were available:
 
 This dual-license arrangement was to allow use of the package both with GPL programs
 and non GPL programs. This can be achieved by using a single license now, and thus APQ
-has changed it's license to GMGPL.
+has changed it's license to MGPL.
 
 Please see pages \pageref{gmgpl} and \pageref{gpl} for more information.
 
@@ -10967,7 +10986,7 @@ Second release August 4, 2002, but under the dual ACL and GPL2%
 \section*{APQ 1.93}
 
 \begin{itemize}
-   \item Modified the Ada95 package hierarchy to insert a top level package
+   \item Modified the Ada2005 package hierarchy to insert a top level package
          named APQ. Hence package PostgreSQL now becomes APQ.PostgreSQL. This
          is an interim release, which will pave the way to future support of
          other database products such as MySQL.
