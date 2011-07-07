@@ -1,4 +1,4 @@
-% APQ-2.2 Manual
+% APQ-\apqversion Manual
 
 \documentclass[english,letterpaper]{book}
 \usepackage{times}
@@ -43,7 +43,7 @@
 %==========%
 % HYPERREF %
 %==========%
-\usepackage[dvipdfm, bookmarks, colorlinks, breaklinks, pdftitle={APQ User Manual},
+\usepackage[bookmarks, colorlinks, breaklinks, pdftitle={APQ User Manual},
     pdfauthor={KOW Framework Project}]{hyperref}
 \hypersetup{
 	linkcolor=DarkSkyBlue,
@@ -153,6 +153,7 @@
 \lstnewenvironment{Example}{\lstset{language=Ada,title=Example}}{}
 \lstnewenvironment{NumberedExample}{\lstset{language=Ada,label=Example}}{}
 
+\newcommand\apqversion{3.2}
 
 
 %\DefineVerbatimEnvironment{SQL}{Verbatim}%
@@ -187,9 +188,9 @@ Copyright (c) 2007-2009, KOW Framework Project
 \chapter{Introduction}
 
 
-\section{APQ Version 2.2}
+\section{APQ Version \apqversion}
 
-This manual documents APQ Version 2.2, which is released under a dual
+This manual documents APQ Version \apqversion, which is released under a dual
 ACL\index{ACL} and GPL\index{GPL} (GNU Public License)\index{GNU Public
 License} arrangement. The dual license arrangement is designed to give
 both the \index{distributor} and user the necessary freedoms to enjoy
@@ -208,15 +209,15 @@ Ada binding for each one, it was conceptualized that a common API\index{API}
 could emerge from the APQ framework\index{framework}. To this end, the APQ binding
 has been reworked rather extensively for version 2.1, to permit increasing
 levels of general support of other database technologies, including
-MySQL\index{MySQL}.
+MySQL\index{MySQL}.\\
 
 In the fall of 2003 the foundation was laid for Sybase\index{Sybase} support in
-the unreleased APQ 2.2 software using Sybase on a trial download\index{download} basis.
+the unreleased APQ \apqversion software using Sybase on a trial download\index{download} basis.
 Sybase highlighted some new APQ design \index{design, APQ} wrinkles, which required a
 few new adjustments and API additions. However, this development ground
 to a halt for a spell, until September 9, 2004 when it was announced
 on www.slashdot.org\index{www.slashdot.org} that ``Sybase Releases Free Enterprise Database
-on Linux''\index{Linux}.
+on Linux''\index{Linux}.\\
 
 \begin{quote}
 ``Sybase announced today that they are releasing a free (as in
@@ -233,34 +234,41 @@ Now there was greater reason to put enterprise class database support
 into an Ada thick binding\index{thick binding} for databases. Sybase support in APQ would
 allow developers to develop real applications in using Ada, without
 trial software expiring. Once developed, these same Ada applications
-could be deployed within the enterprise and on a large scale.
+could be deployed within the enterprise and on a large scale.\\
 
-\begin{floatingtable}{
-   \begin{tabular}{lccc}
-   Database       &  As of APQ Version &  SQL   &  Blob \\
+Thanks to the enterprise class database support, APQ entered the
+enterprise development world. This resulted in needing to support
+both Microsoft SQL Server\index{Microsoft SQL Server} and
+ODBC.\\
+
+This resulted in major refactoring of the code and the package apq-sybase moved
+to apq-ct\_lib. Also, APQ became FreeTDS\index{FreeTDS} compatible.
+
+\begin{table}{
+   \begin{tabular}{lcccl}
+   Database       &  As of APQ Version &  SQL   &  Blob &  Module          \\
    \hline
-   PostgreSQL     &  1.x               &  Yes   &  Yes  \\
-   MySQL          &  2.x               &  Yes   &  No   \\
-   Sybase 12.52   &  2.2               &  Yes   &  No   \\
-   SQL Server     &  3.0               &  Yes   &  No   \\
+   PostgreSQL     &  1.x               &  Yes   &  Yes  &  apq-postgresql  \\
+   MySQL          &  2.x               &  Yes   &  No   &  apq-mysql       \\
+   Sybase 12.52   &  2.2               &  Yes   &  No   &  apq-ct\_lib      \\
+   SQL Server     &  3.0               &  Yes   &  No   &  apq-ct\_lib      \\
+   ODBC           & 3.2                &  Yes   &  No   &  apq-odbc
    \end{tabular}}
    \caption{Database Product Support}\label{t:DBSupport}
-\end{floatingtable}
+\end{table}
 
 
-Thanks in part to the generosity of Sybase to developers, APQ 3.0
-now supports the following list of database\index{list of database technologies} technologies:
 Table \ref{t:DBSupport} is further described as follows:
 
 \begin{description}
    \item [As of APQ Version]is the version where the database was first supported.
    \item [SQL]indicates whether the common SQL functions are supported (sans blob).
    \item [Blob]indicates whether blob support is present.
+   \item [Module]indicates the module where the specific binding is implemented
 \end{description}
 
-As the reader can observe in the table above, the support for MySQL
-is incomplete in APQ 2.1. The blob support\index{blob support} is lacking in APQ for MySQL,
-because MySQL's blob interface is not as complete as provided by PostgreSQL.
+As the reader can observe in the table above, the only database with blob support\index{blob support}
+so far is PostgreSQL. This is so because MySQL's blob interface is not as complete as provided by PostgreSQL.
 Where PostgreSQL provides the facility for virtually limitless sized
 blobs, a MySQL blob must fit within a ``column'', very much like
 a text field. For this reason, the facility to perform stream oriented\index{stream oriented}
@@ -268,7 +276,12 @@ I/O is lacking on a blob in APQ for MySQL.\\
 
 Also, there han't been time or interest in developing Blob support in Sybase and SQL Server
 so far. This implementation should take quite a while to be done and for now the focus of 
-the project is in providing a stable solution for database connectivity.
+the project is in providing a stable solution for database connectivity with up to date documentation.\\
+
+
+The ODBC\index{ODBC} support is considered pre-alpha, only tested on Windows platforms.
+There is no build system for it yet and for now there is no interest and continuing this as
+MySQL and PostgreSQL have proven to be stable and robust enough for all of our needs.
 
 
 \subsection{The Future of Blob Support for MySQL}
@@ -277,15 +290,12 @@ Much investigation and research\index{research, APQ} is required to adequately r
 the blob issue in APQ. Rather than hold back the binding from general
 use, where blob functionality may have limited use anyway, it was
 decided to release APQ 2.0 with the common API for the two databases,
-and leaving the resolution of the blob API for a future release.
+and leaving the resolution of the blob API for a future release.\\
 
 If you are a developer, who hopes to write portable database\index{portable database code} code,
 then please be aware that the PostgreSQL\index{PostgreSQL} blob\index{blob} API is subject to future
 revision. Potentially, this could be fairly extensively revised, but
 every attempt will be made to leave a migration path open to the developer.
-
-
-APQ 3.0 inhertis
 
 
 \section{Generic Database Support}
@@ -311,7 +321,7 @@ to use the C library call mysql\_store\_result()\index{mysql\_store\_result()} i
 which is mysql\_use\_result()\index{mysql\_use\_result()}. However, if the result set is large,\index{large result sets}
 then receiving all of the rows into the clients memory\index{memory, client} is not a suitable
 choice. Consequently, APQ does provide some MySQL specific ways to
-manage this setting. 
+manage this setting.\\ 
 
 The MySQL database software also provides the special ``LIMIT n''\index{LIMIT n}
 extension, if the client program is only interested in the first n
@@ -348,12 +358,10 @@ describes the design principles and goals\index{goals of APQ} of this APQ bindin
 also supplies reference documentation\index{reference documentation} to the programmer, enabling
 the reader to write applications using the PostgreSQL\index{PostgreSQL}, MySQL\index{MySQL} 
 or Sybase\index{Sybase}  databases,
-in the Ada programming language.
+in the Ada programming language.\\
 
-The APQ binding\index{binding} was initially developed using GNAT
-3.13p\index{GNAT} under FreeBSD 4.4\index{FreeBSD} release.
-APQ version 2.0 was developed using Debian\index{Debian Linux} Linux\index{Linux} and GNAT 3.14p. The
-examples presented will be tested under the same development environments.
+We recomend you to use the newest GNAT distribution possible. Both FSF and Adacore's version are supported.
+APQ is currently developed under Sabayon Linux, but updated debian packages are currently available.\\
 
 The source code avoids any use of GNAT\index{GNAT} specific language extensions\index{language extensions}.
 The possible exception to this rule is that the gnatprep\index{gnatprep} tool may
@@ -364,11 +372,11 @@ C language library linkages.
 \begin{table}
    \begin{center}
    \begin{tabular}{ll}
-   Library           &  Database\\
+   Library              &  Module         \\
    \hline 
-   libpq             &  PostgreSQL\\
-   libmysqlclient    &  MySQL\\
-   OCS-12\_5         &  Sybase\\
+   libpq                &  apq-postgresql \\
+   libmysqlclient       &  apq-mysql      \\
+   OCS-12\_5 or FreeTDS &  apq-ct\_lib    \\
    \end{tabular}
    \end{center}
 \caption{Client Libraries}\label{t:ClientLib}
@@ -377,10 +385,20 @@ C language library linkages.
 Table \ref{t:ClientLib} 
 lists the C language libraries\index{libraries, C} that are
 used in addition to the APQ client\index{library, APQ client} library, while linking\index{linking} your
-application:
+application.\\
+
+
+GNAT specific features are avoided where possible, but as it has become the \empg{de facto}
+standard compiler for Ada we tend to use some of it's facilities.\\
+
+
+For now our code is built using gprbuild\index{gprbuild} tool (which actually should support 
+non-ACT\index{non-ACT} vendors).
 
 GNAT specific features are avoided where possible. The exception
-however, is the use of the GNAT\index{GNAT} specific pragma\index{pragma} statements of the form:
+however, is the use of the
+
+GNAT\index{GNAT} specific pragma\index{pragma} statements of the form:\\
 
 \index{Linker\_Options}
 \begin{Code}
@@ -388,6 +406,9 @@ however, is the use of the GNAT\index{GNAT} specific pragma\index{pragma} statem
    pragma Linker_Options("-lapq");
 
 \end{Code}
+
+
+were used in the past, but thanks to gprbuild they have been removed.
 
 is used for example, to save the programmer from having to specify
 linking\index{linking} arguments. Therefore those using non-ACT\index{non-ACT} vendor
@@ -1157,7 +1178,7 @@ for a Sybase server%
 }. Since users of Sybase\index{Sybase} tend to use lowercase\index{lowercase names} names, this creates
 a bit of a problem for portable\index{portable SQL} SQL text within APQ.
 
-The approach that APQ 2.2 uses for Sybase\index{Sybase} (and future databases where
+The approach that APQ \apqversion uses for Sybase\index{Sybase} (and future databases where
 this matters), all SQL\index{SQL} code is changed to lowercase\index{lowercase} before being
 sent to the server. Before the reader panics thinking that this won't
 work, it should be made clear that APQ does not change the case\index{case of SQL} of
@@ -1209,7 +1230,7 @@ to use for SQL case\index{SQL case}. You can choose one of the SQL\_Case\_Type\l
 \caption{Default Case Policies}\label{t:dfcpol}
 \end{floatingtable}
 
-Table~\ref{t:dfcpol} summarizes the default case policies\index{case policies} used in APQ 2.2
+Table~\ref{t:dfcpol} summarizes the default case policies\index{case policies} used in APQ \apqversion
 for the different database vendor products supported.
 
 MySQL\index{MySQL} joins Sybase\index{Sybase} in this case policy because by default, MySQL is
@@ -5285,7 +5306,7 @@ Random\_Fetch\index{Random\_Fetch} mode, this indicates that no rows were return
 not raise an exception until a value is extracted.%
 }
 
-The Not\_Supported\index{Not\_Supported} exception is also possible with APQ 2.2
+The Not\_Supported\index{Not\_Supported} exception is also possible with APQ \apqversion
 and later. This exception is raised to indicate that the database
 software being used does not support the current Fetch\_Mode\index{Fetch\_Mode} that
 is in effect.
@@ -9060,7 +9081,7 @@ identified one aspect of generic database processing.
 \section{Generic Connections}
 
 For most routine database work, the only object that needs to be defined
-up front, is the database connection. In APQ version 2.2 and later,
+up front, is the database connection. In APQ version \apqversion and later,
 there are three concrete choices:
 
 \begin{enumerate}
@@ -10984,7 +11005,7 @@ Second release August 4, 2002, but under the dual ACL and GPL2%
          of APQ in the windows environment.
 \end{itemize}
 
-\section*{APQ 2.2}
+\section*{APQ \apqversion}
 
 \begin{itemize}
    \item PostgreSQL now defaults to Set\_Port(C,5432), which is an TCP/IP connection

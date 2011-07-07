@@ -3,7 +3,7 @@
 all: manual.pdf
 
 %.pdf: %.tex
-	pdflatex $< && pdflatex $< || echo Error while building PDF file
+	pdflatex -halt-on-error $< && pdflatex -halt-on-error $< || echo Error while building PDF file
 
 
 clean: manual.pdf-clean

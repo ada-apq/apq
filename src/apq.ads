@@ -73,10 +73,6 @@ with System;
 package APQ is
 
 
-	pragma Linker_Options("-lapq");
-
-
-
 	----------------
 	-- EXCEPTIONS --
 	----------------
