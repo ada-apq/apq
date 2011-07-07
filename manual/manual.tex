@@ -388,15 +388,12 @@ used in addition to the APQ client\index{library, APQ client} library, while lin
 application.\\
 
 
-GNAT specific features are avoided where possible, but as it has become the \empg{de facto}
+GNAT specific features are avoided where possible, but as it has become the \emph{de facto}
 standard compiler for Ada we tend to use some of it's facilities.\\
 
 
 For now our code is built using gprbuild\index{gprbuild} tool (which actually should support 
-non-ACT\index{non-ACT} vendors).
-
-GNAT specific features are avoided where possible. The exception
-however, is the use of the
+non-ACT\index{non-ACT} vendors).\\
 
 GNAT\index{GNAT} specific pragma\index{pragma} statements of the form:\\
 
@@ -408,16 +405,20 @@ GNAT\index{GNAT} specific pragma\index{pragma} statements of the form:\\
 \end{Code}
 
 
-were used in the past, but thanks to gprbuild they have been removed.
-
-is used for example, to save the programmer from having to specify
-linking\index{linking} arguments. Therefore those using non-ACT\index{non-ACT} vendor
+were used in the past, but thanks to gprbuild they are being removed in favour of a more
+portable way for controlling the linker\index{linking}. Therefore those using non-ACT\index{non-ACT} vendor
 supplied Ada compilers\index{Ada compilers} might be able to compile and use this binding\index{binding}
-without a huge investment.
+without a huge investment even if their compiler isn't supported by gprbuild.\\
 
-A 32-bit\index{32-bit Windows} Windows library for APQ can be built for use with the PostgreSQL\index{PostgreSQL},
-MySQL\index{MySQL} or Sybase\index{Sybase} DLL\index{DLL} client libraries. APQ release 2.1 included the
-win32 build instructions necessary, but was omitted in the 2.0 release.
+
+APQ has been tested in the following platforms:
+
+\begin{description}
+	\item [Windows] several versions, but for now 32bit windows only. APQ should work in 64 bit windows as well.
+	\item [Linux] both 32 and 64 bit Linux distributions, including Debian, Ubuntu, Sabayon and Gentoo linux.
+	\item [FreeBSD] even thought it hasn't been tested recently
+	\item [Open Solaris] same as FreeBSD
+\end{description}
 
 
 \subsection{General Features}
@@ -428,7 +429,7 @@ is included%
 \footnote{For PostgreSQL only, at release 2.0.%
 }, and implemented using the Ada streams\index{streams, Ada} interface\index{interface}.
 This provides the programmer with the Ada convenience and safety of
-the streams interface\index{streams interface} when working with blobs.
+the streams interface\index{streams interface} when working with blobs.\\
 
 This binding includes the following general features:
 
@@ -456,13 +457,13 @@ library libpq++ for C++ native support.%
 binding, there are consequently Ada objects\index{objects, Ada} and data types that are
 tailored specifically to the Ada programmer. Some data types and objects
 exist to mirror those used in the C language, while others are provided
-to make the binding easier or safer to apply.
+to make the binding easier or safer to apply.\\
 
 A thin binding\index{thin binding} would have required the Ada programmer to be continually
 dealing with C language\index{C language data types} data type issues. Conversions to and from
 various types and pointers\index{pointers} would be necessary making the use of the
 binding rather tedious. Furthermore, the resulting Ada\index{Ada} program would
-be much harder to read and understand.
+be much harder to read and understand.\\
 
 A thick binding\index{thick binding} introduces new objects and types in order to provide
 an API to the programmer. This approach however, fully insulates the
@@ -470,7 +471,7 @@ Ada\index{Ada} programmer from interfacing with C programs\index{C programs}, po
 The design goal\index{design goal} has additionally been to keep the number of new objects
 and types to a minimum. This has been done without sacrificing convenience
 and safety\index{safety}. Readability\index{readability} of the resulting Ada\index{Ada} program was also considered
-to be important.
+to be important.\\
 
 The objects and data types involved in the use of this binding can
 be classified into the following main groups:
@@ -494,7 +495,7 @@ The PostgreSQL\index{PostgreSQL} database supports many standard SQL\index{SQL d
 as a few exotic ones. This section documents the database base types\index{data types, database}
 that are supported by the Ada\index{Ada binding} binding to the database. This list is
 expected to grow with time as the Ada binding continues to mature
-in its own software development.
+in its own software development.\\
 
 The ``Data Type Name'' column in the following table refers to
 a binding type\index{binding type} if the type name is prefixed with ``APQ\_''%
@@ -504,13 +505,13 @@ in use. They can be used as they are provided, or you may subtype
 from them or even derive new types from them in typical Ada\index{Ada} fashion.
 All other data types are references to native Ada data types (for
 some of these, the package where they are defined are shown in the
-``Notes'' column).
+``Notes'' column).\\
 
 The column labelled ``Root Type''\index{root types} documents the data type that
 the APQ\_ data type was derived\index{derived} from. Where they represent an Ada\index{subtype, Ada}
 subtype, the column ``Subtype'' indicates a ``Y''. For type
 derivations a ``N'' is shown in this column, indicating that the
-APQ\_ type \index{APQ\_ types} listed is made ``unique''.
+APQ\_ type \index{APQ\_ types} listed is made ``unique''.\\
 
 
 \subsection{PostgreSQL Data Types\label{PostgreSQL SQL Data Types}}
