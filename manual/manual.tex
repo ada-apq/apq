@@ -573,9 +573,9 @@ APQ\_Bigserial    &  -           &  N        &  BIGSERIAL\\
 \hline 
 APQ\_Boolean      &  Boolean     &  Y        &  BOOLEAN\\
 \hline 
-APQ\_Date         &  Ada.Calendar.Time & Y   &  DATE\\
+APQ\_Date         &  Ada.Calendar.Time & Y   &  DATE\footnote{Local timezone assumed}\\
 \hline 
-APQ\_Time         &  Ada.Calendar.Day\_Duration & Y & TIME\footnote{No timezone information}\\
+APQ\_Time         &  Ada.Calendar.Day\_Duration & Y & TIME\footnote{Local timezone assumed}\\
 \hline 
 APQ\_Timestamp    &  Ada.Calendar.Time & N   & TIMESTAMP\footnote{Converted into and loaded as UTC}\\
 \hline 
@@ -3972,39 +3972,36 @@ must be performed and it unexpectedly failed.%
 is performed.%
 }
 
-The use of the Execute\index{Execute} primitive is illustrated by extending the example
-from page \pageref{Birthday Timezone Example}:
+The use of the Execute\index{Execute} primitive is illustrated by the example \ref{Ex:Execute}
 
-\begin{Example}
+\begin{NumberedExample}[label=Ex:Execute,caption=Executing Queries]
 declare
    type Cust_No_Type is new Integer range 1000..100_000;
    type Birthday_Type is new APQ_Timestamp;
 
    procedure Append is new Append_Integer(Cust_No_Type);
 
-   procedure Encode is new
-      Encode_Integer(Cust_No_Type,Boolean);
-   procedure Encode is new
-      Encode_Timezone(Birthday_Type,APQ_Timezone,Boolean);
+   procedure Encode is new Encode_Integer(Cust_No_Type,Boolean);
+   procedure Encode is new Encode_Timestamp(Birthday_Type,Boolean);
 
-   C :            Connection_Type;
-   Q :            Query_Type;
-   Cust_No :      Cust_No_Type;     -- NOT NULL
-   Birthday :     Birthday_Type;
-   Birthday_TZ :  APQ_Timezone;     -- Timezone
+   C            : Connection_Type;
+   Q            : Query_Type;
+   Cust_No      : Cust_No_Type;     -- NOT NULL
+   Birthday     : Birthday_Type;
    Birthday_Ind : Boolean;          -- Indicator
 begin
-   ...
-   Prepare(Q,"INSERT INTO BIRTHDAY (CUST_NO,BIRTHDAY)");
-   Append(Q, "VALUES (");
-   Append(Q,Cust_No,",");
-   Encode(Q,Birthday,Birthday_TZ,Birthday_Ind,")" & New_Line);
-   Execute(Q,C);
-\end{Example}
-\label{Examplelalala}
+   -- ...
+   -- we set the Ada variable and so on...
+   Prepare( Q, "INSERT INTO BIRTHDAY (CUST_NO,BIRTHDAY)" );
+   Append( Q, "VALUES (" );
+   Append( Q, Cust_No, ",");
+   Encode( Q, Birthday, Birthday_TZ, Birthday_Ind, ")" );
+   Execute( Q, C ); (*@\label{Ex:Execute:Execute}@*)
+end;
+\end{NumberedExample}
 
 The example shows the Execute primitive pairing the query object Q
-with the database connection object C \ref{Examplelalala}.
+with the database connection object C at line \ref{Ex:Execute:Execute}.
 
 \subsection{Error Message Reporting\label{Error Message Reporting}}
 
@@ -4795,36 +4792,35 @@ the parameter) is given to argument Msg, then the SQL query is dumped\index{dump
 out to Standard\_Error\index{Standard\_Error} instead. This is often useful for debugging\index{debugging}
 purposes.
 
-Changing the example found on page \pageref{Birthday Timezone Example}
+Changing the example \ref{Ex:Execute} on page \pageref{Ex:Execute}
 slightly, we can apply the Execute\_Checked primitive in the place
-of the Execute\index{Execute} call.
+of the Execute\index{Execute} call as shown in the example \ref{Ex:Execute_Checked}.
 
-\begin{Example}
+\begin{NumberedExample}[label=Ex:Execute_Checked,caption=Executing Queries using Execute\_Checked]
 declare
    type Cust_No_Type is new Integer range 1000..100_000;
    type Birthday_Type is new APQ_Timestamp;
 
    procedure Append is new Append_Integer(Cust_No_Type);
 
-   procedure Encode is new
-      Encode_Integer(Cust_No_Type,Boolean);
-   procedure Encode is new
-      Encode_Timezone(Birthday_Type,APQ_Timezone,Boolean);
+   procedure Encode is new Encode_Integer(Cust_No_Type,Boolean);
+   procedure Encode is new Encode_Timestamp(Birthday_Type,Boolean);
 
-   C :            Connection_Type;
-   Q :            Query_Type;
-   Cust_No :      Cust_No_Type;     -- NOT NULL
-   Birthday :     Birthday_Type;
-   Birthday_TZ :  APQ_Timezone;     -- Timezone
+   C            : Connection_Type;
+   Q            : Query_Type;
+   Cust_No      : Cust_No_Type;     -- NOT NULL
+   Birthday     : Birthday_Type;
    Birthday_Ind : Boolean;          -- Indicator
 begin
-   ...
-   Prepare(Q,"INSERT INTO BIRTHDAY (CUST_NO,BIRTHDAY)");
-   Append(Q, "VALUES (");
-   Append(Q,Cust_No,",");
-   Encode(Q,Birthday,Birthday_TZ,Birthday_Ind,")" & New_Line);
-   Execute_Checked(Q,C);
-\end{Example}
+   -- ...
+   -- we set the Ada variable and so on...
+   Prepare( Q, "INSERT INTO BIRTHDAY (CUST_NO,BIRTHDAY)" );
+   Append( Q, "VALUES (" );
+   Append( Q, Cust_No, ",");
+   Encode( Q, Birthday, Birthday_TZ, Birthday_Ind, ")" );
+   Execute_Checked( Q, C ); (*@\label{Ex:Execute_Checked:Execute_Checked}@*)
+end;
+\end{NumberedExample}
 
 
 \subsection{Suppressing Checked Exceptions}
