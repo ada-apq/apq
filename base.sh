@@ -645,7 +645,7 @@ _installe(){
 				[ ! -d "$my_tmp4" ] && continue
 				[ "$debuga" = "normal" ] && my_tmp5="" || my_tmp5="$debuga"
 
-				install -d "$my_prefix/lib/apq-postgresql/$sist_oses/$my_tmp6/$my_tmp5/ali"  2>"$my_tmp4/logged/install_error.log"
+				install -d "$my_prefix/lib/apq/$sist_oses/$my_tmp6/$my_tmp5/ali"  2>"$my_tmp4/logged/install_error.log"
 				if [ -s  "$my_tmp4/logged/install_error.log" ]; then
 					my_made_install="$debuga"
 					printf "install:\tnot ok\t:$libbuildtype\t$sist_oses\t$my_made_install\t: ... \n" >> "$my_atual_dir/apq_error.log"
@@ -653,7 +653,7 @@ _installe(){
 					printf "install:\tOk\t:$libbuildtype\t$sist_oses\t$debuga\t:Created directory! \n" >> "$my_atual_dir/apq_error.log"
 				fi
 
-				install -m0555 "$my_tmp4"/ali/* -t "$my_prefix/lib/apq-postgresql/$sist_oses/$my_tmp6/$my_tmp5/ali"  2>"$my_tmp4/logged/install_error.log"
+				install -m0555 "$my_tmp4"/ali/* -t "$my_prefix/lib/apq/$sist_oses/$my_tmp6/$my_tmp5/ali"  2>"$my_tmp4/logged/install_error.log"
 				if [ -s  "$my_tmp4/logged/install_error.log" ]; then
 					my_made_install="$debuga"
 					printf "install ali:\tnot ok\t:$libbuildtype\t$sist_oses\t$my_made_install\t: ... \n" >> "$my_atual_dir/apq_error.log"
@@ -662,7 +662,7 @@ _installe(){
 				fi
 
 				# using "cp -a" to getrid from transforming symlinks in normal links
-				cp -a "$my_tmp4"/lib/* "$my_prefix/lib/apq-postgresql/$sist_oses/$my_tmp6/$my_tmp5/"  2>"$my_tmp4/logged/install_error.log"
+				cp -a "$my_tmp4"/lib/* "$my_prefix/lib/apq/$sist_oses/$my_tmp6/$my_tmp5/"  2>"$my_tmp4/logged/install_error.log"
 				if [ -s  "$my_tmp4/logged/install_error.log" ]; then
 					my_made_install="$debuga"
 					printf "install lib:\tnot ok\t:$libbuildtype\t$sist_oses\t$my_made_install\t: ... \n" >> "$my_atual_dir/apq_error.log"
@@ -676,14 +676,14 @@ _installe(){
 		done # libbuildtype
 	done # sist_oses
 	if [ $my_count -ge 2 ]; then
-		install -d "$my_prefix/include/apq-postgresql"  2>"$made_dirs/install_src_error.log"
+		install -d "$my_prefix/include/apq"  2>"$made_dirs/install_src_error.log"
 		if [ -s  "$made_dirs/install_src_error.log" ]; then
 			my_made_install="hi"
 			printf "install includes:\tnot ok\t: ... \n" >> "$my_atual_dir/apq_error.log"
 		else
 			printf "install includes:\tOk\t:Created directory! \n" >> "$my_atual_dir/apq_error.log"
 		fi
-		install "$my_atual_dir"/src/* -t "$my_prefix/include/apq-postgresql"  2>"$made_dirs/install_src_error.log"
+		install "$my_atual_dir"/src/* -t "$my_prefix/include/apq"  2>"$made_dirs/install_src_error.log"
 		if [ -s  "$made_dirs/install_src_error.log" ]; then
 			my_made_install="hi"
 			printf "install includes:\tnot ok\t: ... \n" >> "$my_atual_dir/apq_error.log"
