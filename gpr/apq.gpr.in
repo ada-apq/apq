@@ -142,5 +142,5 @@ project Apq is
       for Default_Switches ("ada") use ("-O2", "-gnat05", "-gnatn"  ) & Debug_option_list_builder ;
    end Builder;
 
-end Apq.postgresql;
+end Apq;
 
