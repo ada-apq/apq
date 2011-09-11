@@ -4,8 +4,7 @@
 	Authors: "Daniel Norte de Moraes" <danielcheagle@gmail.com> and
 	Authors: "Marcelo Coraça de Freitas" <marcelo.batera@gmail.com>
 				
-	Obs.: The new Build-System are _in _construction process_. 
-	All options 'names' are in lowercase. Options 'values' are lowercase or is at your will ;-)
+	Obs.:	All options 'names' are in lowercase. Options 'values' are lowercase or is at your will ;-)
 but remember , now days, most systems are 'case sensitive'
 	And a prominente warning: how a _Developer_ don't use "spaces" in names et all ;-) _you_ will be 
 more happy if you follow this advice. :-)
