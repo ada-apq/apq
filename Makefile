@@ -93,7 +93,7 @@ compile:
 	@cat "$(atual_dir)/apq_error.log"
 
 configure:
-	@echo $(shell "$(atual_dir)/base.sh" "configure" "$(oses)" "$(lib_build_types)" "$(add_compiler_paths)" "$(system_libs_paths)" "$(ssl_include_path)" "pg_config_path" "$(gprconfig_path)" "$(gprbuild_path)" "$(build_with_debug_too)" )  > /dev/nul
+	@echo $(shell "$(atual_dir)/base.sh" "configure" "$(oses)" "$(lib_build_types)" "$(add_compiler_paths)" "$(system_libs_paths)" "$(ssl_include_path)" "stub_pg_config_path" "$(gprconfig_path)" "$(gprbuild_path)" "$(build_with_debug_too)" )  > /dev/nul
 	@cat "$(atual_dir)/apq_error.log"
 
 install:
