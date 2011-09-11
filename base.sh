@@ -171,7 +171,7 @@ if [ $# -ne 9 ]; then
 	{	printf "\n"
 		printf 'not ok. You dont need use it by hand. read INSTALL for more info and direction.'
 		printf "\n"
-		printf 'configura "OSes" "libtype,libtype_n" "compiler_path1:compiler_path_n" "system_libs_path1:system_libs_paths_n"  "ssl_include_path" "pg_config_path"  "gprconfig_path"  "gprbuild_path"  "build_with_debug_too" '
+		printf 'configura "OSes" "libtype,libtype_n" "compiler_path1:compiler_path_n" "system_libs_path1:system_libs_paths_n"  "ssl_include_path" " 'stub' pg_config_path"  "gprconfig_path"  "gprbuild_path"  "build_with_debug_too" '
 		printf "\n"
 	}>"$my_atual_dir/apq_error.log"
 	
@@ -204,9 +204,10 @@ local my_with_debug_too=$(_choose_debug "$9" )
 
 # fix me if necessary:
 # need more sanitization
-_pg_config_path=${_pg_config_path:=$(_discover_acmd_path "pg_config" "$my_compiler_paths" "/usr/bin" )}
+# 'stub' _pg_config_path=${_pg_config_path:=$(_discover_acmd_path "pg_config" "$my_compiler_paths" "/usr/bin" )}
 #_pg_config_path=${_pg_config_path//[''``]/""}
-my_pg_config_path=$_pg_config_path
+# 'stub' my_pg_config_path=$_pg_config_path
+my_pg_config_path="stub"
 
 _gprconfig_path=${_gprconfig_path:=$(_discover_acmd_path "gprconfig" "$my_compiler_paths" "/usr/bin" )}
 my_gprconfig_path=$_gprconfig_path
@@ -414,11 +415,11 @@ _compile(){
 							line7_gprbuild_path=$(dirname "$line7_gprbuild_path" )
 						done
 
-						while true;
-						do
-							[ -d "$line8_pg_config_path" ] && break
-							line8_pg_config_path=$(dirname "$line8_pg_config_path" )
-						done
+#						while true;
+#						do
+#							[ -d "$line8_pg_config_path" ] && break
+#							line8_pg_config_path=$(dirname "$line8_pg_config_path" )
+#						done
 						
 						while true;
 						do
@@ -492,15 +493,15 @@ _compile(){
 				madeit2="yes";
 			fi
 
-			pq_include=$( "$madeit8"/pg_config --includedir 2> "$madeit1/logged/pg_config_error.log" )
-			if [ -s  "$madeit1/logged/pg_config_error.log" ]; then
-				erro_msg_pg_config_part="$my_hold_tmp1"
-				printf "pg_config:\tnot ok\t:lib\t$madeit3\t$madeit4\t$erro_msg_pg_config_part\t:Aborting matched's gprconfig & gprbuild... \n" >> "$my_atual_dir/apq_error.log"
-				my_count2=$(( $my_count2 + 1 ))
-				continue
-			else
-				printf "pg_config:\tOk\t:lib\t$madeit3\t$madeit4\t$my_hold_tmp1\t:Trying matched's gprconfig & gprbuild... \n" >> "$my_atual_dir/apq_error.log"
-			fi
+#			pq_include=$( "$madeit8"/pg_config --includedir 2> "$madeit1/logged/pg_config_error.log" )
+#			if [ -s  "$madeit1/logged/pg_config_error.log" ]; then
+#				erro_msg_pg_config_part="$my_hold_tmp1"
+#				printf "pg_config:\tnot ok\t:lib\t$madeit3\t$madeit4\t$erro_msg_pg_config_part\t:Aborting matched's gprconfig & gprbuild... \n" >> "$my_atual_dir/apq_error.log"
+#				my_count2=$(( $my_count2 + 1 ))
+#				continue
+#			else
+#				printf "pg_config:\tOk\t:lib\t$madeit3\t$madeit4\t$my_hold_tmp1\t:Trying matched's gprconfig & gprbuild... \n" >> "$my_atual_dir/apq_error.log"
+#			fi
 
 			# a explanation: with PATH="$my_path:$madeit5" I made preference for gcc and g++ for native compilers in system. this solve problems with multi-arch in Debian sid
 			# using gnat and gprbuild from toolchain Act-San :-)
@@ -516,7 +517,9 @@ _compile(){
 				printf "gprconfig:\tOk\t:lib\t$madeit3\t$madeit4\t$my_hold_tmp1\t:Trying matched gprbuild... \n" >> "$my_atual_dir/apq_error.log"
 			fi
 
-			$(PATH="$madeit5:$my_path" && cd "$madeit1" && "$madeit7"/gprbuild -d -f --config=./kov.cgpr -Xstatic_or_dynamic=$madeit3 -Xos=$madeit4 -Xdebug_information=$madeit2  -P./apq.gpr -cargs -I "$madeit10" -I $pq_include -I $madeit9 >"./logged/gprbuild.log"  2>"./logged/gprbuild_error.log" )
+#			$(PATH="$madeit5:$my_path" && cd "$madeit1" && "$madeit7"/gprbuild -d -f --config=./kov.cgpr -Xstatic_or_dynamic=$madeit3 -Xos=$madeit4 -Xdebug_information=$madeit2  -P./apq.gpr -cargs -I "$madeit10" -I $pq_include -I $madeit9 >"./logged/gprbuild.log"  2>"./logged/gprbuild_error.log" )
+			$(PATH="$madeit5:$my_path" && cd "$madeit1" && "$madeit7"/gprbuild -d -f --config=./kov.cgpr -Xstatic_or_dynamic=$madeit3 -Xos=$madeit4 -Xdebug_information=$madeit2  -P./apq.gpr -cargs -I "$madeit10" -I $madeit9 >"./logged/gprbuild.log"  2>"./logged/gprbuild_error.log" )
+
 			if [ -s  "$madeit1/logged/gprbuild_error.log" ]; then
 				erro_msg_gprbuild_part="$my_hold_tmp1"
 				printf " gprbuild:\tnot ok\t:lib\t$madeit3\t$madeit4\t$erro_msg_gprbuild_part\n" >> "$my_atual_dir/apq_error.log"
@@ -531,14 +534,15 @@ _compile(){
 
 		done
 		# ok
-		if [ -z "$erro_msg_gprconfig_part" ] && [ -z "$erro_msg_gprbuild_part" ] && [ -z "$erro_msg_pg_config_part" ]; then
+#		if [ -z "$erro_msg_gprconfig_part" ] && [ -z "$erro_msg_gprbuild_part" ] && [ -z "$erro_msg_pg_config_part" ]; then
+		if [ -z "$erro_msg_gprconfig_part" ] && [ -z "$erro_msg_gprbuild_part" ]; then
 			printf "\n ok. \n\n"  >> "$my_atual_dir/apq_error.log"
 			exit 0
 		else
 		# not ok
-			if [ -n "$erro_msg_pg_config_part" ]; then
-				printf "pg_config error log: verify matched pg_config_error.log, in 'logged' subdir\n"  >> "$my_atual_dir/apq_error.log"
-			fi
+#			if [ -n "$erro_msg_pg_config_part" ]; then
+#				printf "pg_config error log: verify matched pg_config_error.log, in 'logged' subdir\n"  >> "$my_atual_dir/apq_error.log"
+#			fi
 			if [ -n "$erro_msg_gprconfig_part" ]; then
 				printf "gprconfig error log: verify matched's gprconfig_error.log and gprconfig.log, in 'logged' subdir\n"  >> "$my_atual_dir/apq_error.log"
 			fi
