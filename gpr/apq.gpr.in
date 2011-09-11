@@ -11,7 +11,7 @@
 --			program project file these three(3) environment variables:
 --			 "Static_Or_Dynamic" , "Os" and "Debug_information". this is made
 --			 by the "-Xvariable=value" (without double quotes)
---			eg: if your program import apq-postgresql.gpr in your my_program.gpr made 
+--			eg: if your program import apq.gpr in your my_program.gpr made 
 --
 --			gnatmake -Pmy_program.gpr -Xstatic_or_dynamic=dynamic -XOs=mswindows -Xdebug_information=yes
 --
