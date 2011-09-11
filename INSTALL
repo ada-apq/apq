@@ -62,7 +62,7 @@ or mix values at your will:-)
 		known values ? I will rely in you :-)
 		default value: "none" (without double quotes)
 		IMPORTANT:  "add_compiler_paths" is considered first when searching automatically for commands; 
-		searching for paths and commands gprbuild, pg_config and gprconfig is an examples of this behavior :-)
+		searching for paths and commands gprbuild and gprconfig is an examples of this behavior :-)
 
 1.1.2.4) how choose one(1) or more(2+) paths for search libs when building,compiling and linking
 1.1.2.4.2)	tag "system_libs_paths="	separator ":" or ";"
@@ -80,12 +80,6 @@ doesn't matter. Enjoy! =]
 		eg: "make configure ssl_include_path=/usr/lib/openssl "
 		all Known values: I ( and we ) do not known :o]
 		default value: /usr/lib/openssl
-
-1.1.2.6) how choose one(1) _PATH_ on which is the binary of pg_config that "I Want"
-1.1.2.6.2)	tag "pg_config_path="	separator ? don't exist =]
-		eg:	"make configure pg_config_path=/usr/bin "
-		known values: well... in Debian Sid, now days, is /usr/bin But I will rely in you to discover the correct value ;-)
-		default value: first path from command automatically discover (searching first in "add_compiler_paths" and after in "PATH") OR /usr/bin
 
 1.1.2.7) how choose one(1) _PATH_ on which is the binary of gprconfig that "I Want"
 1.1.2.7.2)	tag "gprconfig_path="	separator ? don't exist =]
