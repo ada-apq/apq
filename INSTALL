@@ -1,13 +1,228 @@
 
-Installation instructions:
+	Revision 1.3
+
+	Authors: "Daniel Norte de Moraes" <danielcheagle@gmail.com> and
+	Authors: "Marcelo Coraça de Freitas" <marcelo.batera@gmail.com>
+				
+	Obs.: The new Build-System are _in _construction process_. 
+	All options 'names' are in lowercase. Options 'values' are lowercase or is at your will ;-)
+but remember , now days, most systems are 'case sensitive'
+	And a prominente warning: how a _Developer_ don't use "spaces" in names et all ;-) _you_ will be 
+more happy if you follow this advice. :-)
+	Well, We opted by use most names and values self descriptives. most times the "plural" names 
+accept more que one value simultaneously and "singular" names accept
+just one value simultaneously.	
+
+1) makefile targets
+1.1) configure
+1.2) compile
+1.3) install
+1.4) clean
+1.5) distclean
+2) mixing all things ( example of real usage)
+
+	A word about options(in all targets): Most times, 
+and often, (if you follow sintatic rules [ eg: separator &cia]),
+you _Can_ mix/add more que one value in option 'values' simultaneously. :-)
 
 
-make
-make install PREFIX=/where/to/install
+1.1) target configure
+	command "make configure"
+
+	Create directory "build",  and support files and directories.
+	The effect is "acumulative" _and_ "cached/logged"  in per "individual" library basis; each time
+you hit this command, it add and/or alter the correspondent files.
+
+	Of course, is non-sense hit "make configure" without his options :-)
+but if you do, it will take default values that don't can be what you want :-)
+		
+1.1.2) options for "configure" target
+
+1.1.2.1) how choose System Operation(s)
+1.1.2.1.2)	tag "oses="		separator ","
+		eg: "make configure oses=linux "
+		eg: "make configure oses=linux,bsd,mswindows "
+		known values: all,linux,mswindows,darwin,bsd,other
+		default value: linux
+
+1.1.2.2) how choose what types of lib are for build
+1.1.2.2.2)	tag "lib_build_types="	separator ","
+		eg:	"make configure lib_build_types=static "
+		eg:	"make configure lib_build_types=relocatable "
+		eg: "make configure lib_build_types=dynamic "
+or mix values at your will:-)
+		eg: "make configure lib_build_types=static,relocatable,dynamic "
+		known values: all,static,dynamic,relocatable
+		default value: static,dynamic
+
+1.1.2.3) how choose one(1) or more(2+) path(s) for search compilers ( and tools) when compiling
+1.1.2.3.2)	tag "add_compiler_paths="	separator ":" or ";"
+		eg:	"make configure add_compiler_paths=/usr/where/I/made/supercompiler/not_in/system_path_or/bring_to_front_in_path_search "
+		eg:	"make configura add_compiler_paths=/usr/tools/bin:/home/dani/cross_compiling/bin:/usr/local/gnat-2012/bin:/etc "
+		known values ? I will rely in you :-)
+		default value: "none" (without double quotes)
+		IMPORTANT:  "add_compiler_paths" is considered first when searching automatically for commands; 
+		searching for paths and commands gprbuild, pg_config and gprconfig is an examples of this behavior :-)
+
+1.1.2.4) how choose one(1) or more(2+) paths for search libs when building,compiling and linking
+1.1.2.4.2)	tag "system_libs_paths="	separator ":" or ";"
+			maximum of ten(10) paths _each time_ you hit this command. But it will "alter/substitute" old values
+in "per lib"(a.k.a 'individual') basis. long as they are up to ten(10) values, the number of values in old or new values
+doesn't matter. Enjoy! =]
+		eg:	"make configure system_libs_paths=/usr/lib "
+		eg	"make configure system_libs_paths=/usr/local/lib/gtkada/lib:/etc/local/lib:/etc/cross/mingw64/lib:/etc/bsd/lib:/etc/etc/lib
+		all known values: Are you kidding me ? :-)
+		default value: /usr/lib
+
+1.1.2.5) how choose one(1) include path for openssl (or similar) 
+		Always keep in mind this "motto target configure" ---> "_always_ in per lib_ basis_" =]
+1.1.2.5.2)	tag "ssl_include_path=" separator ? don't exist :-)
+		eg: "make configure ssl_include_path=/usr/lib/openssl "
+		all Known values: I ( and we ) do not known :o]
+		default value: /usr/lib/openssl
+
+1.1.2.6) how choose one(1) _PATH_ on which is the binary of pg_config that "I Want"
+1.1.2.6.2)	tag "pg_config_path="	separator ? don't exist =]
+		eg:	"make configure pg_config_path=/usr/bin "
+		known values: well... in Debian Sid, now days, is /usr/bin But I will rely in you to discover the correct value ;-)
+		default value: first path from command automatically discover (searching first in "add_compiler_paths" and after in "PATH") OR /usr/bin
+
+1.1.2.7) how choose one(1) _PATH_ on which is the binary of gprconfig that "I Want"
+1.1.2.7.2)	tag "gprconfig_path="	separator ? don't exist =]
+		eg:	"make configure gprconfig_path=/usr/bin "
+		known values: I admit! I don't known... Because this I will rely in You Brave and Brighter Developer. Thank's :-)
+		default value: first path from command automatically discover (searching first in "add_compiler_paths" and after in "PATH") OR /usr/bin
+
+1.1.2.8) how choose one(1) _PATH_ on which is the binary of gprbuild that "I Want"
+1.1.2.8.2)	tag "gprbuild_path="	separator ? don't exist =]
+		eg:	"make configure gprbuild_path=/usr/bin "
+		know values: I don't known =]
+		default value: first path from command automatically discover (searching first in "add_compiler_paths" and after in "PATH") OR /usr/bin
+
+1.1.2.9) how choose the type or type(s) of lib, about presence of debug information, "I Want"
+1.1.2.8.2)	tag "build_with_debug_too="	separator? don't exist :-)
+		eg:	"make configure with_debug_too=yes "
+		known values: no,yes,onlydebug
+		default value: no
+
+1.2) target compile
+	command "make compile"
+
+1.2.2)	option for "compile" target
+
+1.2.2.1) how choose System Operations for compiling
+		important:  _configured_ lib(s) will be compiled, 
+		otherwise, lib will be ignored during this phase
+1.2.2.1.2)	tag "oses="		separator ","
+		eg:	"make compile oses=all"
+		known values:( same of configure oses= ) all,linux,mswindows,darwin,bsd,other
+		default value:( idem configure oses= ) linux
 
 
-it'll install:
+1.3) target install
+	command "make install"
 
-sources + include files at $(PREFIX)/include
-shared library at $(PREFIX)/lib
-gpr files at $(PREFIX)/lib/gnat
+1.3.2) options for "install" target
+
+1.3.2.1) how choose one or more(2+) System Operations for installing
+		Important:  _compiled_ lib(s) will be installed, 
+		otherwise, lib will be ignored during this phase
+1.3.2.1.2)	tag "oses="		separator ","
+		eg:	"make install oses=all "
+		known values:( same of configure and compile oses= ) all,linux,mswindows,darwin,bsd,other
+		default value:( idem configure or compile oses= ) linux
+
+1.3.2.2) how choose where install 
+1.3.2.2.2)	tag "prefix="	separator? don't exist :-)
+		eg:	"make install prefix=/usr/local "
+		known values: I don't know... :-) I rely in you for it =]
+		default value: /usr/local
+
+1.3.3) where it will install
+1.3.3.1) src+include /prefix/include/apq
+1.3.3.2) .ali	/prefix/lib/apq/os/shared/ali
+				/prefix/lib/apq/os/shared/debug/ali
+				/prefix/lib/apq/os/static/ali
+				/prefix/lib/apq/os/static/debug/ali
+1.3.3.3) .so	/prefix/lib/apq/os/shared
+				/prefix/lib/apq/os/shared/debug
+1.3.3.4) .a		/prefix/lib/apq/os/static
+				/prefix/lib/apq/os/static/debug
+1.3.3.5) .gpr	/prefix/lib/gnat
+
+1.4) target clean
+	command "make clean"
+	remove all object and ali files in "build" directory
+
+1.4.2) options for "clean" target ? none, all options are ignored with "clean" target
+
+1.5) target distclean
+	command "make distclean"
+	remove "build" directory. Bye Bye ;-)
+
+1.5.2) options for "distclean" target ? none, all options are ignored with "distclean" target
+
+
+2) mixing all things ( example real usage)
+
+2.1) example Basic use:
+2.1.1) First add path where is apq.gpr in your ADA_PROJECT_PATH var.
+		In my system the path apq.gpr was in /usr/local/lib/gnat :-)
+
+ ADA_PROJECT_PATH="/usr/local/lib/gnat:$ADA_PROJECT_PATH"
+ export ADA_PROJECT_PATH
+ make configure oses=linux lib_build_types=static,dynamic build_with_debug_too=yes
+ --> ok
+ make compile oses=linux
+ --> pg_config:	Ok	:lib	static	linux	normal	:Trying matched's gprconfig & gprbuild... 
+ --> gprconfig:	Ok	:lib	static	linux	normal	:Trying matched gprbuild... 
+ -->  gprbuild:	Ok	:lib	static	linux	normal	:Ok
+ --> pg_config:	Ok	:lib	static	linux	debug	:Trying matched's gprconfig & gprbuild... 
+ --> gprconfig:	Ok	:lib	static	linux	debug	:Trying matched gprbuild... 
+ -->  gprbuild:	Ok	:lib	static	linux	debug	:Ok
+ --> pg_config:	Ok	:lib	dynamic	linux	normal	:Trying matched's gprconfig & gprbuild... 
+ --> gprconfig:	Ok	:lib	dynamic	linux	normal	:Trying matched gprbuild... 
+ -->  gprbuild:	Ok	:lib	dynamic	linux	normal	:Ok
+ --> pg_config:	Ok	:lib	dynamic	linux	debug	:Trying matched's gprconfig & gprbuild... 
+ --> gprconfig:	Ok	:lib	dynamic	linux	debug	:Trying matched gprbuild... 
+ -->  gprbuild:	Ok	:lib	dynamic	linux	debug	:Ok
+ --> 
+ --> ok.
+ --> 
+ make install oses=linux prefix=/usr/local
+ --> install:	Ok	:static	linux	normal	:Created directory! 
+ --> install ali:	Ok	:static	linux	normal	:Installed .ali files! 
+ --> install lib:	Ok	:static	linux	normal	:Installed lib files! 
+ --> install lib_c:	Ok	:static	linux	normal	:Installed 'c/c++' counterpart lib files! 
+ --> install:	Ok	:static	linux	debug	:Created directory! 
+ --> install ali:	Ok	:static	linux	debug	:Installed .ali files! 
+ --> install lib:	Ok	:static	linux	debug	:Installed lib files! 
+ --> install lib_c:	Ok	:static	linux	debug	:Installed 'c/c++' counterpart lib files! 
+ --> install:	Ok	:dynamic	linux	normal	:Created directory! 
+ --> install ali:	Ok	:dynamic	linux	normal	:Installed .ali files! 
+ --> install lib:	Ok	:dynamic	linux	normal	:Installed lib files! 
+ --> install lib_c:	Ok	:dynamic	linux	normal	:Installed 'c/c++' counterpart lib files! 
+ --> install:	Ok	:dynamic	linux	debug	:Created directory! 
+ --> install ali:	Ok	:dynamic	linux	debug	:Installed .ali files! 
+ --> install lib:	Ok	:dynamic	linux	debug	:Installed lib files! 
+ --> install lib_c:	Ok	:dynamic	linux	debug	:Installed 'c/c++' counterpart lib files! 
+ --> install includes:	Ok	:Created directory! 
+ --> install includes:	Ok	:Installed includes! 
+ --> install gpr(s):	Ok	:Created directory! 
+ --> install gpr(s):	Ok	:Installed GPR(s)! 
+ --> 
+ --> 
+ -->  Install libs now success finished. 
+ -->  Read the inline text in file /usr/local/lib/gnat/apq.gpr 
+ --> for hints and example usage :-)
+ --> 
+ --> ok.
+
+
+and read the inline text in installed apq.gpr for a explanation how use in your program projects
+
+2.1) examples of more advance use:
+  "To be Done" :-)
+
+
+

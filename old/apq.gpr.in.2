@@ -1,0 +1,41 @@
+--
+-- author Marcelo Coraça de Freitas <marcelo.batera@gmail.com> 
+--
+-- Repository information:
+-- $Date: 2008-02-25 19:47:48 -0300 (Seg, 25 Fev 2008) $
+-- $Revision: 234 $
+-- $Author: ogro $
+
+
+project APQ is
+
+	version	:= $version;
+	
+	
+	
+	type Supported_OS is ("Windows_NT", "GNU/Linux");
+	
+	target: Supported_OS := external("OS", "GNU/Linux");
+	
+	
+	for Source_Dirs use ( $include_path );
+	-- LIBRARY
+	for Library_Dir use $lib_path;
+	for Library_Name use "apq";
+	case target is
+		when "Windows_NT" =>
+			for Library_Kind use "dynamic";
+		
+		when "GNU/Linux" =>
+			for Library_Kind use "dynamic";
+	end case;
+	for Library_Version use "libapq.so." & Version;
+	
+	
+	package Compiler is
+		for Default_Switches ("ada") use ("-O2", "-gnat05");
+	end Compiler;
+
+	for Externally_Built use "true";
+end APQ;
+

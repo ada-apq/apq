@@ -1,38 +1,8 @@
----- author Daniel Norte de Moraes <danielcheagle@gmail.com>
----- tested in Debian Sid, Gcc 4.6 , gnat 4.6 , gprbuild 2011-1 :-)
-----
----- this project file permit "simultaneously" :
----- choose compile with (static or shared) and ( normal or debug) and (system operations)  libs.
---
--- this permit cross-compiling too :-)
----- 
 
-----    IMPORTANT!!!  You Can hit and compile you program just passing for your
---			program project file these three(3) environment variables:
---			 "Static_Or_Dynamic" , "Os" and "Debug_information". this is made
---			 by the "-Xvariable=value" (without double quotes)
---			eg: if your program import apq-postgresql.gpr in your my_program.gpr made 
---
---			gnatmake -Pmy_program.gpr -Xstatic_or_dynamic=dynamic -XOs=mswindows -Xdebug_information=yes
---
---			to compile your program with lib shared+debug+mswindows. if the combination 
---			don't exist, usually the compiler/linker will hit
---			a error message. these combination was determined by the time the libs was compiled and installed.
---			of course you can use "gprbuil" instead og gnatmake :-)
---		    the gpr file will take  care for you where are the libs.
-----                   You will need however, in system specific manner,  a way for
-----                    your program using the libs "as being run/executing" locate the libs for him :-)
-----                   We just (just? ;-) take care of _compilation_ :-)
-----       p.s.: You can use gnat-gps. gnat-gps will permit you choose in a Gui , the enviroment variables on-the-fly :-)
-----  Enjoy!!! :-)
 
--- You can need set ADA_PROJECT_PATH
-
-project Apq is
    -----------------------
    -- type declarations --
    -----------------------
-	prefix := $prefix ;
 
    type Static_Or_Dynamic_Type is ("dynamic", "static", "relocatable" );
    type Debug_information_Type is ("yes", "no");
@@ -76,7 +46,7 @@ project Apq is
 
          end case;  -- end yes/os
       when "no" =>
-         Debug := Debug & "";
+         Debug := Debug & "normal";
          case os is
             when "other" => -- :0}
                Debug_option_list_builder := Debug_option_list_builder & (  );
@@ -107,40 +77,87 @@ project Apq is
 		  null;
    end case; -- end Debug_information
 
-   for Languages use ("Ada");
-   for Source_Dirs use () & ( prefix & "/include/apq" ) ;
-   for Library_Name use "apq" ;
-   case debug_information is
-	   when "yes" =>
-		   case static_or_dynamic is
-				when "dynamic" | "relocatable" =>
-					for Library_Dir use "" & prefix & "/lib/apq/" & Os & "/shared/debug/"  ;
-					for Library_ALI_Dir use  "" & prefix & "/lib/apq/" & Os & "/shared/debug/ali/" ;
-				when "static" =>
-					for Library_Dir use "" & prefix & "/lib/apq/" & Os & "/static/debug/"  ;
-					for Library_ALI_Dir use  "" & prefix & "/lib/apq/" & Os & "/static/debug/ali/" ;
-		   end case;
-	   when "no"  =>
-		   case static_or_dynamic is
-				when "dynamic" | "relocatable" =>
-					for Library_Dir use "" & prefix & "/lib/apq/" & Os & "/shared/"  ;
-					for Library_ALI_Dir use  "" & prefix & "/lib/apq/" & Os & "/shared/ali/" ;
-				when "static" =>
-					for Library_Dir use "" & prefix & "/lib/apq/" & Os & "/static/"  ;
-					for Library_ALI_Dir use  "" & prefix & "/lib/apq/" & Os & "/static/ali/" ;
-		   end case;
+   sufix1 := "";
+   sufix2 := "";
+   export_dynamic := "--export-dynamic";
+   case static_or_dynamic is
+      when "dynamic" | "relocatable" =>
+         case os is
+            when "other" =>
+               sufix1 := "so.";
+               sufix2 := "";
+               export_dynamic := "--export-dynamic";
+            when "mswindows" =>
+               sufix1 := "so.";
+               sufix2 := ".dll";
+               export_dynamic := "--export-dynamic";
+            when "linux" =>
+               sufix1 := "so.";
+               sufix2 := "";
+               export_dynamic := "--export-dynamic";
+            when "darwin" => -- fix it ;-)
+               sufix1 := "so.";
+               sufix2 := ".lib";
+               export_dynamic := "--export-dynamic";
+            when "bsd" =>  -- just a stub here :-)
+               sufix1 := "so.";
+               sufix2 := ".idx";
+               export_dynamic := "--export-dynamic";
+            when others =>
+               sufix1 := "so.";
+               sufix2 := "";
+               export_dynamic := "";  -- fix it ;-)
+         end case;
+      when "static" =>
+         case os is
+            when "other" =>
+               sufix1 := "static.";
+               sufix2 := "";
+               export_dynamic := "";
+            when "mswindows" =>
+               sufix1 := "static.";
+               sufix2 := "";
+               export_dynamic := "";
+            when "linux" =>
+               sufix1 := "static.";
+               sufix2 := "";
+               export_dynamic := "";
+            when "darwin" =>
+               sufix1 := "static.";
+               sufix2 := "";
+               export_dynamic := "";
+            when "bsd" =>
+               sufix1 := "static.";
+               sufix2 := "";
+               export_dynamic := "";
+            when others =>
+               sufix1 := "static.";
+               sufix2 := "";
+               export_dynamic := "";
+         end case;
+      when others =>
+		  null;
    end case;
 
+
+   for Languages use ("Ada");
+   for Source_Dirs use () & mysource ;
+   for Object_Dir use "" & basedir & "/" & Os & "/" & Static_Or_Dynamic & "/" & debug & "/obj/";
+   for Library_Name use "apq" ;
+   for Library_Dir use "" & basedir & "/" & Os & "/" & Static_Or_Dynamic & "/" & debug & "/lib/" ;
+   for Library_ALI_Dir use  "" & basedir & "/" & Os & "/" & Static_Or_Dynamic & "/" & debug & "/ali/" ;
    for Library_Kind use Static_Or_Dynamic;
-   for Externally_Built use "true";
+   for Library_Version use "libapq." & sufix1 & version & sufix2 ;
+   for Library_Options use ("-Wl," & export_dynamic ) & system_libs  & ( "-lssl"  );
+   for Externally_Built use "false";
 
    package Compiler is
-      for Default_Switches ("ada") use ("-O2", "-gnat05", "-gnatn"  ) & Debug_option_list_compiler ;
+      for Default_Switches ("ada") use ("-O2", "-gnat05", "-gnatn" , "-fPIC" ) & Debug_option_list_compiler ;
    end Compiler;
 
    package Builder  is
-      for Default_Switches ("ada") use ("-O2", "-gnat05", "-gnatn"  ) & Debug_option_list_builder ;
+      for Default_Switches ("ada") use ("-O2", "-gnat05", "-gnatn" , "-fPIC" ) & Debug_option_list_builder ;
    end Builder;
 
-end Apq.postgresql;
+end Apq;
 

@@ -1,0 +1,35 @@
+---- author Daniel Norte de Moraes <danielcheagle@gmail.com>
+---- tested in Debian Sid, Gcc 4.6 , gnat 4.6 , gprbuild 2011-1 :-)
+----
+---- this Building System permit "simultaneously" (if you want) :
+---- Make static and shared libs
+---- Cross-Compiling too ;-) enjoy! :-)
+---- obs.: the  MakeFile permit you choose the correct libs for _each_ library you type make ! :-)
+---- obs.: "make system_libs=<path_value>" can be used for it. (e.g cross-compiling
+----       or just change the base lib , in per compiling base. For The Braves and Sagacious ^_^!!!
+
+---- 	IMPORTANT!!!  You NEED INSTALL the gpr/apq-postgresql.gpr
+----                   and apq_postgresql_version in ONE(1) local Only if you want access all
+----                   compileds libs. the build system take care for you where are all them ;-)
+----                   just hit " make install oses=system_operation1,system_operation_n --prefix=/where_path_to_install " ;
+
+----    IMPORTANT!!!  You Can hit make and make install  any time you want. the build system e the installed gpr take
+----                   care for you where are the libs.
+----                   You will need however, in system specific manner, that
+----                    your program using the libs "as being run/executing" locate the libs for him :-)
+----                   We just (just? ;-) take care of _compilation_ :-)
+----
+----
+
+ -- You can need set ADA_PROJECT_PATH :-)
+
+project Apq is
+
+
+   version   := $version ;    --  eg.: "3.0.1"
+
+   mysource	:= ( ) & $mysource ;
+   basedir	:= "" & $basedir ;
+
+
+
