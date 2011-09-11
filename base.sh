@@ -300,7 +300,7 @@ IFS="$ifsbackup"
 		exit 1
 	else 
 		#ok
-		printf "\n ok. \n " >> "$my_atual_dir/apq_error.log"
+		printf "\n ok. \n\n" >> "$my_atual_dir/apq_error.log"
 		exit 0;   # end ;-)
 	fi
 
@@ -382,8 +382,7 @@ _compile(){
 				
 				if [ -f "$my_tmp/logged/kov.log" ] && \
 					[ $(wc -l < "$my_tmp/logged/kov.log" ) -ge 6 ] && \
-					[ -f "$my_tmp/apq-postgresql.gpr" ] && \
-					[ -f "$my_tmp/apq_postgresqlhelp.gpr" ];
+					[ -f "$my_tmp/apq.gpr" ];
 				then
 					
 						line1_my_tmp="$my_tmp"
@@ -709,7 +708,7 @@ _installe(){
 		#
 		if [ -z "$my_made_install" ]; then
 			{	printf "\n\n Install libs now success finished. \n"
-				printf " Read the inline text in file $my_prefix/lib/gnat/apq-postgresql.gpr \n"
+				printf " Read the inline text in file $my_prefix/lib/gnat/apq.gpr \n"
 				printf " for hints and example usage :-)\n"
 				printf "\n ok. \n\n"
 			}>>"$my_atual_dir/apq_error.log"
@@ -725,7 +724,7 @@ _installe(){
 	else
 		{	printf "nothing was installed. \n"
 			printf "maybe a wrong 'oses' ? or a not already compiled libs for install ? "
-			printf "not ok."
+			printf "not ok.\n\n"
 		}>>"$my_atual_dir/apq_error.log"
 		exit 1
 	fi
@@ -809,7 +808,7 @@ _clean(){
 		done # libbuildtype
 	done # sist_oses
 
-	printf "\n\n ok. \n" >> "$my_atual_dir/apq_error.log"
+	printf "\n\n ok. \n\n" >> "$my_atual_dir/apq_error.log"
 	exit 0
 
 } #end _clean
