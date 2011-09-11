@@ -166,11 +166,7 @@ doesn't matter. Enjoy! =]
 2) mixing all things ( example real usage)
 
 2.1) example Basic use:
-2.1.1) First add path where is apq.gpr in your ADA_PROJECT_PATH var.
-		In my system the path apq.gpr was in /usr/local/lib/gnat :-)
 
- ADA_PROJECT_PATH="/usr/local/lib/gnat:$ADA_PROJECT_PATH"
- export ADA_PROJECT_PATH
  make configure oses=linux lib_build_types=static,dynamic build_with_debug_too=yes
  --> ok
  make compile oses=linux
