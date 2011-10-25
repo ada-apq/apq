@@ -18,12 +18,12 @@
 --			to compile your program with lib shared+debug+mswindows. if the combination 
 --			don't exist, usually the compiler/linker will hit
 --			a error message. these combination was determined by the time the libs was compiled and installed.
---			of course you can use "gprbuil" instead og gnatmake :-)
+--			of course you can use "gprbuild" instead of gnatmake :-)
 --		    the gpr file will take  care for you where are the libs.
 ----                   You will need however, in system specific manner,  a way for
 ----                    your program using the libs "as being run/executing" locate the libs for him :-)
 ----                   We just (just? ;-) take care of _compilation_ :-)
-----       p.s.: You can use gnat-gps. gnat-gps will permit you choose in a Gui , the enviroment variables on-the-fly :-)
+----       p.s.: You can use gnat-gps. gnat-gps will permit you choose in a Gui , the enviroment variables on-the-fly :-) and if you already have a cross-compiling enviroment, this permit cross-compiling,too. :-)
 ----  Enjoy!!! :-)
 
 -- You can need set ADA_PROJECT_PATH
