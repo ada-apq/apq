@@ -1,4 +1,4 @@
-## Makefile for libapq-postgresql and associated files
+## Makefile for libapq and associated files
 #
 # @author Marcelo Coraça de Freitas <marcelo.batera@gmail.com>
 #
