@@ -13,7 +13,7 @@
 ----                   compileds libs. the build system take care for you where are all them ;-)
 ----                   just hit " make install oses=system_operation1,system_operation_n --prefix=/where_path_to_install " ;
 
-----    IMPORTANT!!!  You Can hit make and make install  any time you want. the build system e the installed gpr take
+----    IMPORTANT!!!  You Can hit make and make install  any time you want. the build system and the installed gpr take
 ----                   care for you where are the libs.
 ----                   You will need however, in system specific manner, that
 ----                    your program using the libs "as being run/executing" locate the libs for him :-)
