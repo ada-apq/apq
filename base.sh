@@ -126,7 +126,7 @@ _discover_acmd_path(){
 #: date		: 2011-jul-15
 #: Authors	: "Daniel Norte de Moraes" <danielcheagle@gmail.com>
 #: Authors	: "Marcelo Coraça de Freitas" <marcelo.batera@gmail.com>
-#: version	: 1.0
+#: version	: 1.02
 #: Description:  Discover automatically a _PATH_ for a command OR use a default.
 #: Options	: "cmd" "add_these_path(s)" "or_default_path"
 # need more sanitization
@@ -136,7 +136,7 @@ local these_paths="$2"
 local default_path="$3"
 local path_backup="$PATH"
 case $cmdo in
-	*\)* | *\(* | *\{* | *\}* | *\$*  )  printf '/usr/bin/boo' ; exit 1
+	*[\)\({}$]* )  printf '/usr/bin/boo' ; exit 1
 		;;
 esac
 local my_path="$(PATH="$these_paths:$path_backup"; which "$cmdo" || printf "$default_path/stub" )"
