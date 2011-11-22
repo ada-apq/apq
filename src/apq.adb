@@ -275,7 +275,8 @@ package body APQ is
 	procedure Set_Port(C : in out Root_Connection_Type; Port_Name : String) is
 		-- Set the Unix Port
 	begin
-		C.Port_Format     := UNIX_Port;
+      		C.Port_Format     := UNIX_Port;
+      		Free_Ptr(C.Port_Name);
 		C.Port_Name       := new String(1..Port_Name'Length);
 		C.Port_Name.all   := Set_Port.Port_Name;
 	end Set_Port;
@@ -1784,7 +1785,7 @@ package body APQ is
 	end Convert_To_Timestamp;
 
 	function Convert_Date_and_Time(
-					DT	: in Date_Type; 
+					DT	: in Date_Type;
 					TM	: in Time_Type
 				) return Result_Type is
 		-- return a new timestamp in DT's timezone at TM duration
