@@ -1106,14 +1106,14 @@ package APQ is
 				S	: in String;
 				TZ	: in Ada.Calendar.Time_Zones.Time_Offset
 			) return Val_Type;
-	
+
 
 	generic
 		type Date_Type is new Ada.Calendar.Time;
 		type Time_Type is new Ada.Calendar.Day_Duration;
 		type Result_Type is new Ada.Calendar.Time;
 	function Convert_Date_and_Time(
-					DT	: in Date_Type; 
+					DT	: in Date_Type;
 					TM	: in Time_Type
 				) return Result_Type;
 	-- return a new timestamp in DT's timezone at TM duration
@@ -1162,6 +1162,8 @@ package APQ is
    type tiponat_type is (start , aend );
    type tiponatar_type is array (tiponat_type) of natural;
    type tpar_type is array (natural range <>) of tiponatar_type; -- for future use.
+
+   type Unsigned_Ptr is access all interfaces.c.unsigned;
 
 private
 
