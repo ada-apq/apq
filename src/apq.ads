@@ -1163,11 +1163,13 @@ package APQ is
    type tiponatar_type is array (tiponat_type) of natural;
    type tpar_type is array (natural range <>) of tiponatar_type; -- for future use.
 
-   type Unsigned_Ptr is access all interfaces.c.unsigned;
 
 private
 
-	package CStr renames Interfaces.C_Streams;
+   package CStr renames Interfaces.C_Streams;
+
+   type Unsigned_Ptr is access all interfaces.c.unsigned;
+   procedure free is new Ada.Unchecked_Deallocation( Interfaces.c.unsigned , Unsigned_Ptr );
 
 	type String_Ptr is access all String;
 	type String_Ptr_Array is array(Natural range <>) of String_Ptr;
