@@ -5,17 +5,17 @@
 ---- choose compile with (static or shared) and ( normal or debug) and (system operations)  libs.
 --
 -- this permit cross-compiling too :-)
----- 
+----
 
 ----    IMPORTANT!!!  You Can hit and compile you program just passing for your
 --			program project file these three(3) environment variables:
 --			 "Static_Or_Dynamic" , "Os" and "Debug_information". this is made
 --			 by the "-Xvariable=value" (without double quotes)
---			eg: if your program import apq.gpr in your my_program.gpr made 
+--			eg: if your program import apq.gpr in your my_program.gpr made
 --
 --			gnatmake -Pmy_program.gpr -Xstatic_or_dynamic=dynamic -XOs=mswindows -Xdebug_information=yes
 --
---			to compile your program with lib shared+debug+mswindows. if the combination 
+--			to compile your program with lib shared+debug+mswindows. if the combination
 --			don't exist, usually the compiler/linker will hit
 --			a error message. these combination was determined by the time the libs was compiled and installed.
 --			of course you can use "gprbuild" instead of gnatmake :-)
@@ -135,11 +135,11 @@ project Apq is
    for Externally_Built use "true";
 
    package Compiler is
-      for Default_Switches ("ada") use ("-O2", "-gnat05", "-gnatn"  ) & Debug_option_list_compiler ;
+      for Default_Switches ("ada") use ("-O2", "-gnat05", "-gnatn" , "-fPIC"  ) & Debug_option_list_compiler ;
    end Compiler;
 
    package Builder  is
-      for Default_Switches ("ada") use ("-O2", "-gnat05", "-gnatn"  ) & Debug_option_list_builder ;
+      for Default_Switches ("ada") use ("-O2", "-gnat05", "-gnatn" , "-fPIC") & Debug_option_list_builder ;
    end Builder;
 
 end Apq;
