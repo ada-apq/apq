@@ -2117,7 +2117,7 @@ package body APQ is
 	function Value_Of(C_String : Interfaces.C.Strings.chars_ptr) return String is
 		use Interfaces.C.Strings, Interfaces.C;
 	begin
-		return To_Ada(Value(C_String));
+		return To_Ada(char_array'(Interfaces.c.Strings.Value(C_String)));
 	end Value_Of;
 
 
