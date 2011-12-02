@@ -1152,24 +1152,13 @@ package APQ is
 	function Generic_Second(TM : Time_Type) return Second_Number;
 
 
-
-
-
-
    -------------------
    --- misc types ----
    -------------------
-   type tiponat_type is (start , aend );
-   type tiponatar_type is array (tiponat_type) of natural;
-   type tpar_type is array (natural range <>) of tiponatar_type; -- for future use.
-
 
 private
 
    package CStr renames Interfaces.C_Streams;
-
-   type Unsigned_Ptr is access all interfaces.c.unsigned;
-   procedure free is new Ada.Unchecked_Deallocation( Interfaces.c.unsigned , Unsigned_Ptr );
 
 	type String_Ptr is access all String;
 	type String_Ptr_Array is array(Natural range <>) of String_Ptr;
@@ -1258,6 +1247,24 @@ private
 	procedure Replace_String(SP : in out String_Ptr; S : String);
 
 	function Value_Of(C_String : Interfaces.C.Strings.chars_ptr) return String;
-	function Is_Null(C_String : Interfaces.C.Strings.chars_ptr) return Boolean;
+   function Is_Null(C_String : Interfaces.C.Strings.chars_ptr) return Boolean;
+
+   type Unsigned_Integer is new interfaces.c.unsigned;
+   type Unsigned_Integer_Ptr is access all unsigned_integer;
+
+   function to_string( val : Unsigned_Integer ) return string;
+   function to_string( val : Unsigned_Integer ) return string_ptr;
+   function to_string( val : Unsigned_Integer_ptr ) return string;
+   function to_string( val : Unsigned_Integer_ptr ) return string_ptr;
+
+   function to_unsigned_integer( val : string ) return Unsigned_Integer;
+   function to_unsigned_integer( val : string ) return Unsigned_Integer_Ptr;
+   function to_unsigned_integer( val : string_ptr ) return Unsigned_Integer;
+   function to_unsigned_integer( val : String_Ptr ) return Unsigned_Integer_Ptr;
+
+   procedure free is new Ada.Unchecked_Deallocation( Unsigned_Integer , Unsigned_Integer_Ptr );
+
+   pragma Inline( to_string , to_unsigned_integer);
+
 
 end APQ;

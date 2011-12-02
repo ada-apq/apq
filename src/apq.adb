@@ -2126,6 +2126,74 @@ package body APQ is
 		use Interfaces.C.Strings;
 	begin
 		return C_String = Null_Ptr;
-	end Is_Null;
+   end Is_Null;
+   --
+    function to_string( val : Unsigned_Integer ) return string
+   is
+      use ada.Strings.Fixed;
+   begin
+      return string'(trim(string'(Unsigned_Integer'Image(val)), ada.Strings.Both));
+   end to_string;
+
+   function to_string( val : Unsigned_Integer ) return string_ptr
+   is
+   begin
+      return new string'(to_string(val));
+   end to_string;
+   --
+   function to_string( val : Unsigned_Integer_ptr ) return string
+   is
+      use ada.Strings.Fixed;
+   begin
+      if val /= null then
+	 return string'(trim(string'(Unsigned_Integer'Image(val.all)), ada.Strings.Both));
+      end if;
+      return "";
+   end to_string;
+
+   function to_string( val : Unsigned_Integer_ptr ) return string_ptr
+   is
+      use ada.Strings.Fixed;
+   begin
+      return new string'(to_string(val));
+   end to_string;
+   --
+   --
+   function to_unsigned_integer( val : string ) return Unsigned_Integer
+   is
+      use Ada.Strings.Fixed;
+      mi_hold : Unsigned_Integer := 0;
+      val_hold : string := trim( val, ada.Strings.Both);
+   begin
+      begin
+	 mi_hold := Unsigned_Integer'(Unsigned_Integer'value(val_hold));
+      exception
+	 when others =>
+	    mi_hold := 0;
+      end;
+      return mi_hold;
+   end to_unsigned_integer;
+
+   function to_unsigned_integer( val : string ) return Unsigned_Integer_Ptr
+   is
+   begin
+      return new Unsigned_Integer'(to_unsigned_integer(val));
+   end to_unsigned_integer;
+
+   function to_unsigned_integer( val : string_ptr ) return Unsigned_Integer
+   is
+   begin
+     if val /= null then
+	 return Unsigned_Integer'(to_unsigned_integer(val.all));
+      end if;
+      return 0;
+   end to_unsigned_integer;
+
+   function to_unsigned_integer( val : String_Ptr ) return Unsigned_Integer_Ptr
+   is
+   begin
+      return new Unsigned_Integer'(to_unsigned_integer(val));
+   end to_unsigned_integer;
+
 
 end APQ;
