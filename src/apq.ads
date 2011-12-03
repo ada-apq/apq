@@ -1262,9 +1262,12 @@ private
    function to_unsigned_integer( val : string_ptr ) return Unsigned_Integer;
    function to_unsigned_integer( val : String_Ptr ) return Unsigned_Integer_Ptr;
 
+   function is_valid_unsigned( val : string ) return boolean;
+   function is_valid_unsigned( val : String_Ptr ) return boolean;
+
    procedure free is new Ada.Unchecked_Deallocation( Unsigned_Integer , Unsigned_Integer_Ptr );
 
-   pragma Inline( to_string , to_unsigned_integer);
+   pragma Inline( to_string , to_unsigned_integer );
 
 
 end APQ;

@@ -2163,9 +2163,10 @@ package body APQ is
    is
       use Ada.Strings.Fixed;
       mi_hold : Unsigned_Integer := 0;
-      val_hold : string := trim( val, ada.Strings.Both);
+      val_hold : string ;
    begin
       begin
+	 val_hold := trim( val, ada.Strings.Both);
 	 mi_hold := Unsigned_Integer'(Unsigned_Integer'value(val_hold));
       exception
 	 when others =>
@@ -2194,6 +2195,36 @@ package body APQ is
    begin
       return new Unsigned_Integer'(to_unsigned_integer(val));
    end to_unsigned_integer;
+
+   function is_valid_unsigned( val : string ) return boolean
+   is
+      use Ada.Strings.Fixed;
+      mi_hold : Unsigned_Integer := 0;
+      val_hold : string ;
+      mi_bool : boolean := false;
+   begin
+      begin
+	 val_hold := trim( val, ada.Strings.Both);
+	 if val_hold = "" then
+	    return false;
+	 end if;
+	 mi_hold := Unsigned_Integer'(Unsigned_Integer'value(val_hold));
+	 mi_bool := true;
+      exception
+	 when others =>
+	    mi_bool := false;
+      end;
+      return mi_bool;
+   end is_valid_unsigned;
+
+   function is_valid_unsigned( val : String_Ptr ) return boolean
+   is
+   begin
+      if val = null then
+	 return false;
+      end if;
+      return boolean'(is_valid_unsigned(val.all));
+   end if;
 
 
 end APQ;
