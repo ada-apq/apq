@@ -40,6 +40,15 @@
 			system_libs_paths=/usr/source:/usr/local:/lib/got \
 			build_with_debug_too=yes
 
+	OK = $(shell \
+		 oper="" ; \
+		 temporary=$(shell cat ok.log) ; \
+		 case "$$temporary" in \
+		 	( *fal* ) oper="false" ;; \
+			( *tru* ) oper="true" ;; \
+		esac; \
+		echo "$$oper" ; )
+
 ifndef ($(prefix))
 	prefix=/usr/local
 endif
@@ -91,22 +100,27 @@ endif
 compile:
 	@echo $(shell "$(atual_dir)/base.sh" "compile" "$(oses)" ) > /dev/nul
 	@cat "$(atual_dir)/apq_error.log"
+	@$(OK)
 
 configure:
 	@echo $(shell "$(atual_dir)/base.sh" "configure" "$(oses)" "$(lib_build_types)" "$(add_compiler_paths)" "$(system_libs_paths)" "$(ssl_include_path)" "stub_pg_config_path" "$(gprconfig_path)" "$(gprbuild_path)" "$(build_with_debug_too)" )  > /dev/nul
 	@cat "$(atual_dir)/apq_error.log"
+	@$(OK)
 
 install:
 	@echo $(shell "$(atual_dir)/base.sh" "install" "$(oses)" "$(prefix)" ) > /dev/null
 	@cat "$(atual_dir)/apq_error.log"
+	@$(OK)
 
 clean:
 	@echo $(shell "$(atual_dir)/base.sh" "clean" ) > /dev/null
 	@cat  "$(atual_dir)/apq_error.log"
+	@$(OK)
 
 distclean:
 	@echo $(shell "$(atual_dir)/base.sh" "distclean" ) > /dev/null
 	@cat "$(atual_dir)/apq_error.log"
+	@$(OK)
 
 docs:
 	@for docdir in $(DOCS_DIRS); do make -C $$docdir; done

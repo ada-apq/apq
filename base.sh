@@ -163,7 +163,7 @@ _configure(){
 local my_atual_dir=$(pwd)
 
 # Silent Reporting, because apq_error.log or  don't exist or don't is a regular file or is a link
-if [ ! -f "$my_atual_dir"/apq_error.log ] || [ -L "$my_atual_dir"/apq_error.log ]; then
+if [ ! -f "$my_atual_dir"/apq_error.log ] || [ -L "$my_atual_dir"/apq_error.log ] || [ -L "$my_atual_dir/ok.log" ]; then
 	exit 1
 fi
 
@@ -175,8 +175,10 @@ if [ $# -ne 9 ]; then
 		printf "\n"
 	}>"$my_atual_dir/apq_error.log"
 	
+	printf 'false'>"$my_atual_dir/ok.log"
 	exit 1
-fi;
+fi
+
 # remove old content from apq_error.log
 printf "" > "$my_atual_dir/apq_error.log"
 
@@ -298,10 +300,12 @@ IFS="$ifsbackup"
 	#not ok
 	if [ -s  "$my_atual_dir/apq_error.log" ]; then
 		printf "\nthere is a chance an error occurred.\nsee the above messages and correct if necessary.\n not ok. \n " >> "$my_atual_dir/apq_error.log"
+		printf 'false'>"$my_atual_dir/ok.log"
 		exit 1
 	else 
 		#ok
 		printf "\n ok. \n\n" >> "$my_atual_dir/apq_error.log"
+		printf 'true'>"$my_atual_dir/ok.log"
 		exit 0;   # end ;-)
 	fi
 
@@ -320,7 +324,7 @@ _compile(){
 
 	local my_atual_dir=$(pwd)
 	# Silent Reporting, because apq_error.log or don't exist or don't is a regular file or is a link
-	if [ ! -f "$my_atual_dir"/apq_error.log ] || [ -L "$my_atual_dir"/apq_error.log ]; then
+	if [ ! -f "$my_atual_dir"/apq_error.log ] || [ -L "$my_atual_dir"/apq_error.log ] || [ -L "$my_atual_dir/ok.log" ]; then
 		exit 1
 	fi
 	# remove old content from apq_error.log
@@ -331,6 +335,7 @@ _compile(){
 			printf 'usage: compile "OSes" '
 			printf "\n\n not ok. \n"
 		}>"$my_atual_dir/apq_error.log"
+		printf 'false'>"$my_atual_dir/ok.log"
 		exit 1
 	fi
 	local ifsbackup="$IFS"
@@ -349,6 +354,7 @@ _compile(){
 			printf "don't exist or don't is a directory."
 			printf "\n\n not ok. \n\n"
 		}>> "$my_atual_dir/apq_error.log"
+		printf 'false'>"$my_atual_dir/ok.log"
 		exit 1
 	fi
 	
@@ -537,6 +543,7 @@ _compile(){
 #		if [ -z "$erro_msg_gprconfig_part" ] && [ -z "$erro_msg_gprbuild_part" ] && [ -z "$erro_msg_pg_config_part" ]; then
 		if [ -z "$erro_msg_gprconfig_part" ] && [ -z "$erro_msg_gprbuild_part" ]; then
 			printf "\n ok. \n\n"  >> "$my_atual_dir/apq_error.log"
+			printf 'true'>"$my_atual_dir/ok.log"
 			exit 0
 		else
 		# not ok
@@ -554,6 +561,7 @@ _compile(){
 			else 
 				printf "\n not ok.\n\n"  >> "$my_atual_dir/apq_error.log"
 			fi
+			printf 'false'>"$my_atual_dir/ok.log"
 			exit 1
 		fi
 		
@@ -562,6 +570,7 @@ _compile(){
 			printf " Maybe 'oses' not yet (or erroneously) configured ? "
 			printf "\n\n Not ok. \n\n"
 		}>>"$my_atual_dir/apq_error.log"
+		printf 'false'>"$my_atual_dir/ok.log"
 		exit 1
 	fi
 
@@ -581,7 +590,7 @@ _installe(){
 
 	local my_atual_dir=$(pwd)
 	# Silent Reporting, because apq_error.log or don't exist or don't is a regular file or is a link
-	if [ ! -f "$my_atual_dir"/apq_error.log ] || [ -L "$my_atual_dir"/apq_error.log ]; then
+	if [ ! -f "$my_atual_dir"/apq_error.log ] || [ -L "$my_atual_dir"/apq_error.log ] || [ -L "$my_atual_dir/ok.log" ]; then
 		exit 1
 	fi
 	# remove old content from apq_error.log
@@ -592,6 +601,8 @@ _installe(){
 			printf 'usage: installe "OSes" "prefix" '
 			printf "\n\n not ok. \n"
 		}>"$my_atual_dir/apq_error.log"
+
+		printf 'false'>"$my_atual_dir/ok.log"
 		exit 1
 	fi
 	local ifsbackup="$IFS"
@@ -611,6 +622,8 @@ _installe(){
 			printf "don't exist or don't is a directory."
 			printf "\n\n not ok. \n\n"
 		}>> "$my_atual_dir/apq_error.log"
+
+		printf 'false'>"$my_atual_dir/ok.log"
 		exit 1
 	fi
 	
@@ -716,6 +729,8 @@ _installe(){
 				printf " for hints and example usage :-)\n"
 				printf "\n ok. \n\n"
 			}>>"$my_atual_dir/apq_error.log"
+
+			printf 'true'>"$my_atual_dir/ok.log"
 			exit 0
 		else
 			{	printf "\n\n there were some errors during this install process \n"
@@ -723,6 +738,8 @@ _installe(){
 				printf " for hints to fixes these errors :-)\n"
 				printf "\n not ok. \n\n"
 			}>>"$my_atual_dir/apq_error.log"
+
+			printf 'false'>"$my_atual_dir/ok.log"
 			exit 1
 		fi
 	else
@@ -730,6 +747,8 @@ _installe(){
 			printf "maybe a wrong 'oses' ? or a not already compiled libs for install ? "
 			printf "not ok.\n\n"
 		}>>"$my_atual_dir/apq_error.log"
+
+		printf 'false'>"$my_atual_dir/ok.log"
 		exit 1
 	fi
 	
@@ -747,7 +766,7 @@ _clean(){
 
 	local my_atual_dir=$(pwd)
 	# Silent Reporting, because apq_error.log or don't exist or don't is a regular file or is a link
-	if [ ! -f "$my_atual_dir"/apq_error.log ] || [ -L "$my_atual_dir"/apq_error.log ]; then
+	if [ ! -f "$my_atual_dir"/apq_error.log ] || [ -L "$my_atual_dir"/apq_error.log ] || [ -L "$my_atual_dir/ok.log" ]; then
 		exit 1
 	fi
 	# remove old content from apq_error.log
@@ -764,6 +783,8 @@ _clean(){
 			printf "don't exist or don't is a directory."
 			printf "\n\n not ok. \n\n"
 		}>> "$my_atual_dir/apq_error.log"
+
+		printf 'false'>"$my_atual_dir/ok.log"
 		exit 1
 	fi
 	local my_path=$( echo $PATH )
@@ -813,6 +834,8 @@ _clean(){
 	done # sist_oses
 
 	printf "\n\n ok. \n\n" >> "$my_atual_dir/apq_error.log"
+
+	printf 'true'>"$my_atual_dir/ok.log"
 	exit 0
 
 } #end _clean
@@ -843,9 +866,11 @@ _distclean(){
 			printf "don't exist or don't is a directory."
 			printf "\n\n not ok. \n\n"
 		}>> "$my_atual_dir/apq_error.log"
+
+		printf 'false'>"$my_atual_dir/ok.log"
 		exit 1
 	fi
-	[ -d "$made_dirs" ] && [ ! -L "$made_dirs" ] && rm $made_dirs -rf && printf "\n\n ok \n\n" >> "$my_atual_dir/apq_error.log"; exit 0 || printf "\n\n not ok \n\n">> "$my_atual_dir/apq_error.log"; exit 1
+	[ -d "$made_dirs" ] && [ ! -L "$made_dirs" ] && rm $made_dirs -rf && printf "\n\n ok \n\n" >> "$my_atual_dir/apq_error.log"; printf 'true'>"$my_atual_dir/ok.log"; exit 0 || printf "\n\n not ok \n\n">> "$my_atual_dir/apq_error.log"; printf 'false'>"$my_atual_dir/ok.log"; exit 1
 
 } #end _distclean
 
