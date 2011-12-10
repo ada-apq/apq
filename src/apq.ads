@@ -1155,6 +1155,8 @@ package APQ is
    -------------------
    --- misc types ----
    -------------------
+   type Unsigned_Integer is new interfaces.c.unsigned;
+   type Unsigned_Integer_Ptr is access all unsigned_integer;
 
 private
 
@@ -1249,8 +1251,7 @@ private
 	function Value_Of(C_String : Interfaces.C.Strings.chars_ptr) return String;
    function Is_Null(C_String : Interfaces.C.Strings.chars_ptr) return Boolean;
 
-   type Unsigned_Integer is new interfaces.c.unsigned;
-   type Unsigned_Integer_Ptr is access all unsigned_integer;
+
 
    function to_string( val : Unsigned_Integer ) return string;
    function to_string( val : Unsigned_Integer ) return string_ptr;
