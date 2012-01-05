@@ -1,0 +1,168 @@
+#!/usr/bin/env bash
+# Main configuration file for KOW framework projects
+#
+# @author Marcelo C. de Freitas
+
+
+
+source scripts/buildutil.sh
+
+###################
+# Default Options #
+###################
+
+
+enable_debug="false";
+enable_static="true";
+enable_relocatable="true";
+include_files=src/*
+work_path="$PWD/work"
+
+prefix=$(dirname `which gnatls`)
+prefix=$(dirname $prefix)
+
+version=$(cat version)
+processors=2
+
+GPRBUILD="gprbuild"
+
+
+
+
+if [[ $OS -eq "" ]]
+then
+	OS="GNU/Linux"
+fi
+
+
+###########################
+# Command Line Parameters #
+###########################
+
+# Setup build environment
+for i in $@
+do
+	option=`echo $i | cut -d= -f1`
+	value=`echo $i | cut -d= -f2`
+
+	case $option in
+		--prefix ) 
+			prefix="$value";;
+		--enable-debug )
+			enable_debug="true";;
+		--disable-static )
+			enable_static="false";;
+		--disable-relocatable )
+			enable_relocatable="false";;
+		--os )
+			OS="$value";;
+		--work-path )
+			work_path="$value";;
+
+		--gprbuild )
+			GPRBUILD="$value";;
+
+		--gprbuild-params )
+			gprbuild_params="$value";;
+
+		--processors )
+			processors=$value;;
+	esac
+done
+
+
+#########################
+# Initial configuration #
+#########################
+
+check_in_path gprbuild
+check_in_path gnatprep
+init_configuration
+init_gnatprep
+
+###########################
+# Run local configuration #
+###########################
+
+if [[ -x configure.local ]]
+then
+	source configure.local
+fi
+
+
+#######################
+# Include Files Setup #
+#######################
+
+echo "Copying source files"
+source_destination="$work_path/src/$project"
+mkdir -p $source_destination
+
+for i in $include_files
+do
+	cpu "$i" $source_destination
+done
+
+#############
+# GPR Files #
+#############
+
+echo "Copying standard project files"
+gpr_destination="$work_path/lib/gnat"
+mkdir -p "$gpr_destination"
+
+for i in gnat/*.gpr
+do
+	if [[ -f $i ]]
+	then
+		cpu $i $gpr_destination
+	fi
+done
+
+
+echo "Preparing def file.."
+set_gnatprep version $version
+set_gnatprep prefix "$prefix"
+set_gnatprep project "$project"
+
+
+
+
+
+for i in gnat/*.gpr.in
+do
+	if [[ -f $i ]]
+	then
+		fname=$(basename "$i" .in)
+		destination="$gpr_destination/$fname"
+		gnatprep "$i" "$destination" gnatprep.def
+	fi
+done
+
+
+
+
+
+#######################################
+# Store the usual configuration flags #
+#######################################
+
+set_configuration prefix "$prefix"
+set_configuration enable_debug $enable_debug
+set_configuration enable_static $enable_static
+set_configuration enable_relocatable $enable_relocatable
+set_configuration OS "$OS"
+set_configuration include_files "$include_files"
+set_configuration version "$version"
+set_configuration work_path "$work_path"
+set_configuration GPRBUILD "$GPRBUILD"
+set_configuration gprbuild_params "$gprbuild_params"
+set_configuration processors $processors
+set_configuration project "$project"
+
+
+echo
+echo "################################################"
+echo "# This is the build environment you did setup: #"
+echo "################################################"
+cat_configuration
