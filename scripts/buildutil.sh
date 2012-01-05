@@ -27,7 +27,7 @@ check_in_path(){
 check_project(){
 	proj=$1;
 	echo -n "Looking for project $proj ...	"
-	${GPRBUILD} -P$proj 2>&- || { echo "[false]"; echo "${GPRBUILD} can't find $proj in ADA_PROJECT_PATH"; exit -1;} && echo "[ok]";
+	${GPRBUILD} -ws -P$proj 2>&- || { echo "[false]"; echo "${GPRBUILD} can't find $proj in ADA_PROJECT_PATH"; exit -1;} && echo "[ok]";
 }
 
 
@@ -96,6 +96,110 @@ load_configuration(){
 }
 
 
+
+
+###################
+# Data Processing #
+###################
+
+# iterate for printing a list of declarations, used internally by print_enum_declaration and print_for_declaration
+# usage:
+#	iterate_enum_list "the list of values" echo_function_name
+#
+# The list of values should respect the format:
+#   number name
+#   number name
+#   number name
+#   number name
+#
+# and eatch line is trimmed before calling the given function
+iterate_enum_list(){
+	local is_first=1;
+
+	echo "$1" | while read a
+	do
+		if [[ "$a" = "" ]]
+		then
+			echo -n
+			#skip empty lines
+		else
+			if [[ $is_first -eq 1 ]]
+			then
+				is_first=0;
+			else
+				echo ',';
+			fi;
+
+			echo -n "		";
+			$2 $a
+		fi
+	done
+	echo;
+}
+
+
+_enum_declaration(){
+	echo -n $2;
+}
+
+# For each entry print as expected for the enum declaration type
+echo_enum_declaration(){
+	iterate_enum_list "$1" _enum_declaration
+}
+
+
+
+_for_declaration(){
+	echo -n "$2	=> $1";
+}
+echo_for_declaration(){
+	iterate_enum_list "$1" _for_declaration
+}
+
+
+
+# Will set a enum value using the same list as the one used in iterate_enum_list
+# in the given file (edit the given file).
+# usage:
+# 	set_enum_values FILE LIST_OF_VALUES PREFIX
+#
+# This will replace:
+#	%${PREFIX}_DECLARATION% with the result of echo_enum_declaration
+#	%${PREFIX}_FOR% with the result of echo_for_declaration
+#
+set_enum_values(){
+	outfile="$1"
+	values="$2"
+	prefix="$3"
+
+
+	declaration_values=`echo_enum_declaration "$values"`
+	for_values=`echo_for_declaration "$values"`
+
+
+	replace_in_file "$outfile" "%${prefix}_DECLARATION%" "$declaration_values"
+	replace_in_file "$outfile" "%${prefix}_FOR%" "$for_values"
+
+
+	echo "[ok]"
+}
+
+
+
+
+# Simple str_replace in a file
+# usage
+#	replace_in_file FILENAME FROM TO
+replace_in_file(){
+	filename="$1"
+	from="$2"
+	to=$(echo "$3" | sed -e 's/$/\\&/')
+	sed -i -e "s/$from/$to /" "$filename"
+}
+
+
+
+
 ################################
 # Gnatprep def file management #
 ################################
@@ -108,6 +212,25 @@ init_gnatprep() {
 set_gnatprep(){
 	echo $1:=\"$2\" >> gnatprep.def
 }
+
+
+
+# transform a list of parameters in a format both sed and gprbuild will understand...
+sedfy_gpr_list(){
+	is_first=1
+	for i in $1
+	do
+		if [[ $is_first -eq 1 ]]
+		then
+			is_first=0;
+		else
+			echo -n ","
+		fi
+		option=`echo $i | sed 's/\//\\\&/g'`
+		echo -n \\\"$option\\\"
+	done 
+}
+
 
 
 ############
