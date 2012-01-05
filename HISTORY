@@ -1,6 +1,3 @@
-$Id: HISTORY,v 1.10 2004/10/07 03:35:11 wwg Exp $
-
-
 Marcelo C. de Freitas
 marcelo@kow.com.br
 
@@ -8,8 +5,19 @@ Warren W. Gay VE3WWG
 ve3wwg@cogeco.ca
 
 
+With valuable contributions from:
+
+Daniel Norte de Moraes
+danielcheagle@gmail.com
+
+
+
 APQ REVISION HISTORY:
 =====================
+
+
+APQ 3.2
+  - Build system revisited again and unified with the rest of the framework
 
 
 APQ 3.1
