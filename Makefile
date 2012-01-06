@@ -16,3 +16,7 @@ uninstall:
 	./scripts/uninstall.sh
 clean:
 	./scripts/clean.sh
+
+distclean: 
+	@-${MAKE} clean
+	@-${MAKE} -C samples clean
