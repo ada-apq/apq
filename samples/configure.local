@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+
+project="apq-samples"
+
+
+set_configuration APQSAMPLES_EXTERNALLY_BUILT false
