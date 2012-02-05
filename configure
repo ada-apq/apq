@@ -95,7 +95,7 @@ fi
 #######################
 
 echo "Copying source files"
-source_destination="$work_path/src/$project"
+source_destination="$work_path/include/$project"
 mkdir -p $source_destination
 
 for i in $include_files

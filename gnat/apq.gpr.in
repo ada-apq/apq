@@ -36,7 +36,7 @@ project APQ is
 	----------------
 
 	for Library_Name use $project;
-	for Source_Dirs use ( "../../src/" & Project'Library_Name & "/" );
+	for Source_Dirs use ( "../../include/" & Project'Library_Name & "/" );
 	for Library_kind use external( "LIBRARY_KIND", "static" );
 
 
