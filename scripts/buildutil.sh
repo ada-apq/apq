@@ -254,7 +254,7 @@ build_libraries(){
 build_library(){
 	kind=$1;
 	echo "Building $kind library";
-	export LIBRARY_KIND=$kind
+	export LIBRARY_TYPE=$kind
 	$GPRBUILD -P$work_path/lib/gnat/$project.gpr -d -q -j$processors --create-missing-dirs $gprbuild_params
 }
 

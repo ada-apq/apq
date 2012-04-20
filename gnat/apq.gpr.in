@@ -37,7 +37,7 @@ project APQ is
 
 	for Library_Name use $project;
 	for Source_Dirs use ( "../../include/" & Project'Library_Name & "/" );
-	for Library_kind use external( "LIBRARY_KIND", "static" );
+	for Library_kind use external( "LIBRARY_TYPE", "static" );
 
 
 	case Debug is
