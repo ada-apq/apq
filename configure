@@ -12,6 +12,8 @@ source scripts/buildutil.sh
 ###################
 
 
+project_type="library";
+
 enable_debug="false";
 enable_static="true";
 enable_relocatable="true";
@@ -148,6 +150,7 @@ done
 #######################################
 
 set_configuration prefix "$prefix"
+set_configuration project_type $project_type
 set_configuration enable_debug $enable_debug
 set_configuration enable_static $enable_static
 set_configuration enable_relocatable $enable_relocatable

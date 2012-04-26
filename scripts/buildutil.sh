@@ -242,16 +242,16 @@ sedfy_gpr_list(){
 build_libraries(){
 	if [[ "$enable_static" = "true" ]]
 	then
-		build_library static
+		build_project static
 	fi
 
 	if [[ "$enable_relocatable" = "true" ]]
 	then
-		build_library relocatable
+		build_project relocatable
 	fi
 }
 
-build_library(){
+build_project(){
 	kind=$1;
 	echo "Building $kind library";
 	export LIBRARY_TYPE=$kind
