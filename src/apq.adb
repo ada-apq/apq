@@ -792,12 +792,8 @@ package body APQ is
 	end Value;
 
 	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Date is
-		function To_Date is new Convert_To_Timestamp(APQ_Date);
 	begin
-		return To_Date(
-				S	=> Value( Root_Query_Type'Class( Query ), CX ) & " 03:03:03",
-				TZ	=> Ada.Calendar.Time_Zones.UTC_Time_Offset( Ada.Calendar.Clock )
-			);
+		return To_Date( Value( Root_Query_Type'Class( Query ), CX ) );
 	exception
 		when Constraint_Error =>
 			Raise_APQ_Error_Exception(
@@ -830,13 +826,9 @@ package body APQ is
 	end Value;
 
 	function Value(Query : Root_Query_Type; CX : Column_Index_Type) return APQ_Timestamp is
-		function To_Timestamp is new Convert_To_Timestamp( APQ_Timestamp );
 		Text : String := Value( Root_Query_Type'Class( Query ), CX );
 	begin
-		return To_Timestamp(
-					S	=> Text,
-					TZ	=> 0
-				);
+		return To_Timestamp( Text );
 	exception
 		when Constraint_Error | Invalid_Format =>
 			Raise_APQ_Error_Exception(
@@ -1783,6 +1775,40 @@ package body APQ is
 					);
 		return Val_Type( D );
 	end Convert_To_Timestamp;
+
+
+	function To_Date(
+				S	: in String
+			) return APQ_Date is
+		-- convert the string to apq_date using the UTC timezone
+		function To_Date is new Convert_To_Timestamp(APQ_Date);
+	begin
+		return To_Date(
+				S	=> S,
+				TZ	=> Ada.Calendar.Time_Zones.UTC_Time_Offset( Ada.Calendar.Clock )
+			);
+	end To_Date;
+
+
+	function To_Time(
+				S	: in String
+			) return APQ_Time is
+		function Inner_To_Time is new Convert_To_Time( APQ_Time );
+	begin
+		return Inner_To_Time( S );
+	end To_Time;
+
+	function To_Timestamp(
+				S	: in String
+			) return APQ_Timestamp	is
+		-- convert the string to apq_timestamp using the UTC timezone
+		function To_Timestamp is new Convert_To_Timestamp( APQ_Timestamp );
+	begin
+		return To_Timestamp(
+					S	=> S,
+					TZ	=> Ada.Calendar.Time_Zones.UTC_Time_Offset( Ada.Calendar.Clock )
+				);
+	end To_Timestamp;
 
 	function Convert_Date_and_Time(
 					DT	: in Date_Type;

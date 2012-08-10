@@ -1106,6 +1106,22 @@ package APQ is
 				S	: in String;
 				TZ	: in Ada.Calendar.Time_Zones.Time_Offset
 			) return Val_Type;
+	
+	function To_Date(
+				S	: in String
+			) return APQ_Date;
+	-- convert the string to apq_date using the UTC timezone
+
+	function To_Time( 
+				S	: in String
+			) return APQ_Time;
+	-- convert the string to apq_time 
+
+	function To_Timestamp(
+				S	: in String
+			) return APQ_Timestamp;
+	-- convert the string to apq_timestamp using the UTC timezone
+
 
 
 	generic
